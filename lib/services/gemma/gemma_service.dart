@@ -27,9 +27,7 @@ class GemmaService {
 
     if (_hfToken.isEmpty) {
       _initializing = false;
-      throw StateError(
-        'HF_TOKEN is empty. Build with: flutter run --dart-define=HF_TOKEN=hf_xxx',
-      );
+      throw StateError('HF_TOKEN is empty. Build with: flutter run --dart-define=HF_TOKEN=hf_xxx');
     }
 
     try {
@@ -42,13 +40,10 @@ class GemmaService {
       await FlutterGemma.installModel(
         modelType: ModelType.gemma4,
         fileType: ModelFileType.litertlm,
-      )
-          .fromNetwork(_modelUrl, token: _hfToken)
-          .withProgress((p) {
-            debugPrint('[Gemma] download $p%');
-            onProgress?.call(p);
-          })
-          .install();
+      ).fromNetwork(_modelUrl, token: _hfToken).withProgress((p) {
+        debugPrint('[Gemma] download $p%');
+        onProgress?.call(p);
+      }).install();
 
       debugPrint('[Gemma] install/cache done in ${swInstall.elapsed}');
 

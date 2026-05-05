@@ -84,10 +84,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gemma-San — Diagnostic'),
-        backgroundColor: cs.inversePrimary,
-      ),
+      appBar: AppBar(title: const Text('Gemma-San — Diagnostic'), backgroundColor: cs.inversePrimary),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -99,25 +96,14 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
               if (_loading) _ProgressBar(progress: _downloadProgress),
               if (!_service.isReady) ...[
                 const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: _loading ? null : _loadModel,
-                  child: const Text('Load Gemma 4'),
-                ),
+                FilledButton(onPressed: _loading ? null : _loadModel, child: const Text('Load Gemma 4')),
               ],
               const SizedBox(height: 12),
               Expanded(
-                child: _OutputArea(
-                  output: _output,
-                  scrollController: _scrollController,
-                ),
+                child: _OutputArea(output: _output, scrollController: _scrollController),
               ),
               const Divider(height: 24),
-              _InputRow(
-                controller: _controller,
-                generating: _generating,
-                enabled: _service.isReady,
-                onSend: _send,
-              ),
+              _InputRow(controller: _controller, generating: _generating, enabled: _service.isReady, onSend: _send),
             ],
           ),
         ),
@@ -138,10 +124,7 @@ class _StatusBanner extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        status,
-        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-      ),
+      child: Text(status, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
     );
   }
 }
@@ -187,12 +170,7 @@ class _OutputArea extends StatelessWidget {
 }
 
 class _InputRow extends StatelessWidget {
-  const _InputRow({
-    required this.controller,
-    required this.generating,
-    required this.enabled,
-    required this.onSend,
-  });
+  const _InputRow({required this.controller, required this.generating, required this.enabled, required this.onSend});
 
   final TextEditingController controller;
   final bool generating;
@@ -207,10 +185,7 @@ class _InputRow extends StatelessWidget {
         Expanded(
           child: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Type a prompt…',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(hintText: 'Type a prompt…', border: OutlineInputBorder()),
             maxLines: 4,
             minLines: 1,
             enabled: enabled && !generating,
@@ -220,11 +195,7 @@ class _InputRow extends StatelessWidget {
         FilledButton(
           onPressed: enabled && !generating ? onSend : null,
           child: generating
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Send'),
         ),
       ],

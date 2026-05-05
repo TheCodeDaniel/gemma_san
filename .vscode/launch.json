@@ -2,21 +2,17 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Gemma-San (debug, physical device)",
+      "name": "Gemma-San (debug)",
       "request": "launch",
       "type": "dart",
-      "args": [
-        "--dart-define=HF_TOKEN=${env:HF_TOKEN}"
-      ]
+      "args": ["--dart-define-from-file", ".env"]
     },
     {
       "name": "Gemma-San (profile)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile",
-      "args": [
-        "--dart-define=HF_TOKEN=${env:HF_TOKEN}"
-      ]
+      "args": ["--dart-define-from-file", ".env"]
     }
   ]
 }

@@ -14,10 +14,7 @@ class GemmaSanApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Gemma-San',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B4332)),
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B4332)), useMaterial3: true),
       // Temporary: replaced by onboarding on Day 13.
       home: const DiagnosticScreen(),
     );
