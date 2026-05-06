@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
 
 import '../../services/gemma/gemma_service.dart';
+import '../../services/stt/stt_service.dart';
 
 class DiagnosticScreen extends StatefulWidget {
   const DiagnosticScreen({super.key});
@@ -10,49 +14,73 @@ class DiagnosticScreen extends StatefulWidget {
 }
 
 class _DiagnosticScreenState extends State<DiagnosticScreen> {
-  final _service = GemmaService();
-  final _controller = TextEditingController();
+  final _gemmaService = GemmaService();
+  final _sttService = SttService();
+  final _recorder = AudioRecorder();
+  final _promptController = TextEditingController();
   final _scrollController = ScrollController();
 
-  String _status = 'Tap "Load Gemma 4" to begin.';
+  String _status = 'Tap "Set up" to begin.';
   int _downloadProgress = 0;
   bool _loading = false;
   bool _generating = false;
+  bool _recording = false;     // drives the red-button UI
+  bool _recorderReady = false; // true only after _recorder.start() resolves
+  bool _transcribing = false;
   String _output = '';
+
+  bool get _bothReady => _gemmaService.isReady && _sttService.isReady;
 
   @override
   void dispose() {
-    _service.dispose();
-    _controller.dispose();
+    _gemmaService.dispose();
+    _sttService.dispose();
+    _recorder.dispose();
+    _promptController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadModel() async {
+  Future<void> _setup() async {
     setState(() {
       _loading = true;
-      _status = 'Downloading model… (check Logcat for progress)';
       _downloadProgress = 0;
+      _status = 'Setting up your tutor…';
     });
 
     try {
-      await _service.initialize(
+      // ── Phase 1: Gemma ────────────────────────────────────────────────────
+      await _gemmaService.initialize(
         onProgress: (p) => setState(() {
           _downloadProgress = p;
-          _status = 'Downloading: $p%';
+          _status = 'Gemma: $p% (1 of 2)';
         }),
       );
-      setState(() => _status = 'Model ready ✓');
+      setState(() => _status = 'Gemma ready. Loading Whisper…');
+
+      // ── Phase 2: Whisper ──────────────────────────────────────────────────
+      setState(() => _downloadProgress = 0);
+      await _sttService.initialize(
+        onProgress: (p) => setState(() {
+          _downloadProgress = p;
+          _status = 'Whisper: $p% (2 of 2)';
+        }),
+      );
+
+      // Request mic permission now so _startRecording() has no async gap.
+      await Permission.microphone.request();
+
+      setState(() => _status = 'Ready — speak or type.');
     } catch (e) {
-      setState(() => _status = 'Load failed: $e');
+      setState(() => _status = 'Setup failed: $e');
     } finally {
       setState(() => _loading = false);
     }
   }
 
   Future<void> _send() async {
-    final prompt = _controller.text.trim();
-    if (prompt.isEmpty || _generating || !_service.isReady) return;
+    final prompt = _promptController.text.trim();
+    if (prompt.isEmpty || _generating || !_gemmaService.isReady) return;
 
     setState(() {
       _generating = true;
@@ -60,7 +88,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     });
 
     try {
-      await for (final token in _service.generate(prompt)) {
+      await for (final token in _gemmaService.generate(prompt)) {
         setState(() => _output += token);
         _scrollToBottom();
       }
@@ -68,6 +96,87 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
       setState(() => _output = 'Generation error: $e');
     } finally {
       setState(() => _generating = false);
+    }
+  }
+
+  // Toggle: first tap starts, second tap stops + transcribes.
+  Future<void> _toggleMic() async {
+    if (_recording) {
+      await _stopAndTranscribe();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    if (_transcribing || _generating) return;
+
+    if (!await Permission.microphone.isGranted) {
+      setState(() => _status = 'Microphone permission denied. Run setup again.');
+      return;
+    }
+
+    // Show red button immediately, then start the hardware.
+    setState(() {
+      _recording = true;
+      _recorderReady = false;
+      _status = 'Starting mic…';
+    });
+
+    try {
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/stt_input.wav';
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.wav, sampleRate: 16000, numChannels: 1),
+        path: path,
+      );
+      setState(() {
+        _recorderReady = true;
+        _status = 'Recording… tap mic to stop';
+      });
+    } catch (e) {
+      setState(() {
+        _recording = false;
+        _recorderReady = false;
+        _status = 'Recording error: $e';
+      });
+    }
+  }
+
+  Future<void> _stopAndTranscribe() async {
+    // Ignore taps that arrive before the hardware is ready.
+    if (!_recording || !_recorderReady) return;
+
+    setState(() {
+      _recording = false;
+      _recorderReady = false;
+      _transcribing = true;
+      _status = 'Transcribing…';
+    });
+
+    String? path;
+    try {
+      path = await _recorder.stop();
+    } catch (e) {
+      setState(() {
+        _transcribing = false;
+        _status = 'Stop error: $e';
+      });
+      return;
+    }
+
+    try {
+      if (path != null) {
+        final text = await _sttService.transcribe(path);
+        setState(() => _promptController.text = text);
+      }
+    } catch (e) {
+      setState(() => _status = 'Transcription error: $e');
+    } finally {
+      setState(() {
+        _transcribing = false;
+        _status = 'Ready — speak or type.';
+      });
     }
   }
 
@@ -84,7 +193,10 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gemma-San — Diagnostic'), backgroundColor: cs.inversePrimary),
+      appBar: AppBar(
+        title: const Text('Gemma-San — Diagnostic'),
+        backgroundColor: cs.inversePrimary,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -94,16 +206,31 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
               _StatusBanner(status: _status),
               const SizedBox(height: 8),
               if (_loading) _ProgressBar(progress: _downloadProgress),
-              if (!_service.isReady) ...[
+              if (!_bothReady) ...[
                 const SizedBox(height: 8),
-                FilledButton(onPressed: _loading ? null : _loadModel, child: const Text('Load Gemma 4')),
+                FilledButton(
+                  onPressed: _loading ? null : _setup,
+                  child: const Text('Set up'),
+                ),
               ],
               const SizedBox(height: 12),
               Expanded(
-                child: _OutputArea(output: _output, scrollController: _scrollController),
+                child: _OutputArea(
+                  output: _output,
+                  scrollController: _scrollController,
+                ),
               ),
               const Divider(height: 24),
-              _InputRow(controller: _controller, generating: _generating, enabled: _service.isReady, onSend: _send),
+              _InputRow(
+                controller: _promptController,
+                gemmaReady: _gemmaService.isReady,
+                sttReady: _sttService.isReady,
+                generating: _generating,
+                transcribing: _transcribing,
+                recording: _recording,
+                onSend: _send,
+                onMicTap: _toggleMic,
+              ),
             ],
           ),
         ),
@@ -111,6 +238,8 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     );
   }
 }
+
+// ── Private widgets ────────────────────────────────────────────────────────
 
 class _StatusBanner extends StatelessWidget {
   const _StatusBanner({required this.status});
@@ -124,7 +253,10 @@ class _StatusBanner extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(status, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+      child: Text(
+        status,
+        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+      ),
     );
   }
 }
@@ -170,35 +302,108 @@ class _OutputArea extends StatelessWidget {
 }
 
 class _InputRow extends StatelessWidget {
-  const _InputRow({required this.controller, required this.generating, required this.enabled, required this.onSend});
+  const _InputRow({
+    required this.controller,
+    required this.gemmaReady,
+    required this.sttReady,
+    required this.generating,
+    required this.transcribing,
+    required this.recording,
+    required this.onSend,
+    required this.onMicTap,
+  });
 
   final TextEditingController controller;
+  final bool gemmaReady;
+  final bool sttReady;
   final bool generating;
-  final bool enabled;
+  final bool transcribing;
+  final bool recording;
   final VoidCallback onSend;
+  final VoidCallback onMicTap;
 
   @override
   Widget build(BuildContext context) {
+    final busy = generating || transcribing;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        if (sttReady) ...[
+          _MicButton(
+            recording: recording,
+            disabled: busy,
+            onTap: onMicTap,
+          ),
+          const SizedBox(width: 8),
+        ],
         Expanded(
           child: TextField(
             controller: controller,
-            decoration: const InputDecoration(hintText: 'Type a prompt…', border: OutlineInputBorder()),
+            decoration: InputDecoration(
+              hintText: recording
+                  ? 'Recording… tap mic to stop'
+                  : transcribing
+                      ? 'Transcribing…'
+                      : 'Type a prompt…',
+              border: const OutlineInputBorder(),
+            ),
             maxLines: 4,
             minLines: 1,
-            enabled: enabled && !generating,
+            enabled: gemmaReady && !busy && !recording,
           ),
         ),
         const SizedBox(width: 8),
         FilledButton(
-          onPressed: enabled && !generating ? onSend : null,
+          onPressed: gemmaReady && !busy && !recording ? onSend : null,
           child: generating
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Send'),
         ),
       ],
+    );
+  }
+}
+
+class _MicButton extends StatelessWidget {
+  const _MicButton({
+    required this.recording,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final bool recording;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: disabled ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: recording
+              ? Colors.red
+              : disabled
+                  ? cs.surfaceContainerHighest
+                  : cs.primary,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          recording ? Icons.stop : Icons.mic,
+          color: disabled && !recording ? cs.onSurfaceVariant : Colors.white,
+          size: 24,
+        ),
+      ),
     );
   }
 }
