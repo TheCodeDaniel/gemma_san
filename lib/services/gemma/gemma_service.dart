@@ -1,16 +1,26 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:path_provider/path_provider.dart';
 
 // E4B model (4B effective params). Swap to an E2B URL if RAM is tight on target devices.
 const _modelUrl =
     'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/'
     'resolve/main/gemma-4-E4B-it.litertlm';
 
-// Set at build time: flutter run --dart-define=HF_TOKEN=hf_xxx
-// Or via .vscode/launch.json (see project root).
+const _modelFilename = 'gemma-4-E4B-it.litertlm';
+
+// Set at build time via .env / --dart-define=HF_TOKEN=hf_xxx
 const _hfToken = String.fromEnvironment('HF_TOKEN');
+
+// USE_GPU=false  → CPU backend (works on emulator and all real devices, slower)
+// USE_GPU=true   → GPU backend (real device only — crashes on emulator's SwiftShader)
+const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
+
+// Reduce if GPU OOMs on low-end devices (1024 = ~half the KV-cache RAM of 2048).
+const _maxTokens = 1024;
 
 typedef DownloadProgressCallback = void Function(int percent);
 
@@ -20,36 +30,48 @@ class GemmaService {
 
   bool get isReady => _model != null;
 
-  /// Idempotent. Downloads model on first call (shows progress), loads it, then resolves.
+  /// Idempotent. Downloads model on first call using dart:io HttpClient
+  /// (bypasses WorkManager to avoid Android's 10-min background task timeout),
+  /// then loads it into memory.
   Future<void> initialize({DownloadProgressCallback? onProgress}) async {
     if (isReady || _initializing) return;
     _initializing = true;
 
     if (_hfToken.isEmpty) {
       _initializing = false;
-      throw StateError('HF_TOKEN is empty. Build with: flutter run --dart-define=HF_TOKEN=hf_xxx');
+      throw StateError('HF_TOKEN is empty. Add HF_TOKEN=hf_xxx to your .env file.');
     }
 
     try {
       debugPrint('[Gemma] initializing SDK…');
       await FlutterGemma.initialize(huggingFaceToken: _hfToken);
 
-      debugPrint('[Gemma] installing model (skipped if cached):\n  $_modelUrl');
-      final swInstall = Stopwatch()..start();
+      final modelPath = await _localModelPath();
+      debugPrint('[Gemma] model path: $modelPath');
 
+      if (_isDownloadComplete(modelPath)) {
+        debugPrint('[Gemma] model already on disk (complete), skipping download');
+        onProgress?.call(100);
+      } else {
+        // Partial file or no file — delete both and start fresh.
+        await _cleanPartial(modelPath);
+        debugPrint('[Gemma] downloading model…');
+        final sw = Stopwatch()..start();
+        await _downloadModel(url: _modelUrl, savePath: modelPath, token: _hfToken, onProgress: onProgress);
+        debugPrint('[Gemma] download complete in ${sw.elapsed}');
+      }
+
+      // Register with flutter_gemma — fromFile records metadata only, no copy.
+      debugPrint('[Gemma] registering model…');
       await FlutterGemma.installModel(
         modelType: ModelType.gemma4,
         fileType: ModelFileType.litertlm,
-      ).fromNetwork(_modelUrl, token: _hfToken).withProgress((p) {
-        debugPrint('[Gemma] download $p%');
-        onProgress?.call(p);
-      }).install();
+      ).fromFile(modelPath).install();
 
-      debugPrint('[Gemma] install/cache done in ${swInstall.elapsed}');
-
-      debugPrint('[Gemma] loading model into memory…');
+      final backend = _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu;
+      debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens)…');
       final swLoad = Stopwatch()..start();
-      _model = await FlutterGemma.getActiveModel(maxTokens: 2048);
+      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend);
       debugPrint('[Gemma] model ready — load time: ${swLoad.elapsed}');
     } catch (_) {
       _initializing = false;
@@ -95,5 +117,108 @@ class GemmaService {
     await _model?.close();
     _model = null;
     _initializing = false;
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  static Future<String> _localModelPath() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return '${dir.path}/$_modelFilename';
+  }
+
+  /// Marker written next to the model file only after a successful download.
+  /// Its presence means the model file is complete and safe to load.
+  static String _markerPath(String modelPath) => '$modelPath.complete';
+
+  static bool _isDownloadComplete(String modelPath) =>
+      File(modelPath).existsSync() && File(_markerPath(modelPath)).existsSync();
+
+  static Future<void> _cleanPartial(String modelPath) async {
+    for (final path in [modelPath, _markerPath(modelPath)]) {
+      final f = File(path);
+      if (f.existsSync()) await f.delete().catchError((_) => f);
+    }
+  }
+
+  /// Downloads [url] to [savePath] using dart:io HttpClient.
+  /// No WorkManager, no foreground service — runs in Dart's main isolate,
+  /// immune to Android's background task timeout.
+  static Future<void> _downloadModel({
+    required String url,
+    required String savePath,
+    required String token,
+    DownloadProgressCallback? onProgress,
+  }) async {
+    final file = File(savePath);
+    HttpClient? client;
+    IOSink? sink;
+
+    try {
+      client = HttpClient()..connectionTimeout = const Duration(seconds: 30);
+
+      final request = await client.getUrl(Uri.parse(url));
+      request.headers.set('Authorization', 'Bearer $token');
+      request.headers.set('Connection', 'keep-alive');
+
+      final response = await request.close();
+
+      switch (response.statusCode) {
+        case 401:
+          throw Exception(
+            'HuggingFace token rejected (401). '
+            'Ensure your token has Read access to the model repo.',
+          );
+        case 403:
+          throw Exception(
+            'Access denied (403). Accept the model licence at '
+            'huggingface.co/litert-community/gemma-4-E4B-it-litert-lm',
+          );
+        case 404:
+          throw Exception('Model file not found (404). Check the URL.');
+        default:
+          if (response.statusCode != 200) {
+            throw Exception('Download failed: HTTP ${response.statusCode}');
+          }
+      }
+
+      final contentLength = response.contentLength; // -1 if server omits it
+      sink = file.openWrite();
+      int received = 0;
+      int lastReported = -1;
+
+      await for (final chunk in response) {
+        sink.add(chunk);
+        received += chunk.length;
+
+        if (contentLength > 0) {
+          final pct = (received * 100 ~/ contentLength).clamp(0, 99);
+          if (pct != lastReported) {
+            lastReported = pct;
+            debugPrint('[Gemma] download $pct%');
+            onProgress?.call(pct);
+          }
+        }
+      }
+
+      await sink.flush();
+      await sink.close();
+      sink = null;
+
+      // Write completion marker — only reached if stream finished without error.
+      await File(_markerPath(savePath)).writeAsString('ok');
+
+      onProgress?.call(100);
+      debugPrint(
+        '[Gemma] download finished — '
+        '${(received / 1024 / 1024).toStringAsFixed(1)} MB',
+      );
+    } catch (e) {
+      await sink?.close().catchError((_) {});
+      // Delete both the partial model and any stale marker.
+      await _cleanPartial(savePath);
+      rethrow;
+    } finally {
+      client?.close(force: true);
+    }
   }
 }
