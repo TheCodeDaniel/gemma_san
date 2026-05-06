@@ -19,6 +19,12 @@ const _hfToken = String.fromEnvironment('HF_TOKEN');
 // USE_GPU=true   → GPU backend (real device only — crashes on emulator's SwiftShader)
 const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
 
+// Dev shortcut: set DEV_MODEL_PATH to an absolute path on the device where you've
+// already pushed the model file (e.g. /sdcard/Download/gemma-4-E4B-it.litertlm).
+// When set and the file exists, initialize() skips HF download entirely.
+// Leave empty (or omit) in production builds.
+const _devModelPath = String.fromEnvironment('DEV_MODEL_PATH', defaultValue: '');
+
 // Reduce if GPU OOMs on low-end devices (1024 = ~half the KV-cache RAM of 2048).
 const _maxTokens = 1024;
 
@@ -37,28 +43,33 @@ class GemmaService {
     if (isReady || _initializing) return;
     _initializing = true;
 
-    if (_hfToken.isEmpty) {
-      _initializing = false;
-      throw StateError('HF_TOKEN is empty. Add HF_TOKEN=hf_xxx to your .env file.');
-    }
-
     try {
       debugPrint('[Gemma] initializing SDK…');
       await FlutterGemma.initialize(huggingFaceToken: _hfToken);
 
-      final modelPath = await _localModelPath();
-      debugPrint('[Gemma] model path: $modelPath');
-
-      if (_isDownloadComplete(modelPath)) {
-        debugPrint('[Gemma] model already on disk (complete), skipping download');
+      String modelPath;
+      if (_devModelPath.isNotEmpty && File(_devModelPath).existsSync()) {
+        debugPrint('[Gemma] DEV: using model at $_devModelPath — skipping download');
+        modelPath = _devModelPath;
         onProgress?.call(100);
       } else {
-        // Partial file or no file — delete both and start fresh.
-        await _cleanPartial(modelPath);
-        debugPrint('[Gemma] downloading model…');
-        final sw = Stopwatch()..start();
-        await _downloadModel(url: _modelUrl, savePath: modelPath, token: _hfToken, onProgress: onProgress);
-        debugPrint('[Gemma] download complete in ${sw.elapsed}');
+        if (_hfToken.isEmpty) {
+          _initializing = false;
+          throw StateError('HF_TOKEN is empty. Add HF_TOKEN=hf_xxx to your .env file.');
+        }
+        modelPath = await _localModelPath();
+        debugPrint('[Gemma] model path: $modelPath');
+
+        if (_isDownloadComplete(modelPath)) {
+          debugPrint('[Gemma] model already on disk (complete), skipping download');
+          onProgress?.call(100);
+        } else {
+          await _cleanPartial(modelPath);
+          debugPrint('[Gemma] downloading model…');
+          final sw = Stopwatch()..start();
+          await _downloadModel(url: _modelUrl, savePath: modelPath, token: _hfToken, onProgress: onProgress);
+          debugPrint('[Gemma] download complete in ${sw.elapsed}');
+        }
       }
 
       // Register with flutter_gemma — fromFile records metadata only, no copy.
