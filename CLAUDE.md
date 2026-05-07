@@ -107,8 +107,11 @@ features/<name>/
 | Day | Goal                                                            | Status                                                        |
 | --- | --------------------------------------------------------------- | ------------------------------------------------------------- |
 | 1   | LM Studio validation: Pidgin quality, function calling, SVG gen | Done — Pidgin ✅, function calling ✅, SVG dropped from scope |
-| 2   | Scaffold, flutter_gemma installed, HF model access verified     | In progress                                                   |
-| 3+  | Conversation feature                                            | Upcoming                                                      |
+| 2   | Scaffold, flutter_gemma installed, HF model access verified     | Done                                                          |
+| 3   | GemmaService: GPU backend, DEV_MODEL_PATH shortcut, HF download | Done                                                          |
+| 4   | STT: Whisper tiny via whisper_flutter_new, WAV recording        | Done — tiny model avoids OOM alongside Gemma 4B               |
+| 5   | TTS: sentence-streaming via flutter_tts, interruption support   | Done — speech starts at first sentence boundary, ~1–2s        |
+| 6+  | Conversation feature                                            | Upcoming                                                      |
 
 ---
 

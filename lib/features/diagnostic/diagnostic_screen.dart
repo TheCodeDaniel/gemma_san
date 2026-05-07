@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -5,6 +7,7 @@ import 'package:record/record.dart';
 
 import '../../services/gemma/gemma_service.dart';
 import '../../services/stt/stt_service.dart';
+import '../../services/tts/tts_service.dart';
 
 class DiagnosticScreen extends StatefulWidget {
   const DiagnosticScreen({super.key});
@@ -16,9 +19,12 @@ class DiagnosticScreen extends StatefulWidget {
 class _DiagnosticScreenState extends State<DiagnosticScreen> {
   final _gemmaService = GemmaService();
   final _sttService = SttService();
+  final _ttsService = TtsService();
   final _recorder = AudioRecorder();
   final _promptController = TextEditingController();
   final _scrollController = ScrollController();
+
+  StreamSubscription<bool>? _ttsSub;
 
   String _status = 'Tap "Set up" to begin.';
   int _downloadProgress = 0;
@@ -27,14 +33,29 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   bool _recording = false;     // drives the red-button UI
   bool _recorderReady = false; // true only after _recorder.start() resolves
   bool _transcribing = false;
+  bool _speaking = false;
   String _output = '';
 
   bool get _bothReady => _gemmaService.isReady && _sttService.isReady;
 
+  // Splits at whitespace following sentence-ending punctuation.
+  static final _sentenceSplit = RegExp(r'(?<=[.!?])\s+');
+
+  @override
+  void initState() {
+    super.initState();
+    _ttsService.initialize();
+    _ttsSub = _ttsService.speakingStream.listen(
+      (speaking) { if (mounted) setState(() => _speaking = speaking); },
+    );
+  }
+
   @override
   void dispose() {
+    _ttsSub?.cancel();
     _gemmaService.dispose();
     _sttService.dispose();
+    _ttsService.dispose();
     _recorder.dispose();
     _promptController.dispose();
     _scrollController.dispose();
@@ -67,7 +88,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
         }),
       );
 
-      // Request mic permission now so _startRecording() has no async gap.
       await Permission.microphone.request();
 
       setState(() => _status = 'Ready — speak or type.');
@@ -82,16 +102,27 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     final prompt = _promptController.text.trim();
     if (prompt.isEmpty || _generating || !_gemmaService.isReady) return;
 
+    // Interrupt any ongoing speech before starting a new response.
+    await _ttsService.stop();
+
     setState(() {
       _generating = true;
       _output = '';
     });
 
+    final buffer = StringBuffer();
+
     try {
       await for (final token in _gemmaService.generate(prompt)) {
         setState(() => _output += token);
         _scrollToBottom();
+
+        buffer.write(token);
+        _flushSentences(buffer);
       }
+      // Speak any trailing text that didn't end with punctuation.
+      final tail = buffer.toString().trim();
+      if (tail.isNotEmpty) _ttsService.enqueue(tail);
     } catch (e) {
       setState(() => _output = 'Generation error: $e');
     } finally {
@@ -99,7 +130,27 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     }
   }
 
-  // Toggle: first tap starts, second tap stops + transcribes.
+  /// Extracts complete sentences from [buffer], enqueues them, and keeps
+  /// any incomplete tail in the buffer for the next token.
+  void _flushSentences(StringBuffer buffer) {
+    final text = buffer.toString();
+    final matches = _sentenceSplit.allMatches(text).toList();
+    if (matches.isEmpty) return;
+
+    final splitPoint = matches.last.end;
+    final completed = text.substring(0, splitPoint);
+    final pending = text.substring(splitPoint);
+
+    buffer.clear();
+    buffer.write(pending);
+
+    for (final sentence in completed.split(_sentenceSplit)) {
+      final s = sentence.trim();
+      if (s.isNotEmpty) _ttsService.enqueue(s);
+    }
+  }
+
+  // Toggle: first tap starts recording, second tap stops + transcribes.
   Future<void> _toggleMic() async {
     if (_recording) {
       await _stopAndTranscribe();
@@ -116,7 +167,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
       return;
     }
 
-    // Show red button immediately, then start the hardware.
     setState(() {
       _recording = true;
       _recorderReady = false;
@@ -144,7 +194,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   }
 
   Future<void> _stopAndTranscribe() async {
-    // Ignore taps that arrive before the hardware is ready.
     if (!_recording || !_recorderReady) return;
 
     setState(() {
@@ -196,6 +245,17 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
       appBar: AppBar(
         title: const Text('Gemma-San — Diagnostic'),
         backgroundColor: cs.inversePrimary,
+        actions: [
+          if (_ttsService.isReady)
+            IconButton(
+              icon: Icon(
+                _speaking ? Icons.volume_up : Icons.volume_off,
+                color: _speaking ? Colors.red : cs.onSurfaceVariant,
+              ),
+              onPressed: _speaking ? () => _ttsService.stop() : null,
+              tooltip: _speaking ? 'Stop speaking' : 'Audio idle',
+            ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -330,11 +390,7 @@ class _InputRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (sttReady) ...[
-          _MicButton(
-            recording: recording,
-            disabled: busy,
-            onTap: onMicTap,
-          ),
+          _MicButton(recording: recording, disabled: busy, onTap: onMicTap),
           const SizedBox(width: 8),
         ],
         Expanded(
