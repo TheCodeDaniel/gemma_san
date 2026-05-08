@@ -27,9 +27,6 @@ const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
 // Leave empty (or omit) in production builds.
 const _devModelPath = String.fromEnvironment('DEV_MODEL_PATH', defaultValue: '');
 
-// Vision encoder needs ~190 MB of GPU headroom. With supportImage=true the
-// KV cache at 512 tokens (~190 MB) fits alongside the vision subgraphs on S22.
-// Raise back to 1024 only if vision is disabled and you need longer context.
 const _maxTokens = 512;
 
 typedef DownloadProgressCallback = void Function(int percent);
@@ -84,7 +81,7 @@ class GemmaService {
       ).fromFile(modelPath).install();
 
       final backend = _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu;
-      debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens, vision=true)…');
+      debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens, vision=false)…');
       final swLoad = Stopwatch()..start();
       _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: false);
       debugPrint('[Gemma] model ready — load time: ${swLoad.elapsed}');
@@ -94,27 +91,15 @@ class GemmaService {
     }
   }
 
-  /// Streams response tokens for [prompt], with optional [imagePath] for vision.
-  /// The image file is deleted from disk once Gemma has read the bytes.
-  Stream<String> generate(String prompt, {String? imagePath}) async* {
+  Stream<String> generate(String prompt) async* {
     final model = _model;
     if (model == null) throw StateError('GemmaService.initialize() not called');
 
-    debugPrint('[Gemma] creating session (vision=${imagePath != null})…');
+    debugPrint('[Gemma] creating session…');
     final session = await model.createSession();
 
     try {
-      final Message message;
-      if (imagePath != null) {
-        final bytes = await File(imagePath).readAsBytes();
-        message = Message.withImage(text: prompt, imageBytes: bytes, isUser: true);
-        // Free disk space immediately — bytes are now in the native engine.
-        await File(imagePath).delete().catchError((Object _) => File(imagePath));
-        debugPrint('[Gemma] image loaded — ${bytes.lengthInBytes} bytes');
-      } else {
-        message = Message.text(text: prompt, isUser: true);
-      }
-      await session.addQueryChunk(message);
+      await session.addQueryChunk(Message.text(text: prompt, isUser: true));
 
       int tokenCount = 0;
       bool firstToken = true;

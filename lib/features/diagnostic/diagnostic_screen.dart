@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
@@ -23,7 +21,6 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   final _sttService = SttService();
   final _ttsService = TtsService();
   final _recorder = AudioRecorder();
-  final _picker = ImagePicker();
   final _promptController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -38,10 +35,8 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   bool _transcribing = false;
   bool _speaking = false;
   String _output = '';
-  String? _capturedImagePath;
 
   bool get _bothReady => _gemmaService.isReady && _sttService.isReady;
-  bool get _hasImage => _capturedImagePath != null;
 
   // Splits at whitespace following sentence-ending punctuation.
   static final _sentenceSplit = RegExp(r'(?<=[.!?])\s+');
@@ -98,7 +93,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
       );
 
       await Permission.microphone.request();
-      setState(() => _status = 'Ready — speak, photograph, or type.');
+      setState(() => _status = 'Ready — speak or type.');
     } catch (e) {
       setState(() => _status = 'Setup failed — tap Retry to try again.\n$e');
     } finally {
@@ -106,47 +101,23 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     }
   }
 
-  Future<void> _captureImage() async {
-    if (_generating || _transcribing) return;
-    try {
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-      if (photo == null) return; // user cancelled
-      setState(() => _capturedImagePath = photo.path);
-    } catch (e) {
-      setState(() => _status = 'Camera error: $e');
-    }
-  }
-
   Future<void> _send() async {
     final prompt = _promptController.text.trim();
-    // Require either text or an image.
-    if (prompt.isEmpty && !_hasImage) return;
+    if (prompt.isEmpty) return;
     if (_generating || !_gemmaService.isReady) return;
 
     await _ttsService.stop();
 
-    // Snapshot image path before clearing state.
-    final snapshotImage = _capturedImagePath;
-    final effectivePrompt = prompt.isEmpty
-        ? 'Describe what you see in this image and explain it simply, as a tutor teaching a child aged 5–12.'
-        : prompt;
-
     setState(() {
       _generating = true;
       _output = '';
-      _capturedImagePath = null;
       _promptController.clear();
     });
 
     final buffer = StringBuffer();
 
     try {
-      await for (final token in _gemmaService.generate(effectivePrompt, imagePath: snapshotImage)) {
+      await for (final token in _gemmaService.generate(prompt)) {
         setState(() => _output += token);
         _scrollToBottom();
         buffer.write(token);
@@ -252,7 +223,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     } finally {
       setState(() {
         _transcribing = false;
-        _status = _hasImage ? 'Image ready — ask a question or tap Send.' : 'Ready — speak or type.';
+        _status = 'Ready — speak or type.';
       });
     }
   }
@@ -302,23 +273,16 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
               Expanded(
                 child: _OutputArea(output: _output, scrollController: _scrollController),
               ),
-              // Image thumbnail + dismiss
-              if (_hasImage) ...[
-                const SizedBox(height: 8),
-                _ImagePreview(path: _capturedImagePath!, onClear: () => setState(() => _capturedImagePath = null)),
-              ],
               const Divider(height: 24),
               _InputRow(
                 controller: _promptController,
                 gemmaReady: _gemmaService.isReady,
                 sttReady: _sttService.isReady,
-                hasImage: _hasImage,
                 generating: _generating,
                 transcribing: _transcribing,
                 recording: _recording,
                 onSend: _send,
                 onMicTap: _toggleMic,
-                onCameraCapture: _gemmaService.isReady ? _captureImage : null,
               ),
             ],
           ),
@@ -388,97 +352,36 @@ class _OutputArea extends StatelessWidget {
   }
 }
 
-class _ImagePreview extends StatelessWidget {
-  const _ImagePreview({required this.path, required this.onClear});
-  final String path;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.file(File(path), width: 72, height: 72, fit: BoxFit.cover, cacheWidth: 144, cacheHeight: 144),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'Image captured — ask a question or tap Send to explain it.',
-            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-          ),
-        ),
-        IconButton(icon: const Icon(Icons.close), onPressed: onClear, tooltip: 'Remove image'),
-      ],
-    );
-  }
-}
-
 class _InputRow extends StatelessWidget {
   const _InputRow({
     required this.controller,
     required this.gemmaReady,
     required this.sttReady,
-    required this.hasImage,
     required this.generating,
     required this.transcribing,
     required this.recording,
     required this.onSend,
     required this.onMicTap,
-    required this.onCameraCapture,
   });
 
   final TextEditingController controller;
   final bool gemmaReady;
   final bool sttReady;
-  final bool hasImage;
   final bool generating;
   final bool transcribing;
   final bool recording;
   final VoidCallback onSend;
   final VoidCallback onMicTap;
-  final VoidCallback? onCameraCapture;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final busy = generating || transcribing;
-
-    // Send is enabled when Gemma is ready and we have text or an image.
-    final canSend = gemmaReady && !busy && !recording && (controller.text.trim().isNotEmpty || hasImage);
+    final canSend = gemmaReady && !busy && !recording && controller.text.trim().isNotEmpty;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Mic button
         if (sttReady) ...[_MicButton(recording: recording, disabled: busy, onTap: onMicTap), const SizedBox(width: 8)],
-        // Camera button
-        GestureDetector(
-          onTap: (busy || recording) ? null : onCameraCapture,
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: hasImage
-                  ? cs.primary
-                  : (busy || recording || onCameraCapture == null)
-                  ? cs.surfaceContainerHighest
-                  : cs.secondaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.photo_library,
-              color: hasImage
-                  ? Colors.white
-                  : (busy || recording || onCameraCapture == null)
-                  ? cs.onSurfaceVariant
-                  : cs.onSecondaryContainer,
-              size: 22,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
         Expanded(
           child: TextField(
             controller: controller,
@@ -487,8 +390,6 @@ class _InputRow extends StatelessWidget {
                   ? 'Recording… tap mic to stop'
                   : transcribing
                   ? 'Transcribing…'
-                  : hasImage
-                  ? 'Ask about this picture…'
                   : 'Type a prompt…',
               border: const OutlineInputBorder(),
             ),
@@ -502,7 +403,7 @@ class _InputRow extends StatelessWidget {
           onPressed: canSend ? onSend : null,
           child: generating
               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(hasImage && controller.text.trim().isEmpty ? 'Explain' : 'Send'),
+              : const Text('Send'),
         ),
       ],
     );
