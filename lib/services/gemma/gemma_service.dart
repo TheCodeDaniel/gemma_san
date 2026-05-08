@@ -5,14 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
 
-// E4B model (4B effective params). Vision (supportImage: true) is currently disabled —
-// E4B's 3-subgraph vision encoder is incompatible with flutter_gemma 0.14.x on GPU,
-// and the CPU path requires a single-signature encoder. Re-enable once library stabilises.
+// E2B model (2B effective params) — lighter, better for low-end target devices.
+// Vision (supportImage: true) blocked: Gemma 4 E2B/E4B both have 3-subgraph vision
+// encoders that flutter_gemma 0.14.x rejects. Text generation works fine.
 const _modelUrl =
-    'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/'
-    'resolve/main/gemma-4-E4B-it.litertlm';
+    'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/'
+    'resolve/main/gemma-4-E2B-it.litertlm';
 
-const _modelFilename = 'gemma-4-E4B-it.litertlm';
+const _modelFilename = 'gemma-4-E2B-it.litertlm';
 
 // Set at build time via .env / --dart-define=HF_TOKEN=hf_xxx
 const _hfToken = String.fromEnvironment('HF_TOKEN');
