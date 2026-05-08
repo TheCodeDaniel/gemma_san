@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
 import '../../services/gemma/gemma_service.dart';
+import '../../services/gemma/tutor_response.dart';
 import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
 
@@ -35,10 +36,10 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   bool _transcribing = false;
   bool _speaking = false;
   String _output = '';
+  TutorMode? _currentMode;
 
   bool get _bothReady => _gemmaService.isReady && _sttService.isReady;
 
-  // Splits at whitespace following sentence-ending punctuation.
   static final _sentenceSplit = RegExp(r'(?<=[.!?])\s+');
 
   @override
@@ -111,42 +112,26 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     setState(() {
       _generating = true;
       _output = '';
+      _currentMode = null;
       _promptController.clear();
     });
 
-    final buffer = StringBuffer();
-
     try {
-      await for (final token in _gemmaService.generate(prompt)) {
-        setState(() => _output += token);
+      await for (final response in _gemmaService.generate(prompt)) {
+        setState(() {
+          _currentMode = response.mode;
+          _output = response.spokenText;
+        });
         _scrollToBottom();
-        buffer.write(token);
-        _flushSentences(buffer);
+        for (final sentence in response.spokenText.split(_sentenceSplit)) {
+          final s = sentence.trim();
+          if (s.isNotEmpty) _ttsService.enqueue(s);
+        }
       }
-      final tail = buffer.toString().trim();
-      if (tail.isNotEmpty) _ttsService.enqueue(tail);
     } catch (e) {
       setState(() => _output = 'Generation error: $e');
     } finally {
       setState(() => _generating = false);
-    }
-  }
-
-  void _flushSentences(StringBuffer buffer) {
-    final text = buffer.toString();
-    final matches = _sentenceSplit.allMatches(text).toList();
-    if (matches.isEmpty) return;
-
-    final splitPoint = matches.last.end;
-    final completed = text.substring(0, splitPoint);
-    final pending = text.substring(splitPoint);
-
-    buffer.clear();
-    buffer.write(pending);
-
-    for (final sentence in completed.split(_sentenceSplit)) {
-      final s = sentence.trim();
-      if (s.isNotEmpty) _ttsService.enqueue(s);
     }
   }
 
@@ -273,6 +258,10 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
               Expanded(
                 child: _OutputArea(output: _output, scrollController: _scrollController),
               ),
+              if (_currentMode != null) ...[
+                const SizedBox(height: 8),
+                _ModePill(mode: _currentMode!),
+              ],
               const Divider(height: 24),
               _InputRow(
                 controller: _promptController,
@@ -406,6 +395,32 @@ class _InputRow extends StatelessWidget {
               : const Text('Send'),
         ),
       ],
+    );
+  }
+}
+
+class _ModePill extends StatelessWidget {
+  const _ModePill({required this.mode});
+  final TutorMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (mode) {
+      TutorMode.socratic => ('? Socratic', Colors.green),
+      TutorMode.direct => ('📖 Direct', Colors.blue),
+      TutorMode.encourage => ('❤ Encourage', Colors.pink),
+    };
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          border: Border.all(color: color.withValues(alpha: 0.5)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      ),
     );
   }
 }

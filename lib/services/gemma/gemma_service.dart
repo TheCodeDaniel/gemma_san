@@ -1,9 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_gemma/core/parsing/sdk_response_parser.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
+
+import 'tool_definitions.dart';
+import 'tutor_response.dart';
 
 // E2B model (2B effective params) — lighter, better for low-end target devices.
 // Vision (supportImage: true) blocked: Gemma 4 E2B/E4B both have 3-subgraph vision
@@ -27,7 +32,7 @@ const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
 // Leave empty (or omit) in production builds.
 const _devModelPath = String.fromEnvironment('DEV_MODEL_PATH', defaultValue: '');
 
-const _maxTokens = 512;
+const _maxTokens = 2048;
 
 typedef DownloadProgressCallback = void Function(int percent);
 
@@ -91,36 +96,63 @@ class GemmaService {
     }
   }
 
-  Stream<String> generate(String prompt) async* {
+  Stream<TutorResponse> generate(String prompt) async* {
     final model = _model;
     if (model == null) throw StateError('GemmaService.initialize() not called');
 
-    debugPrint('[Gemma] creating session…');
-    final session = await model.createSession();
+    debugPrint('[Gemma] creating session (tools=${kGemmaTools.length})…');
+    final session = await model.createSession(tools: kGemmaTools, systemInstruction: kSystemPrompt);
 
     try {
       await session.addQueryChunk(Message.text(text: prompt, isUser: true));
 
-      int tokenCount = 0;
-      bool firstToken = true;
-      final swFirst = Stopwatch()..start();
-      final swTotal = Stopwatch()..start();
+      final sw = Stopwatch()..start();
+      await session.getResponse(); // collects full response into lastRawResponse
+      debugPrint('[Gemma] response in ${sw.elapsed}');
 
-      await for (final token in session.getResponseAsync()) {
-        if (firstToken) {
-          debugPrint('[Gemma] time to first token: ${swFirst.elapsed}');
-          firstToken = false;
-        }
-        tokenCount++;
-        yield token;
+      final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
+      debugPrint('[Gemma] raw response: $raw');
+
+      final calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
+
+      if (calls.isNotEmpty) {
+        final call = calls.first;
+        debugPrint('[Gemma] tool call: ${call.name} args=${call.args}');
+        final mode = switch (call.name) {
+          'socratic_teach' => TutorMode.socratic,
+          'direct_teach' => TutorMode.direct,
+          'encourage' => TutorMode.encourage,
+          _ => TutorMode.direct,
+        };
+        final spokenText = (call.args['spoken_response'] as String?) ?? '';
+        yield TutorResponse(mode: mode, spokenText: spokenText, metadata: call.args);
+      } else {
+        // Fallback: model replied with plain text instead of a tool call.
+        // Extract text from the raw response and wrap as direct_teach.
+        final text = raw != null ? _extractPlainText(raw) : '';
+        debugPrint('[Gemma] no tool call in response — falling back to direct');
+        yield TutorResponse(
+          mode: TutorMode.direct,
+          spokenText: text.isNotEmpty ? text : 'E get small wahala, try again.',
+        );
       }
-
-      debugPrint(
-        '[Gemma] done — $tokenCount tokens in ${swTotal.elapsed} '
-        '(${(tokenCount / swTotal.elapsed.inMilliseconds * 1000).toStringAsFixed(1)} tok/s)',
-      );
     } finally {
       await session.close();
+    }
+  }
+
+  static String _extractPlainText(String raw) {
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final content = json['content'] as List?;
+      if (content == null) return raw;
+      final buf = StringBuffer();
+      for (final item in content) {
+        if (item is Map && item['type'] == 'text') buf.write(item['text'] ?? '');
+      }
+      return buf.toString();
+    } catch (_) {
+      return raw;
     }
   }
 

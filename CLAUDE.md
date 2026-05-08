@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Gemma-San is an offline AI tutor for Nigerian children (ages 5–12), running Google's Gemma 4 E2B model entirely on-device via flutter_gemma. It supports voice input (whisper.cpp), voice output (Android system TTS), multimodal camera input for annotated illustrations, and a three-tier memory system that compacts automatically in the background. The app targets low-to-mid-range Android phones and must work fully offline after the one-time model download. This is a hackathon submission due May 18, 2026.
+Gemma-San is an offline AI tutor for Nigerian children (ages 5–12), running Google's Gemma 4 E2B model entirely on-device via flutter_gemma. It supports voice input (whisper.cpp), voice output (Android system TTS), and a three-tier memory system that compacts automatically in the background. The app targets low-to-mid-range Android phones and must work fully offline after the one-time model download. This is a hackathon submission due May 18, 2026.
 
 ---
 
@@ -26,7 +26,7 @@ Gemma-San is an offline AI tutor for Nigerian children (ages 5–12), running Go
 
 ## Gemma Tool Functions
 
-Gemma uses native function calling. The 8 tools are:
+Gemma uses native function calling. The v1 tools are:
 
 | Tool                | Purpose                                                                        |
 | ------------------- | ------------------------------------------------------------------------------ |
@@ -34,7 +34,6 @@ Gemma uses native function calling. The 8 tools are:
 | `direct_teach`      | Explain a concept clearly and directly                                         |
 | `encourage`         | Deliver a warm, culturally-appropriate encouragement message                   |
 | `show_illustration` | Render an illustration (Lottie or static image) relevant to the topic          |
-| `annotate_image`    | Draw an overlay annotation on a camera-captured image                          |
 | `start_practice`    | Begin a phonics or arithmetic drilling loop                                    |
 | `remember`          | Write a fact about the child (name, progress, preferences) to the memory store |
 | `recall`            | Read from the memory store to personalize a response                           |
@@ -102,6 +101,12 @@ features/<name>/
 
 ---
 
+## Known Limitations (v1)
+
+- **Vision / camera**: Blocked by `libLiteRtLm.so` rejecting Gemma 4's 3-subgraph vision encoder ("must have exactly one signature but got 3"). Not patchable client-side — fix requires Google to update the native binary. Camera/multimodal deferred to v2.
+
+---
+
 ## Build State Log
 
 | Day | Goal                                                            | Status                                                        |
@@ -111,7 +116,9 @@ features/<name>/
 | 3   | GemmaService: GPU backend, DEV_MODEL_PATH shortcut, HF download | Done                                                          |
 | 4   | STT: Whisper tiny via whisper_flutter_new, WAV recording        | Done — tiny model avoids OOM alongside Gemma 4B               |
 | 5   | TTS: sentence-streaming via flutter_tts, interruption support   | Done — speech starts at first sentence boundary, ~1–2s        |
-| 6+  | Conversation feature                                            | Upcoming                                                      |
+| 6   | Camera/image UI, gallery picker, vision spike                   | Done — vision blocked by libLiteRtLm.so (Gemma 4 has 3-subgraph encoder; LiteRT requires 1). Deferred to v2. |
+| 7   | Tool-call mode signaling: 3 tools, system prompt, TutorResponse | Done — socratic/direct/encourage, mode pill on diagnostic screen |
+| 8   | Conversation feature                                            | Upcoming                                                      |
 
 ---
 
