@@ -131,7 +131,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     await _ttsService.stop();
 
     // Snapshot image path before clearing state.
-    final _ = _capturedImagePath; // reserved for vision — currently disabled
+    final snapshotImage = _capturedImagePath;
     final effectivePrompt = prompt.isEmpty
         ? 'Describe what you see in this image and explain it simply, as a tutor teaching a child aged 5–12.'
         : prompt;
@@ -146,8 +146,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     final buffer = StringBuffer();
 
     try {
-      // Vision disabled (supportImage: false) — pass text only until re-enabled.
-      await for (final token in _gemmaService.generate(effectivePrompt)) {
+      await for (final token in _gemmaService.generate(effectivePrompt, imagePath: snapshotImage)) {
         setState(() => _output += token);
         _scrollToBottom();
         buffer.write(token);
