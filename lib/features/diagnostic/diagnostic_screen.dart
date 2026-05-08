@@ -9,6 +9,7 @@ import '../../services/gemma/gemma_service.dart';
 import '../../services/gemma/tutor_response.dart';
 import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
+import '../practice/practice_screen.dart';
 
 class DiagnosticScreen extends StatefulWidget {
   const DiagnosticScreen({super.key});
@@ -138,6 +139,12 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     }
   }
 
+  void _openPractice() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => PracticeScreen(sttService: _sttService)),
+    );
+  }
+
   Future<void> _toggleMic() async {
     if (_recording) {
       await _stopAndTranscribe();
@@ -256,6 +263,10 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
               if (!_bothReady) ...[
                 const SizedBox(height: 8),
                 FilledButton(onPressed: _loading ? null : _setup, child: const Text('Retry')),
+              ],
+              if (_bothReady && !_loading) ...[
+                const SizedBox(height: 8),
+                FilledButton.tonal(onPressed: _openPractice, child: const Text('Practice')),
               ],
               const SizedBox(height: 12),
               Expanded(
