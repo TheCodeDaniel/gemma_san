@@ -1,9 +1,10 @@
 import 'package:flutter_gemma/flutter_gemma.dart';
 
 const kSystemPrompt = '''
-You are Gemma-San, a warm and patient tutor for Nigerian children aged 5–12.
+You are Gemma-San, a warm and patient tutor for children across Africa.
 
-Always reply in the same language the child used — Hausa, Yoruba, Igbo, Nigerian Pidgin, or English.
+Always reply in the same language the child used.
+Set language_code to the BCP-47 code of the language you used (e.g. en, ha, yo, ig, sw, fr, am, zu, pcm).
 
 You MUST call exactly one function in every reply — never reply with plain text.
 
@@ -14,6 +15,13 @@ Rules:
 
 Keep spoken_response short: 4–6 sentences for teaching, 1–2 sentences for encourage.
 ''';
+
+const _languageCodeParam = {
+  'language_code': {
+    'type': 'string',
+    'description': 'BCP-47 code of the language used in spoken_response (e.g. en, ha, yo, ig, sw, fr, am, zu, pcm).',
+  },
+};
 
 const kGemmaTools = [
   Tool(
@@ -33,8 +41,9 @@ const kGemmaTools = [
         },
         'target_concept': {'type': 'string', 'description': 'The concept being taught this turn.'},
         'next_concept_step': {'type': 'string', 'description': 'The micro-step towards the concept to reach next.'},
+        ..._languageCodeParam,
       },
-      'required': ['spoken_response', 'stage', 'target_concept', 'next_concept_step'],
+      'required': ['spoken_response', 'stage', 'target_concept', 'next_concept_step', 'language_code'],
     },
   ),
   Tool(
@@ -45,8 +54,9 @@ const kGemmaTools = [
       'properties': {
         'spoken_response': {'type': 'string', 'description': 'Clear explanation in the child\'s language.'},
         'follow_up_check': {'type': 'string', 'description': 'A simple question to check the child understood.'},
+        ..._languageCodeParam,
       },
-      'required': ['spoken_response', 'follow_up_check'],
+      'required': ['spoken_response', 'follow_up_check', 'language_code'],
     },
   ),
   Tool(
@@ -59,8 +69,9 @@ const kGemmaTools = [
           'type': 'string',
           'description': 'Short warm encouragement in the child\'s language (1–2 sentences).',
         },
+        ..._languageCodeParam,
       },
-      'required': ['spoken_response'],
+      'required': ['spoken_response', 'language_code'],
     },
   ),
 ];

@@ -123,6 +123,9 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
           _output = response.spokenText;
         });
         _scrollToBottom();
+        if (response.languageCode != null) {
+          await _ttsService.setResponseLanguage(response.languageCode!);
+        }
         for (final sentence in response.spokenText.split(_sentenceSplit)) {
           final s = sentence.trim();
           if (s.isNotEmpty) _ttsService.enqueue(s);

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -13,8 +14,8 @@ class TtsService {
   bool _stopped = false;
   bool _processingQueue = false;
   Completer<void>? _utteranceCompleter;
+  late String _deviceCountry;
 
-  /// Emits true when speech starts, false when the queue drains or is stopped.
   Stream<bool> get speakingStream => _speakingController.stream;
 
   bool get isReady => _ready;
@@ -22,11 +23,12 @@ class TtsService {
   Future<void> initialize() async {
     if (_ready) return;
 
-    // Prefer Nigerian English accent; fall back to US English.
-    final langOk = await _tts.setLanguage('en-NG');
-    if (langOk != 1) await _tts.setLanguage('en-US');
+    _deviceCountry = ui.PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? 'NG';
+    debugPrint('[TTS] device country: $_deviceCountry');
 
-    await _tts.setSpeechRate(0.48); // slightly slower for children
+    await _setTtsLanguage('en');
+
+    await _tts.setSpeechRate(0.48);
     await _tts.setVolume(1.0);
     await _tts.setPitch(1.05);
 
@@ -38,7 +40,13 @@ class TtsService {
     debugPrint('[TTS] ready');
   }
 
-  /// Adds [sentence] to the speak queue. Starts the worker if idle.
+  /// Called after each Gemma response with the BCP-47 language code the model used.
+  /// Switches TTS voice to the best available match for that language + device country.
+  Future<void> setResponseLanguage(String langCode) async {
+    if (!_ready) return;
+    await _setTtsLanguage(langCode);
+  }
+
   void enqueue(String sentence) {
     final s = sentence.trim();
     if (!_ready || s.isEmpty) return;
@@ -46,11 +54,9 @@ class TtsService {
     if (!_processingQueue) _startQueue();
   }
 
-  /// Immediately stops playback and clears the queue.
   Future<void> stop() async {
     _stopped = true;
     _queue.clear();
-    // Resolve any pending await so the worker loop can exit.
     _utteranceCompleter?.complete();
     _utteranceCompleter = null;
     await _tts.stop();
@@ -66,6 +72,22 @@ class TtsService {
 
   // ── Private ────────────────────────────────────────────────────────────────
 
+  /// Tries language variants in priority order; stops at the first that succeeds.
+  Future<void> _setTtsLanguage(String langCode) async {
+    final candidates = [
+      '$langCode-$_deviceCountry', // e.g. en-NG, ha-NG
+      langCode,                    // e.g. en, ha
+      'en-$_deviceCountry',        // en-NG fallback
+      'en-US',                     // last resort
+    ];
+    for (final lang in candidates) {
+      if (await _tts.setLanguage(lang) == 1) {
+        debugPrint('[TTS] language → $lang');
+        return;
+      }
+    }
+  }
+
   void _onUtteranceDone() {
     _utteranceCompleter?.complete();
     _utteranceCompleter = null;
@@ -80,14 +102,12 @@ class TtsService {
       try {
         _utteranceCompleter = Completer<void>();
         await _tts.speak(sentence);
-        // Wait for the completion/cancel/error handler to fire.
         await _utteranceCompleter!.future;
       } catch (_) {
         _utteranceCompleter = null;
       }
     }
 
-    // Only emit idle if stop() didn't already do it.
     if (!_stopped) {
       _processingQueue = false;
       if (!_speakingController.isClosed) _speakingController.add(false);

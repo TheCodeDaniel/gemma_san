@@ -125,7 +125,8 @@ class GemmaService {
           _ => TutorMode.direct,
         };
         final spokenText = (call.args['spoken_response'] as String?) ?? '';
-        yield TutorResponse(mode: mode, spokenText: spokenText, metadata: call.args);
+        final langCode = call.args['language_code'] as String?;
+        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
       } else {
         // Fallback: model replied with plain text instead of a tool call.
         // Extract text from the raw response and wrap as direct_teach.

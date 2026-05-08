@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Gemma-San is an offline AI tutor for Nigerian children (ages 5–12), running Google's Gemma 4 E2B model entirely on-device via flutter_gemma. It supports voice input (whisper.cpp), voice output (Android system TTS), and a three-tier memory system that compacts automatically in the background. The app targets low-to-mid-range Android phones and must work fully offline after the one-time model download. This is a hackathon submission due May 18, 2026.
+Gemma-San is an offline AI tutor for African children (ages 5–12), running Google's Gemma 4 E2B model entirely on-device via flutter_gemma. It supports voice input (whisper.cpp), voice output (Android system TTS), and a three-tier memory system that compacts automatically in the background. The app targets low-to-mid-range Android phones and must work fully offline after the one-time model download. This is a hackathon submission due May 18, 2026.
 
 ---
 
