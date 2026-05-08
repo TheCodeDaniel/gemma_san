@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
 
-// E4B model (4B effective params). Swap to an E2B URL if RAM is tight on target devices.
+// E4B model (4B effective params). Vision (supportImage: true) is currently disabled —
+// E4B's 3-subgraph vision encoder is incompatible with flutter_gemma 0.14.x on GPU,
+// and the CPU path requires a single-signature encoder. Re-enable once library stabilises.
 const _modelUrl =
     'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/'
     'resolve/main/gemma-4-E4B-it.litertlm';
@@ -25,8 +27,10 @@ const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
 // Leave empty (or omit) in production builds.
 const _devModelPath = String.fromEnvironment('DEV_MODEL_PATH', defaultValue: '');
 
-// Reduce if GPU OOMs on low-end devices (1024 = ~half the KV-cache RAM of 2048).
-const _maxTokens = 1024;
+// Vision encoder needs ~190 MB of GPU headroom. With supportImage=true the
+// KV cache at 512 tokens (~190 MB) fits alongside the vision subgraphs on S22.
+// Raise back to 1024 only if vision is disabled and you need longer context.
+const _maxTokens = 512;
 
 typedef DownloadProgressCallback = void Function(int percent);
 
@@ -80,9 +84,9 @@ class GemmaService {
       ).fromFile(modelPath).install();
 
       final backend = _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu;
-      debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens)…');
+      debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens, vision=true)…');
       final swLoad = Stopwatch()..start();
-      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend);
+      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: false);
       debugPrint('[Gemma] model ready — load time: ${swLoad.elapsed}');
     } catch (_) {
       _initializing = false;
@@ -90,16 +94,27 @@ class GemmaService {
     }
   }
 
-  /// Streams response tokens for [prompt]. Creates and closes a fresh session per call.
-  Stream<String> generate(String prompt) async* {
+  /// Streams response tokens for [prompt], with optional [imagePath] for vision.
+  /// The image file is deleted from disk once Gemma has read the bytes.
+  Stream<String> generate(String prompt, {String? imagePath}) async* {
     final model = _model;
     if (model == null) throw StateError('GemmaService.initialize() not called');
 
-    debugPrint('[Gemma] creating session…');
+    debugPrint('[Gemma] creating session (vision=${imagePath != null})…');
     final session = await model.createSession();
 
     try {
-      await session.addQueryChunk(Message.text(text: prompt, isUser: true));
+      final Message message;
+      if (imagePath != null) {
+        final bytes = await File(imagePath).readAsBytes();
+        message = Message.withImage(text: prompt, imageBytes: bytes, isUser: true);
+        // Free disk space immediately — bytes are now in the native engine.
+        await File(imagePath).delete().catchError((Object _) => File(imagePath));
+        debugPrint('[Gemma] image loaded — ${bytes.lengthInBytes} bytes');
+      } else {
+        message = Message.text(text: prompt, isUser: true);
+      }
+      await session.addQueryChunk(message);
 
       int tokenCount = 0;
       bool firstToken = true;
