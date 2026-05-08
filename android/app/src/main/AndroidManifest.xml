@@ -14,11 +14,11 @@
     <uses-feature android:name="android.hardware.microphone" android:required="true" />
 
 
-    <uses-native-library
+    <!-- <uses-native-library
         android:name="libOpenCL.so"
         android:required="false" />
     <uses-native-library android:name="libOpenCL-car.so" android:required="false" />
-    <uses-native-library android:name="libOpenCL-pixel.so" android:required="false" />
+    <uses-native-library android:name="libOpenCL-pixel.so" android:required="false" /> -->
 
     <application
         android:label="gemma_san"
