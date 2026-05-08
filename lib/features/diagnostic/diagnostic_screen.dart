@@ -110,7 +110,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     if (_generating || _transcribing) return;
     try {
       final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
+        source: ImageSource.gallery,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,
@@ -131,7 +131,7 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     await _ttsService.stop();
 
     // Snapshot image path before clearing state.
-    final imagePath = _capturedImagePath;
+    final _ = _capturedImagePath; // reserved for vision — currently disabled
     final effectivePrompt = prompt.isEmpty
         ? 'Describe what you see in this image and explain it simply, as a tutor teaching a child aged 5–12.'
         : prompt;
@@ -146,7 +146,8 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     final buffer = StringBuffer();
 
     try {
-      await for (final token in _gemmaService.generate(effectivePrompt, imagePath: imagePath)) {
+      // Vision disabled (supportImage: false) — pass text only until re-enabled.
+      await for (final token in _gemmaService.generate(effectivePrompt)) {
         setState(() => _output += token);
         _scrollToBottom();
         buffer.write(token);
@@ -468,7 +469,7 @@ class _InputRow extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.camera_alt,
+              Icons.photo_library,
               color: hasImage
                   ? Colors.white
                   : (busy || recording || onCameraCapture == null)
@@ -488,7 +489,7 @@ class _InputRow extends StatelessWidget {
                   : transcribing
                   ? 'Transcribing…'
                   : hasImage
-                  ? 'What you wan know about this picture?'
+                  ? 'Ask about this picture…'
                   : 'Type a prompt…',
               border: const OutlineInputBorder(),
             ),
