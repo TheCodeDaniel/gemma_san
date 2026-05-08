@@ -109,7 +109,12 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
   Future<void> _captureImage() async {
     if (_generating || _transcribing) return;
     try {
-      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
       if (photo == null) return; // user cancelled
       setState(() => _capturedImagePath = photo.path);
     } catch (e) {
@@ -395,7 +400,7 @@ class _ImagePreview extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.file(File(path), width: 72, height: 72, fit: BoxFit.cover),
+          child: Image.file(File(path), width: 72, height: 72, fit: BoxFit.cover, cacheWidth: 144, cacheHeight: 144),
         ),
         const SizedBox(width: 8),
         Expanded(
