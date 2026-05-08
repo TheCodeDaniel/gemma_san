@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
+import '../../data/app_database.dart';
 import '../../services/stt/stt_service.dart';
 import 'practice_service.dart';
 
-const _hardcodedLevel = 1;
 const _maxTriesPerItem = 2;
 
 enum _Phase { ready, recording, evaluating, feedback }
@@ -35,7 +34,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCurriculum();
+    _initService();
   }
 
   @override
@@ -44,8 +43,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
     super.dispose();
   }
 
-  Future<void> _loadCurriculum() async {
-    await _service.loadLevel(_hardcodedLevel, rootBundle);
+  Future<void> _initService() async {
+    final db = await AppDatabase.get();
+    await _service.initialize('default', rootBundle, db);
     if (mounted) setState(() => _loaded = true);
   }
 
@@ -72,12 +72,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
     String transcribed = '';
     try {
       final path = await _recorder.stop();
-      if (path != null) {
-        transcribed = await widget.sttService.transcribe(path);
-      }
+      if (path != null) transcribed = await widget.sttService.transcribe(path);
     } catch (_) {}
 
-    final result = _service.evaluate(transcribed);
+    final result = await _service.evaluate(transcribed);
 
     setState(() {
       _lastCorrect = result.correct;
@@ -85,23 +83,23 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _phase = _Phase.feedback;
     });
 
-    final delay = result.correct ? 700 : 800;
-    await Future.delayed(Duration(milliseconds: delay));
+    await Future.delayed(Duration(milliseconds: result.correct ? 700 : 800));
     if (!mounted) return;
 
     if (result.correct || _service.tries >= _maxTriesPerItem) {
       _service.advance();
     }
 
+    if (!_service.hasMore) await _service.debugDump();
+
     setState(() => _phase = _Phase.ready);
   }
 
   void _endPractice() => Navigator.of(context).pop();
 
-  void _restartPractice() {
-    _service.loadLevel(_hardcodedLevel, rootBundle).then((_) {
-      if (mounted) setState(() {});
-    });
+  Future<void> _restartPractice() async {
+    setState(() => _loaded = false);
+    await _initService();
   }
 
   @override
@@ -111,12 +109,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
 
     if (!_service.hasMore) {
-      return _SummaryScreen(
-        score: _service.score,
-        total: _service.total,
-        onRestart: _restartPractice,
-        onBack: _endPractice,
-      );
+      return _SummaryScreen(stats: _service.sessionStats, onRestart: _restartPractice, onBack: _endPractice);
     }
 
     final item = _service.currentItem!;
@@ -125,12 +118,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Practice — Level $_hardcodedLevel'),
+        title: const Text('Practice'),
         backgroundColor: cs.inversePrimary,
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Chip(label: Text('${_service.score} / ${_service.total}'), backgroundColor: cs.primaryContainer),
+            child: Chip(label: Text('${_service.score} / ${_service.tried}'), backgroundColor: cs.primaryContainer),
           ),
           TextButton(onPressed: _endPractice, child: const Text('End')),
         ],
@@ -138,10 +131,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            LinearProgressIndicator(
-              value: _service.currentIndex / _service.total,
-              backgroundColor: cs.surfaceContainerHighest,
-            ),
+            LinearProgressIndicator(value: _service.tried / 15, backgroundColor: cs.surfaceContainerHighest),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -289,17 +279,16 @@ class _MicButton extends StatelessWidget {
 }
 
 class _SummaryScreen extends StatelessWidget {
-  const _SummaryScreen({required this.score, required this.total, required this.onRestart, required this.onBack});
+  const _SummaryScreen({required this.stats, required this.onRestart, required this.onBack});
 
-  final int score;
-  final int total;
+  final SessionStats stats;
   final VoidCallback onRestart;
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final pct = total == 0 ? 0 : (score * 100 ~/ total);
+    final pct = stats.itemsPracticed == 0 ? 0 : (stats.correct * 100 ~/ stats.itemsPracticed);
     final message = pct == 100
         ? 'You don pass all! You too much!'
         : pct >= 70
@@ -315,13 +304,22 @@ class _SummaryScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '$score / $total',
+                '${stats.correct} / ${stats.itemsPracticed}',
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text('correct', style: TextStyle(color: cs.onSurfaceVariant)),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18)),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _StatChip(icon: Icons.star, label: '${stats.masteredToday} mastered', color: Colors.amber),
+                  const SizedBox(width: 8),
+                  _StatChip(icon: Icons.schedule, label: '${stats.reviewTomorrow} tomorrow', color: Colors.blue),
+                ],
+              ),
               const SizedBox(height: 40),
               FilledButton(onPressed: onRestart, child: const Text('Try Again')),
               const SizedBox(height: 12),
@@ -329,6 +327,36 @@ class _SummaryScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({required this.icon, required this.label, required this.color});
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }

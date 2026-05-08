@@ -119,7 +119,8 @@ features/<name>/
 | 6   | Camera/image UI, gallery picker, vision spike                   | Done — vision blocked by libLiteRtLm.so (Gemma 4 has 3-subgraph encoder; LiteRT requires 1). Deferred to v2. |
 | 7   | Tool-call mode signaling: 3 tools, system prompt, TutorResponse | Done — socratic/direct/encourage, mode pill on diagnostic screen                                             |
 | 8   | Practice mode: phonics drilling loop, fuzzy STT eval, 5 levels  | Done                                                                                                         |
-| 9   | Adaptive difficulty                                             | Upcoming                                                                                                     |
+| 9   | Adaptive practice: SRS scheduler, SQLite persistence, session stats | Done                                                                                                     |
+| 10  | Conversation feature                                            | Upcoming                                                                                                     |
 
 ---
 
