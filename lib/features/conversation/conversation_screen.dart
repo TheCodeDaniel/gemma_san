@@ -84,11 +84,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   Future<void> _initSession() async {
     final db = await AppDatabase.get();
-    await widget.gemmaService.startSession(
-      widget.childId,
-      db,
-      ageRange: widget.ageRange,
-    );
+    await widget.gemmaService.startSession(widget.childId, db, ageRange: widget.ageRange);
     if (mounted) setState(() => _sessionReady = true);
   }
 
@@ -110,12 +106,14 @@ class _ConversationScreenState extends State<ConversationScreen> {
       await for (final response in widget.gemmaService.generate(prompt)) {
         setState(() {
           _currentMode = response.mode;
-          _messages.add(_Message(
-            isUser: false,
-            text: response.spokenText,
-            mode: response.mode,
-            illustrationTopicId: response.illustrationTopicId,
-          ));
+          _messages.add(
+            _Message(
+              isUser: false,
+              text: response.spokenText,
+              mode: response.mode,
+              illustrationTopicId: response.illustrationTopicId,
+            ),
+          );
         });
         _scrollToBottom();
 
@@ -200,11 +198,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _ConvHeader(
-              currentMode: _currentMode,
-              speaking: _speaking,
-              onStopTts: widget.ttsService.stop,
-            ),
+            _ConvHeader(currentMode: _currentMode, speaking: _speaking, onStopTts: widget.ttsService.stop),
 
             // ── Owl + status bar ──────────────────────────────────────────
             Padding(
@@ -239,8 +233,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                   ? const _EmptyPlaceholder()
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                       itemCount: _messages.length,
                       itemBuilder: (_, i) => _ChatBubble(message: _messages[i]),
                     ),
@@ -257,10 +250,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           const SizedBox(
                             width: 14,
                             height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.terracotta,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta),
                           ),
                           const SizedBox(width: 8),
                           Text('Mama San is thinking…', style: AppText.caption()),
@@ -291,11 +281,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
 // ── Header ─────────────────────────────────────────────────────────────────
 
 class _ConvHeader extends StatelessWidget {
-  const _ConvHeader({
-    required this.currentMode,
-    required this.speaking,
-    required this.onStopTts,
-  });
+  const _ConvHeader({required this.currentMode, required this.speaking, required this.onStopTts});
 
   final TutorMode? currentMode;
   final bool speaking;
@@ -364,22 +350,13 @@ class _InputRow extends StatelessWidget {
         color: AppColors.warmCream,
         border: Border(top: BorderSide(color: AppColors.warmCreamDark, width: 1.5)),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.charcoal.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
+          BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, -4)),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _MicPill(
-            recording: recording,
-            transcribing: transcribing,
-            disabled: busy || !sessionReady,
-            onTap: onMicTap,
-          ),
+          _MicPill(recording: recording, transcribing: transcribing, disabled: busy || !sessionReady, onTap: onMicTap),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Container(
@@ -418,12 +395,7 @@ class _InputRow extends StatelessWidget {
 }
 
 class _MicPill extends StatefulWidget {
-  const _MicPill({
-    required this.recording,
-    required this.transcribing,
-    required this.disabled,
-    required this.onTap,
-  });
+  const _MicPill({required this.recording, required this.transcribing, required this.disabled, required this.onTap});
 
   final bool recording, transcribing, disabled;
   final VoidCallback onTap;
@@ -440,9 +412,7 @@ class _MicPillState extends State<_MicPill> with SingleTickerProviderStateMixin 
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
@@ -514,9 +484,7 @@ class _SendButtonState extends State<_SendButton> with SingleTickerProviderState
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
@@ -548,11 +516,7 @@ class _SendButtonState extends State<_SendButton> with SingleTickerProviderState
             boxShadow: widget.enabled ? AppShadows.button(AppColors.deepGreen) : [],
           ),
           alignment: Alignment.center,
-          child: Icon(
-            PhosphorIconsRegular.paperPlaneTilt,
-            color: Colors.white,
-            size: 22,
-          ),
+          child: Icon(PhosphorIconsRegular.paperPlaneTilt, color: Colors.white, size: 22),
         ),
       ),
     );
@@ -592,12 +556,12 @@ class _ChatBubble extends StatelessWidget {
             Container(
               width: 30,
               height: 30,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.terracottaLight,
-              ),
+              decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.terracottaLight),
               alignment: Alignment.center,
-              child: Text('M', style: AppText.caption(color: AppColors.terracotta).copyWith(fontWeight: FontWeight.w700, fontSize: 12)),
+              child: Text(
+                'M',
+                style: AppText.caption(color: AppColors.terracotta).copyWith(fontWeight: FontWeight.w700, fontSize: 12),
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -605,10 +569,7 @@ class _ChatBubble extends StatelessWidget {
             child: Column(
               crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                if (assetPath != null) ...[
-                  _IllustrationView(assetPath: assetPath),
-                  const SizedBox(height: 6),
-                ],
+                if (assetPath != null) ...[_IllustrationView(assetPath: assetPath), const SizedBox(height: 6)],
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
@@ -621,17 +582,9 @@ class _ChatBubble extends StatelessWidget {
                     ),
                     boxShadow: AppShadows.card,
                   ),
-                  child: Text(
-                    message.text,
-                    style: AppText.body(
-                      color: isUser ? Colors.white : AppColors.charcoal,
-                    ),
-                  ),
+                  child: Text(message.text, style: AppText.body(color: isUser ? Colors.white : AppColors.charcoal)),
                 ),
-                if (!isUser && message.mode != null) ...[
-                  const SizedBox(height: 4),
-                  _ModeTag(mode: message.mode!),
-                ],
+                if (!isUser && message.mode != null) ...[const SizedBox(height: 4), _ModeTag(mode: message.mode!)],
               ],
             ),
           ),
@@ -743,10 +696,7 @@ class _IllustrationViewState extends State<_IllustrationView> {
                 right: 6,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                  decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(6)),
                   child: const Icon(Icons.fullscreen, color: Colors.white, size: 18),
                 ),
               ),
@@ -769,19 +719,13 @@ class _ModePill extends StatelessWidget {
     if (mode == null) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(
-          color: AppColors.warmCreamDark,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          '· · ·',
-          style: AppText.caption(color: AppColors.charcoal.withValues(alpha: 0.25)),
-        ),
+        decoration: BoxDecoration(color: AppColors.warmCreamDark, borderRadius: BorderRadius.circular(20)),
+        child: Text('· · ·', style: AppText.caption(color: AppColors.charcoal.withValues(alpha: 0.25))),
       );
     }
     final (label, color) = switch (mode!) {
-      TutorMode.socratic  => ('Socratic',    AppColors.socratic),
-      TutorMode.direct    => ('Direct',      AppColors.direct),
+      TutorMode.socratic => ('Socratic', AppColors.socratic),
+      TutorMode.direct => ('Direct', AppColors.direct),
       TutorMode.encourage => ('Encouraging', AppColors.encourage),
     };
     return AnimatedContainer(
@@ -810,21 +754,19 @@ class _EmptyPlaceholder extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              PhosphorIconsRegular.microphone,
-              size: 36,
-              color: AppColors.charcoal.withValues(alpha: 0.18),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Tap the mic and ask me anything…',
-              style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.32)),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(PhosphorIconsRegular.microphone, size: 36, color: AppColors.charcoal.withValues(alpha: 0.18)),
+              const SizedBox(height: 14),
+              Text(
+                'Tap the mic and ask me anything…',
+                style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.32)),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -853,10 +795,7 @@ class _ModeTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppText.caption(color: color).copyWith(
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-        ),
+        style: AppText.caption(color: color).copyWith(fontWeight: FontWeight.w700, fontSize: 11),
       ),
     );
   }
