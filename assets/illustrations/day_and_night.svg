@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <defs>
+    <!-- Clip to the Earth circle -->
+    <clipPath id="earth-clip">
+      <circle cx="190" cy="152" r="108"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background split: night left / day right -->
+  <rect width="400" height="300" fill="#0A1628"/>
+  <rect x="190" y="0" width="210" height="300" fill="#B8DFF5"/>
+
+  <!-- Stars (night side only — left) -->
+  <circle cx="20"  cy="30"  r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="55"  cy="18"  r="1"   fill="white" opacity="0.6"/>
+  <circle cx="90"  cy="45"  r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="30"  cy="80"  r="1"   fill="white" opacity="0.5"/>
+  <circle cx="75"  cy="110" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="15"  cy="140" r="1"   fill="white" opacity="0.6"/>
+  <circle cx="50"  cy="185" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="100" cy="210" r="1"   fill="white" opacity="0.5"/>
+  <circle cx="22"  cy="250" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="80"  cy="270" r="1"   fill="white" opacity="0.6"/>
+
+  <!-- ── SUN (far right) ── -->
+  <circle cx="370" cy="152" r="26" fill="#FFBF46"/>
+  <!-- Sun rays -->
+  <line x1="370" y1="120" x2="370" y2="112" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="394" y1="128" x2="402" y2="120" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="370" y1="184" x2="370" y2="192" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="344" y1="128" x2="336" y2="120" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="344" y1="176" x2="336" y2="184" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <text x="370" y="188" fill="#FFBF46" font-size="10" font-weight="bold" text-anchor="middle" dy="12">Sun</text>
+
+  <!-- ── EARTH ── -->
+  <!-- Night half (left) -->
+  <circle cx="190" cy="152" r="108" fill="#1A2E52"/>
+  <!-- Day half (right) using clip -->
+  <rect x="190" y="44" width="108" height="216" fill="#4DA8DA" clip-path="url(#earth-clip)"/>
+
+  <!-- Earth land masses (simplified) — clipped to earth -->
+  <!-- Night side land -->
+  <ellipse cx="148" cy="130" rx="28" ry="18" fill="#1A936F" opacity="0.6" clip-path="url(#earth-clip)"/>
+  <ellipse cx="120" cy="170" rx="22" ry="15" fill="#1A936F" opacity="0.6" clip-path="url(#earth-clip)"/>
+  <ellipse cx="160" cy="185" rx="18" ry="12" fill="#1A936F" opacity="0.6" clip-path="url(#earth-clip)"/>
+
+  <!-- Day side land -->
+  <ellipse cx="230" cy="120" rx="24" ry="16" fill="#2E8B57" opacity="0.75" clip-path="url(#earth-clip)"/>
+  <ellipse cx="255" cy="168" rx="20" ry="14" fill="#2E8B57" opacity="0.75" clip-path="url(#earth-clip)"/>
+  <ellipse cx="220" cy="185" rx="18" ry="11" fill="#2E8B57" opacity="0.75" clip-path="url(#earth-clip)"/>
+
+  <!-- Earth outline -->
+  <circle cx="190" cy="152" r="108" fill="none" stroke="white" stroke-width="2" opacity="0.4"/>
+
+  <!-- Terminator line (dividing day/night) -->
+  <line x1="190" y1="44" x2="190" y2="260" stroke="white" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+
+  <!-- Night stars on earth (night side) -->
+  <circle cx="138" cy="125" r="1.5" fill="white" opacity="0.8" clip-path="url(#earth-clip)"/>
+  <circle cx="160" cy="155" r="1"   fill="white" opacity="0.7" clip-path="url(#earth-clip)"/>
+  <circle cx="120" cy="165" r="1.5" fill="white" opacity="0.6" clip-path="url(#earth-clip)"/>
+
+  <!-- ── Labels ── -->
+  <!-- Night label -->
+  <text x="105" y="152" fill="white" font-size="15" font-weight="bold" text-anchor="middle" opacity="0.9">Night</text>
+  <text x="105" y="168" fill="#9CB4CC" font-size="9" text-anchor="middle">Dark side</text>
+
+  <!-- Day label -->
+  <text x="268" y="152" fill="#1A1A2E" font-size="15" font-weight="bold" text-anchor="middle">Day</text>
+  <text x="268" y="168" fill="#1A5276" font-size="9" text-anchor="middle">Lit side</text>
+
+  <!-- Rotation arrow -->
+  <path d="M190 270 Q240 285 270 268" fill="none" stroke="white" stroke-width="2" stroke-dasharray="4,3" opacity="0.5" marker-end="url(#rot)"/>
+  <defs>
+    <marker id="rot" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0,7 2.5,0 5" fill="white" opacity="0.5"/>
+    </marker>
+  </defs>
+  <text x="190" y="290" fill="white" font-size="10" text-anchor="middle" opacity="0.7">Earth rotates → Day and Night</text>
+</svg>

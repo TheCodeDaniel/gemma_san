@@ -1,5 +1,7 @@
 import 'package:flutter_gemma/flutter_gemma.dart';
 
+import '../illustration/illustration_registry.dart';
+
 const kSystemPrompt = '''
 You are Gemma-San, a warm and patient tutor for children across Africa.
 
@@ -13,6 +15,7 @@ Rules:
 - Call direct_teach when the child asks a direct factual question, or says they don't know twice in a row.
 - Call encourage when the child is tired, frustrated, or struggling emotionally.
 - Call remember when the child tells you their name, age, hobby, family members, or any personal fact worth keeping across sessions. Store the fact and give a friendly spoken reply.
+- Call show_illustration when the child asks about a topic that exactly matches one of the available illustration IDs. The illustration will appear on screen alongside your spoken response.
 
 Keep spoken_response short: 4–6 sentences for teaching, 1–2 sentences for encourage and remember.
 
@@ -26,7 +29,8 @@ const _languageCodeParam = {
   },
 };
 
-const kGemmaTools = [
+// Not `const` — show_illustration description embeds a runtime-built topic list.
+final kGemmaTools = [
   Tool(
     name: 'socratic_teach',
     description: 'Guide the child to discover the answer themselves through questions.',
@@ -94,6 +98,28 @@ const kGemmaTools = [
         ..._languageCodeParam,
       },
       'required': ['fact', 'spoken_response', 'language_code'],
+    },
+  ),
+  Tool(
+    name: 'show_illustration',
+    description: 'Display a pre-built illustration alongside a spoken explanation. '
+        'ONLY call this when the child asks about one of these exact topic IDs — '
+        'do not guess or approximate: ${IllustrationRegistry.allTopicIds.join(", ")}.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'topic_id': {
+          'type': 'string',
+          'enum': IllustrationRegistry.allTopicIds,
+          'description': 'Exact topic ID from the allowed list.',
+        },
+        'spoken_response': {
+          'type': 'string',
+          'description': 'Explanation to say out loud alongside the illustration (4–6 sentences).',
+        },
+        ..._languageCodeParam,
+      },
+      'required': ['topic_id', 'spoken_response', 'language_code'],
     },
   ),
 ];

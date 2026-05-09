@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#FFF5FF"/>
+  <!-- Title -->
+  <text x="200" y="20" fill="#1A1A2E" font-size="13" font-weight="bold" text-anchor="middle">Animal Cell</text>
+
+  <!-- ── CELL MEMBRANE (irregular oval — no hard cell wall) ── -->
+  <path d="M200 30
+    C285 26 360 62 372 148
+    C384 235 338 272 252 280
+    C166 288 80 268 46 195
+    C12 122 42 46 128 34
+    C150 30 178 30 200 30 Z"
+    fill="#FFE8FF" stroke="#6A4C93" stroke-width="2.5"/>
+
+  <!-- ── CYTOPLASM (slight gradient effect with 2 overlapping fills) ── -->
+  <path d="M200 30 C285 26 360 62 372 148 C384 235 338 272 252 280 C166 288 80 268 46 195 C12 122 42 46 128 34 C150 30 178 30 200 30 Z"
+    fill="#F5E8FF" opacity="0.4"/>
+
+  <!-- ── NUCLEUS (large, central-left) ── -->
+  <circle cx="175" cy="155" r="52" fill="#6A4C93" opacity="0.82" stroke="#4A2C73" stroke-width="2"/>
+  <!-- Nuclear pores (dots on edge) -->
+  <circle cx="175" cy="103" r="3" fill="#8B6FC4"/>
+  <circle cx="226" cy="127" r="3" fill="#8B6FC4"/>
+  <circle cx="227" cy="183" r="3" fill="#8B6FC4"/>
+  <circle cx="175" cy="207" r="3" fill="#8B6FC4"/>
+  <circle cx="124" cy="183" r="3" fill="#8B6FC4"/>
+  <circle cx="124" cy="127" r="3" fill="#8B6FC4"/>
+  <!-- Nucleolus -->
+  <circle cx="168" cy="148" r="20" fill="#8B6FC4"/>
+  <text x="175" y="162" fill="white" font-size="9" font-weight="bold" text-anchor="middle">Nucleus</text>
+
+  <!-- ── MITOCHONDRIA (2, football shapes with cristae) ── -->
+  <!-- Mitochondrion 1 -->
+  <ellipse cx="295" cy="120" rx="30" ry="16" fill="#FF6B35" opacity="0.9"/>
+  <ellipse cx="295" cy="120" rx="22" ry="10" fill="#FF8C56" opacity="0.5"/>
+  <!-- Cristae (inner folds) -->
+  <path d="M278 115 Q285 123 292 115" fill="none" stroke="white" stroke-width="1.5" opacity="0.7"/>
+  <path d="M292 115 Q299 123 306 115" fill="none" stroke="white" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- Mitochondrion 2 -->
+  <ellipse cx="302" cy="195" rx="28" ry="14" fill="#FF6B35" opacity="0.9"/>
+  <ellipse cx="302" cy="195" rx="20" ry="9" fill="#FF8C56" opacity="0.5"/>
+  <path d="M287 191 Q294 198 301 191" fill="none" stroke="white" stroke-width="1.5" opacity="0.7"/>
+  <path d="M301 191 Q308 198 315 191" fill="none" stroke="white" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- ── RIBOSOMES (small yellow dots, scattered in cytoplasm) ── -->
+  <circle cx="112" cy="140" r="3.5" fill="#FFBF46"/>
+  <circle cx="122" cy="168" r="3.5" fill="#FFBF46"/>
+  <circle cx="240" cy="95" r="3.5" fill="#FFBF46"/>
+  <circle cx="252" cy="240" r="3.5" fill="#FFBF46"/>
+  <circle cx="135" cy="220" r="3.5" fill="#FFBF46"/>
+  <circle cx="348" cy="155" r="3.5" fill="#FFBF46"/>
+  <circle cx="335" cy="240" r="3.5" fill="#FFBF46"/>
+
+  <!-- ── ENDOPLASMIC RETICULUM (wavy lines near nucleus) ── -->
+  <path d="M228 148 C238 140 248 156 258 148 C268 140 278 156 286 148"
+        fill="none" stroke="#9CB4CC" stroke-width="3" stroke-linecap="round"/>
+  <path d="M230 168 C240 160 250 176 260 168 C270 160 280 176 290 168"
+        fill="none" stroke="#9CB4CC" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- ── SMALL VACUOLES ── -->
+  <circle cx="90" cy="190" r="14" fill="#2EC4B6" opacity="0.3" stroke="#2EC4B6" stroke-width="1.5"/>
+  <circle cx="115" cy="100" r="10" fill="#2EC4B6" opacity="0.3" stroke="#2EC4B6" stroke-width="1.5"/>
+
+  <!-- ── LABELS ── -->
+  <!-- Cell membrane -->
+  <line x1="362" y1="95" x2="385" y2="75" stroke="#6A4C93" stroke-width="1"/>
+  <text x="330" y="268" fill="#6A4C93" font-size="9" font-weight="bold" text-anchor="middle">Cell</text>
+  <text x="330" y="280" fill="#6A4C93" font-size="9" font-weight="bold" text-anchor="middle">membrane</text>
+  <line x1="338" y1="265" x2="348" y2="248" stroke="#6A4C93" stroke-width="1"/>
+
+  <!-- Mitochondria -->
+  <line x1="325" y1="108" x2="360" y2="90" stroke="#FF6B35" stroke-width="1"/>
+  <text x="355" y="82" fill="#FF6B35" font-size="9" font-weight="bold" text-anchor="start">Mitochondria</text>
+  <text x="355" y="93" fill="#555" font-size="8" text-anchor="start">(energy makers)</text>
+
+  <!-- Ribosome -->
+  <line x1="112" y1="136" x2="95" y2="118" stroke="#FFBF46" stroke-width="1"/>
+  <text x="15" y="112" fill="#8B6914" font-size="9" font-weight="bold">Ribosome</text>
+
+  <!-- ER -->
+  <line x1="265" y1="145" x2="290" y2="120" stroke="#9CB4CC" stroke-width="1"/>
+  <text x="293" y="117" fill="#9CB4CC" font-size="8" font-weight="bold">Endoplasmic</text>
+  <text x="293" y="128" fill="#9CB4CC" font-size="8" font-weight="bold">reticulum</text>
+
+  <!-- Vacuole -->
+  <line x1="90" y1="178" x2="68" y2="165" stroke="#2EC4B6" stroke-width="1"/>
+  <text x="15" y="162" fill="#2EC4B6" font-size="9" font-weight="bold">Vacuole</text>
+</svg>

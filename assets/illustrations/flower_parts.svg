@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#FFFBF0"/>
+  <!-- Title -->
+  <text x="200" y="22" fill="#1A1A2E" font-size="13" font-weight="bold" text-anchor="middle">Parts of a Flower</text>
+
+  <!-- Flower is centered at (150, 155) -->
+
+  <!-- ── SEPALS (green, drawn first, behind petals) ── -->
+  <ellipse cx="150" cy="92" rx="12" ry="32" fill="#1A936F" opacity="0.9" transform="rotate(36 150 155)"/>
+  <ellipse cx="150" cy="92" rx="12" ry="32" fill="#1A936F" opacity="0.9" transform="rotate(108 150 155)"/>
+  <ellipse cx="150" cy="92" rx="12" ry="32" fill="#1A936F" opacity="0.9" transform="rotate(180 150 155)"/>
+  <ellipse cx="150" cy="92" rx="12" ry="32" fill="#1A936F" opacity="0.9" transform="rotate(252 150 155)"/>
+  <ellipse cx="150" cy="92" rx="12" ry="32" fill="#1A936F" opacity="0.9" transform="rotate(324 150 155)"/>
+
+  <!-- ── PETALS (orange, 5 petals rotated around center) ── -->
+  <ellipse cx="150" cy="105" rx="22" ry="48" fill="#FF6B35" opacity="0.92" transform="rotate(0 150 155)"/>
+  <ellipse cx="150" cy="105" rx="22" ry="48" fill="#FF6B35" opacity="0.92" transform="rotate(72 150 155)"/>
+  <ellipse cx="150" cy="105" rx="22" ry="48" fill="#FF6B35" opacity="0.92" transform="rotate(144 150 155)"/>
+  <ellipse cx="150" cy="105" rx="22" ry="48" fill="#FF6B35" opacity="0.92" transform="rotate(216 150 155)"/>
+  <ellipse cx="150" cy="105" rx="22" ry="48" fill="#FF6B35" opacity="0.92" transform="rotate(288 150 155)"/>
+
+  <!-- ── RECEPTACLE / CENTER DISC ── -->
+  <circle cx="150" cy="155" r="30" fill="#FFBF46"/>
+
+  <!-- ── STAMENS (filaments + anthers) ── -->
+  <line x1="141" y1="147" x2="134" y2="138" stroke="#8B6914" stroke-width="2"/>
+  <line x1="150" y1="143" x2="150" y2="133" stroke="#8B6914" stroke-width="2"/>
+  <line x1="159" y1="147" x2="166" y2="138" stroke="#8B6914" stroke-width="2"/>
+  <line x1="162" y1="157" x2="172" y2="153" stroke="#8B6914" stroke-width="2"/>
+  <line x1="138" y1="157" x2="128" y2="153" stroke="#8B6914" stroke-width="2"/>
+  <!-- Anthers (small ovals at tip of filaments) -->
+  <ellipse cx="133" cy="136" rx="4" ry="3" fill="#E0A020"/>
+  <ellipse cx="150" cy="131" rx="4" ry="3" fill="#E0A020"/>
+  <ellipse cx="167" cy="136" rx="4" ry="3" fill="#E0A020"/>
+  <ellipse cx="174" cy="151" rx="4" ry="3" fill="#E0A020"/>
+  <ellipse cx="126" cy="151" rx="4" ry="3" fill="#E0A020"/>
+  <!-- Pollen dots -->
+  <circle cx="133" cy="134" r="1.5" fill="#FFDD00"/>
+  <circle cx="150" cy="129" r="1.5" fill="#FFDD00"/>
+
+  <!-- ── PISTIL (center: stigma + style + ovary) ── -->
+  <rect x="146" y="150" width="8" height="22" rx="3" fill="#6A4C93"/>
+  <!-- Stigma (top of pistil) -->
+  <ellipse cx="150" cy="148" rx="9" ry="6" fill="#8B6FC4"/>
+  <!-- Ovary (base) -->
+  <ellipse cx="150" cy="175" rx="10" ry="8" fill="#6A4C93" opacity="0.85"/>
+
+  <!-- ── STEM ── -->
+  <rect x="145" y="215" width="10" height="72" rx="5" fill="#1A936F"/>
+  <!-- Leaf on stem -->
+  <path d="M155 242 C175 232 182 248 165 254 C158 257 155 254 155 242 Z" fill="#2EC4B6" opacity="0.85"/>
+  <path d="M145 258 C125 248 118 264 135 270 C142 273 145 270 145 258 Z" fill="#2EC4B6" opacity="0.85"/>
+
+  <!-- ── LABELS with leader lines ── -->
+  <!-- Petal -->
+  <line x1="178" y1="112" x2="250" y2="75" stroke="#888" stroke-width="1"/>
+  <text x="253" y="72" fill="#FF6B35" font-size="10" font-weight="bold">Petal</text>
+  <text x="253" y="84" fill="#555" font-size="9">(attracts insects)</text>
+
+  <!-- Sepal -->
+  <line x1="142" y1="210" x2="250" y2="210" stroke="#888" stroke-width="1"/>
+  <text x="253" y="207" fill="#1A936F" font-size="10" font-weight="bold">Sepal</text>
+  <text x="253" y="219" fill="#555" font-size="9">(protects bud)</text>
+
+  <!-- Stamen -->
+  <line x1="170" y1="138" x2="250" y2="120" stroke="#888" stroke-width="1"/>
+  <text x="253" y="117" fill="#8B6914" font-size="10" font-weight="bold">Stamen</text>
+  <text x="253" y="129" fill="#555" font-size="9">(male, makes pollen)</text>
+
+  <!-- Pistil -->
+  <line x1="160" y1="152" x2="250" y2="152" stroke="#888" stroke-width="1"/>
+  <text x="253" y="149" fill="#6A4C93" font-size="10" font-weight="bold">Pistil</text>
+  <text x="253" y="161" fill="#555" font-size="9">(female, ovary)</text>
+
+  <!-- Stem -->
+  <line x1="155" y1="252" x2="250" y2="260" stroke="#888" stroke-width="1"/>
+  <text x="253" y="257" fill="#1A936F" font-size="10" font-weight="bold">Stem</text>
+</svg>

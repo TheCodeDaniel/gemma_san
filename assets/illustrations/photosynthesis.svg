@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <defs>
+    <marker id="pin" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#2EC4B6"/>
+    </marker>
+    <marker id="pout" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#1A936F"/>
+    </marker>
+    <marker id="pco2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#9CB4CC"/>
+    </marker>
+    <marker id="psun" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#FFBF46"/>
+    </marker>
+  </defs>
+
+  <!-- Background (sky) -->
+  <rect width="400" height="300" fill="#E8F4FD"/>
+  <!-- Ground -->
+  <rect x="0" y="250" width="400" height="50" fill="#1A936F" opacity="0.3"/>
+
+  <!-- Title -->
+  <text x="200" y="22" fill="#1A1A2E" font-size="13" font-weight="bold" text-anchor="middle">Photosynthesis</text>
+
+  <!-- ── SUN (top right) ── -->
+  <circle cx="355" cy="55" r="30" fill="#FFBF46"/>
+  <!-- Rays -->
+  <line x1="355" y1="18" x2="355" y2="10" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="382" y1="28" x2="390" y2="20" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="393" y1="55" x2="400" y2="55" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="382" y1="82" x2="390" y2="90" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <line x1="328" y1="28" x2="320" y2="20" stroke="#FFBF46" stroke-width="3" stroke-linecap="round"/>
+  <text x="355" y="100" fill="#FFBF46" font-size="10" font-weight="bold" text-anchor="middle">Sunlight</text>
+
+  <!-- ── LARGE LEAF (center-left) ── -->
+  <!-- Leaf shape: main blob -->
+  <path d="M160 240 C100 220 60 175 75 130 C85 95 115 75 150 70 C185 65 225 85 240 120 C255 155 245 210 220 235 Z"
+        fill="#1A936F"/>
+  <!-- Leaf midrib -->
+  <line x1="160" y1="240" x2="155" y2="75" stroke="#2EC4B6" stroke-width="2.5" opacity="0.7"/>
+  <!-- Leaf veins -->
+  <line x1="140" y1="160" x2="95" y2="140" stroke="#2EC4B6" stroke-width="1.5" opacity="0.5"/>
+  <line x1="148" y1="130" x2="108" y2="108" stroke="#2EC4B6" stroke-width="1.5" opacity="0.5"/>
+  <line x1="158" y1="105" x2="128" y2="85" stroke="#2EC4B6" stroke-width="1.5" opacity="0.5"/>
+  <line x1="168" y1="145" x2="215" y2="130" stroke="#2EC4B6" stroke-width="1.5" opacity="0.5"/>
+  <line x1="175" y1="115" x2="218" y2="100" stroke="#2EC4B6" stroke-width="1.5" opacity="0.5"/>
+  <line x1="178" y1="185" x2="225" y2="178" stroke="#2EC4B6" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Leaf label: "Glucose" -->
+  <text x="158" y="165" fill="white" font-size="11" font-weight="bold" text-anchor="middle">Glucose</text>
+  <text x="158" y="178" fill="#CCFFCC" font-size="9" text-anchor="middle">made here</text>
+
+  <!-- Leaf stem -->
+  <line x1="160" y1="240" x2="160" y2="270" stroke="#5C4033" stroke-width="4"/>
+
+  <!-- ── CO₂ arrow IN (from left) ── -->
+  <line x1="22" y1="150" x2="68" y2="148" stroke="#9CB4CC" stroke-width="2.5" marker-end="url(#pco2)"/>
+  <text x="12" y="142" fill="#9CB4CC" font-size="10" font-weight="bold">CO₂</text>
+  <text x="12" y="155" fill="#9CB4CC" font-size="9">in</text>
+
+  <!-- ── H₂O arrow IN (from bottom-left) ── -->
+  <path d="M55 265 Q90 260 110 238" fill="none" stroke="#2EC4B6" stroke-width="2.5" marker-end="url(#pin)"/>
+  <text x="25" y="275" fill="#2EC4B6" font-size="10" font-weight="bold">H₂O  in</text>
+
+  <!-- ── Sunlight arrow (from top-right toward leaf) ── -->
+  <path d="M328 80 Q280 95 248 115" fill="none" stroke="#FFBF46" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#psun)"/>
+
+  <!-- ── O₂ arrow OUT (to the right) ── -->
+  <path d="M240 160 Q285 155 320 148" fill="none" stroke="#1A936F" stroke-width="2.5" marker-end="url(#pout)"/>
+  <text x="326" y="142" fill="#1A936F" font-size="10" font-weight="bold">O₂</text>
+  <text x="326" y="155" fill="#1A936F" font-size="9">out</text>
+
+  <!-- Equation at bottom -->
+  <rect x="30" y="278" width="340" height="18" rx="5" fill="#1A936F" opacity="0.2"/>
+  <text x="200" y="291" fill="#1A1A2E" font-size="10" font-weight="bold" text-anchor="middle">CO₂ + H₂O + Sunlight → Glucose + O₂</text>
+</svg>

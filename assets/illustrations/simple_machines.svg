@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <defs>
+    <marker id="sm" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0,7 2.5,0 5" fill="#FF6B35"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="#F8F8F2"/>
+
+  <!-- Title -->
+  <text x="200" y="22" fill="#1A1A2E" font-size="13" font-weight="bold" text-anchor="middle">Simple Machines</text>
+
+  <!-- Panel dividers -->
+  <line x1="133" y1="30" x2="133" y2="270" stroke="#DDDDDD" stroke-width="1"/>
+  <line x1="267" y1="30" x2="267" y2="270" stroke="#DDDDDD" stroke-width="1"/>
+
+  <!-- ══════ LEVER (left panel, cx≈66) ══════ -->
+  <text x="66" y="50" fill="#FF6B35" font-size="12" font-weight="bold" text-anchor="middle">Lever</text>
+
+  <!-- Fulcrum triangle -->
+  <polygon points="66,178 50,200 82,200" fill="#6A4C93"/>
+  <!-- Ground base -->
+  <rect x="38" y="200" width="56" height="6" rx="2" fill="#9E9E9E"/>
+
+  <!-- Bar (slightly tilted) -->
+  <rect x="18" y="155" width="100" height="10" rx="5" fill="#FF6B35" transform="rotate(-8,66,160)"/>
+
+  <!-- Load box (left end, upper) -->
+  <rect x="14" y="130" width="22" height="22" rx="3" fill="#9E9E9E"/>
+  <text x="25" y="145" fill="white" font-size="8" font-weight="bold" text-anchor="middle">Load</text>
+
+  <!-- Effort box (right end, lower) -->
+  <rect x="92" y="172" width="26" height="22" rx="3" fill="#FFBF46"/>
+  <text x="105" y="187" fill="#1A1A2E" font-size="8" font-weight="bold" text-anchor="middle">Effort</text>
+
+  <!-- Effort down arrow -->
+  <line x1="105" y1="170" x2="105" y2="164" stroke="#FF6B35" stroke-width="2" marker-end="url(#sm)"/>
+
+  <!-- Labels -->
+  <text x="66" y="225" fill="#6A4C93" font-size="9" font-weight="bold" text-anchor="middle">Fulcrum</text>
+  <text x="66" y="238" fill="#555" font-size="9" text-anchor="middle">Pivoting bar</text>
+  <text x="66" y="250" fill="#555" font-size="9" text-anchor="middle">reduces effort</text>
+
+  <!-- ══════ PULLEY (middle panel, cx≈200) ══════ -->
+  <text x="200" y="50" fill="#2EC4B6" font-size="12" font-weight="bold" text-anchor="middle">Pulley</text>
+
+  <!-- Ceiling mount -->
+  <rect x="182" y="68" width="36" height="8" rx="2" fill="#9E9E9E"/>
+  <rect x="197" y="60" width="6" height="10" rx="2" fill="#9E9E9E"/>
+
+  <!-- Pulley wheel -->
+  <circle cx="200" cy="100" r="22" fill="none" stroke="#2EC4B6" stroke-width="4"/>
+  <circle cx="200" cy="100" r="10" fill="#9CB4CC"/>
+  <circle cx="200" cy="100" r="4" fill="#6A4C93"/>
+
+  <!-- Rope left side — going down to effort -->
+  <line x1="178" y1="100" x2="178" y2="200" stroke="#5C4033" stroke-width="3"/>
+  <!-- Rope right side — going up over wheel and down to load -->
+  <line x1="222" y1="100" x2="222" y2="155" stroke="#5C4033" stroke-width="3"/>
+  <!-- Rope over top of wheel -->
+  <path d="M178 78 Q200 62 222 78" fill="none" stroke="#5C4033" stroke-width="3"/>
+
+  <!-- Load box (right, hanging) -->
+  <rect x="208" y="155" width="28" height="28" rx="3" fill="#9E9E9E"/>
+  <text x="222" y="173" fill="white" font-size="8" font-weight="bold" text-anchor="middle">Load</text>
+
+  <!-- Effort hand arrow (left, pulling down) -->
+  <line x1="178" y1="195" x2="178" y2="210" stroke="#2EC4B6" stroke-width="2" marker-end="url(#sm)"/>
+  <text x="162" y="210" fill="#2EC4B6" font-size="9" text-anchor="middle">Pull</text>
+
+  <text x="200" y="238" fill="#2EC4B6" font-size="9" font-weight="bold" text-anchor="middle">Changes direction</text>
+  <text x="200" y="250" fill="#555" font-size="9" text-anchor="middle">of force</text>
+
+  <!-- ══════ INCLINED PLANE (right panel, cx≈334) ══════ -->
+  <text x="334" y="50" fill="#1A936F" font-size="12" font-weight="bold" text-anchor="middle">Inclined Plane</text>
+
+  <!-- The ramp triangle -->
+  <polygon points="278,200 390,200 390,110" fill="#1A936F" opacity="0.85"/>
+  <!-- Ground -->
+  <rect x="270" y="200" width="125" height="6" rx="2" fill="#9E9E9E"/>
+
+  <!-- Box on ramp -->
+  <rect x="315" y="146" width="26" height="22" rx="3" fill="#9E9E9E" transform="rotate(-36,328,157)"/>
+
+  <!-- Push arrow along ramp surface -->
+  <line x1="350" y1="138" x2="368" y2="118" stroke="#FF6B35" stroke-width="2.5" marker-end="url(#sm)"/>
+
+  <!-- Height arrow -->
+  <line x1="395" y1="110" x2="395" y2="200" stroke="#FFBF46" stroke-width="1.5"/>
+  <line x1="392" y1="110" x2="398" y2="110" stroke="#FFBF46" stroke-width="1.5"/>
+  <line x1="392" y1="200" x2="398" y2="200" stroke="#FFBF46" stroke-width="1.5"/>
+  <text x="400" y="158" fill="#FFBF46" font-size="8" text-anchor="start">h</text>
+
+  <!-- "longer distance, less force" label -->
+  <text x="334" y="225" fill="#1A936F" font-size="9" font-weight="bold" text-anchor="middle">Longer distance</text>
+  <text x="334" y="238" fill="#555" font-size="9" text-anchor="middle">= less force</text>
+  <text x="334" y="250" fill="#555" font-size="9" text-anchor="middle">needed</text>
+</svg>

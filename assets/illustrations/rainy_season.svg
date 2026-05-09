@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Dark stormy sky -->
+  <rect width="400" height="300" fill="#1A2E52"/>
+
+  <!-- Title -->
+  <text x="200" y="22" fill="#9CB4CC" font-size="13" font-weight="bold" text-anchor="middle">Rainy Season</text>
+
+  <!-- ── DISTANT STORM CLOUDS (back layer, darker) ── -->
+  <ellipse cx="320" cy="65" rx="115" ry="48" fill="#2A3E5E"/>
+  <ellipse cx="80" cy="72" rx="100" ry="42" fill="#2A3E5E"/>
+
+  <!-- ── MAIN STORM CLOUDS (front layer) ── -->
+  <!-- Left main cloud -->
+  <ellipse cx="118" cy="78" rx="95" ry="44" fill="#3D5068"/>
+  <ellipse cx="68"  cy="94" rx="55" ry="38" fill="#3D5068"/>
+  <ellipse cx="158" cy="92" rx="52" ry="35" fill="#3D5068"/>
+  <ellipse cx="118" cy="105" rx="90" ry="30" fill="#3D5068"/>
+  <!-- Cloud highlight -->
+  <ellipse cx="100" cy="64" rx="45" ry="22" fill="#4A6080" opacity="0.4"/>
+
+  <!-- Right main cloud -->
+  <ellipse cx="305" cy="72" rx="100" ry="42" fill="#3D5068"/>
+  <ellipse cx="258" cy="88" rx="55" ry="35" fill="#3D5068"/>
+  <ellipse cx="348" cy="85" rx="58" ry="33" fill="#3D5068"/>
+  <ellipse cx="305" cy="100" rx="94" ry="28" fill="#3D5068"/>
+  <!-- Cloud highlight -->
+  <ellipse cx="288" cy="60" rx="48" ry="20" fill="#4A6080" opacity="0.4"/>
+
+  <!-- ── LIGHTNING BOLTS ── -->
+  <path d="M185 108 L173 132 L182 132 L168 158 L194 128 L183 128 Z" fill="#FFBF46"/>
+  <path d="M320 105 L312 125 L320 125 L308 148 L330 120 L322 120 Z" fill="#FFBF46" opacity="0.8"/>
+
+  <!-- ── HEAVY RAIN (many vertical streaks) ── -->
+  <line x1="38"  y1="120" x2="32"  y2="175" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+  <line x1="60"  y1="115" x2="54"  y2="170" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+  <line x1="82"  y1="118" x2="76"  y2="175" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="104" y1="112" x2="98"  y2="168" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+  <line x1="126" y1="120" x2="120" y2="178" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <line x1="148" y1="115" x2="142" y2="172" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="170" y1="125" x2="164" y2="180" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+  <line x1="200" y1="118" x2="194" y2="175" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+  <line x1="224" y1="115" x2="218" y2="172" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="248" y1="120" x2="242" y2="178" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <line x1="272" y1="115" x2="266" y2="172" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+  <line x1="296" y1="118" x2="290" y2="175" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+  <line x1="320" y1="122" x2="314" y2="180" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="344" y1="116" x2="338" y2="174" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+  <line x1="368" y1="120" x2="362" y2="178" stroke="#2EC4B6" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Lighter second rain layer -->
+  <line x1="50"  y1="172" x2="44"  y2="215" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+  <line x1="92"  y1="168" x2="86"  y2="212" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+  <line x1="136" y1="175" x2="130" y2="218" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+  <line x1="180" y1="170" x2="174" y2="215" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+  <line x1="214" y1="172" x2="208" y2="218" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+  <line x1="258" y1="175" x2="252" y2="218" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+  <line x1="302" y1="170" x2="296" y2="215" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+  <line x1="356" y1="168" x2="350" y2="215" stroke="#4DE8D8" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- ── FLOOD WATER (bottom) ── -->
+  <rect x="0" y="228" width="400" height="72" fill="#1A6A7A" opacity="0.85"/>
+  <!-- Water ripples -->
+  <ellipse cx="80"  cy="232" rx="38" ry="5" fill="none" stroke="#2EC4B6" stroke-width="1.5" opacity="0.55"/>
+  <ellipse cx="200" cy="235" rx="45" ry="5" fill="none" stroke="#2EC4B6" stroke-width="1.5" opacity="0.55"/>
+  <ellipse cx="330" cy="232" rx="38" ry="5" fill="none" stroke="#2EC4B6" stroke-width="1.5" opacity="0.55"/>
+  <ellipse cx="140" cy="248" rx="28" ry="4" fill="none" stroke="#2EC4B6" stroke-width="1" opacity="0.4"/>
+  <ellipse cx="280" cy="248" rx="32" ry="4" fill="none" stroke="#2EC4B6" stroke-width="1" opacity="0.4"/>
+
+  <!-- ── PLANTS THRIVING IN RAIN ── -->
+  <!-- Tall grass / reeds -->
+  <rect x="35" y="198" width="6" height="30" rx="3" fill="#1A936F"/>
+  <rect x="45"  y="192" width="6" height="36" rx="3" fill="#2EC4B6" opacity="0.7"/>
+  <rect x="55"  y="198" width="5" height="30" rx="3" fill="#1A936F"/>
+  <rect x="340" y="196" width="6" height="32" rx="3" fill="#1A936F"/>
+  <rect x="350" y="190" width="6" height="38" rx="3" fill="#2EC4B6" opacity="0.7"/>
+  <rect x="360" y="198" width="5" height="30" rx="3" fill="#1A936F"/>
+  <!-- Leaf fronds -->
+  <path d="M48 192 C42 180 55 175 55 185 Z" fill="#1A936F"/>
+  <path d="M352 190 C346 178 359 173 359 183 Z" fill="#1A936F"/>
+
+  <!-- ── LABELS ── -->
+  <text x="200" y="268" fill="#2EC4B6" font-size="10" font-weight="bold" text-anchor="middle">Flooding</text>
+  <text x="187" y="142" fill="#FFBF46" font-size="9" font-weight="bold">Lightning</text>
+  <text x="200" y="290" fill="#9CB4CC" font-size="9" text-anchor="middle">Heavy rainfall fills rivers and floods land</text>
+</svg>

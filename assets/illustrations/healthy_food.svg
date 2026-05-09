@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#FFFEF0"/>
+  <!-- Title -->
+  <text x="200" y="22" fill="#1A1A2E" font-size="13" font-weight="bold" text-anchor="middle">Healthy Food Plate</text>
+
+  <!-- Plate shadow -->
+  <ellipse cx="188" cy="170" rx="128" ry="12" fill="#DDD" opacity="0.4"/>
+
+  <!-- Outer plate rim -->
+  <circle cx="188" cy="155" r="122" fill="#F0E8C8" stroke="#CCBBAA" stroke-width="3"/>
+
+  <!-- ── 4 FOOD SECTIONS (pie slices) ── -->
+  <!-- Dividing lines through center -->
+  <line x1="188" y1="33" x2="188" y2="277" stroke="white" stroke-width="3"/>
+  <line x1="66" y1="155" x2="310" y2="155" stroke="white" stroke-width="3"/>
+
+  <!-- Section 1 — TOP RIGHT: Fruits (orange) -->
+  <!-- Quarter circle: top-right quadrant (center → top → right → center) -->
+  <path d="M188 155 L188 33 A122 122 0 0 1 310 155 Z" fill="#FF6B35" opacity="0.85"/>
+
+  <!-- Section 2 — BOTTOM RIGHT: Protein (teal) -->
+  <path d="M188 155 L310 155 A122 122 0 0 1 188 277 Z" fill="#2EC4B6" opacity="0.85"/>
+
+  <!-- Section 3 — BOTTOM LEFT: Grains (yellow) -->
+  <path d="M188 155 L188 277 A122 122 0 0 1 66 155 Z" fill="#FFBF46" opacity="0.85"/>
+
+  <!-- Section 4 — TOP LEFT: Vegetables (green) -->
+  <path d="M188 155 L66 155 A122 122 0 0 1 188 33 Z" fill="#1A936F" opacity="0.85"/>
+
+  <!-- White inner circle (covers center, gives plate look) -->
+  <circle cx="188" cy="155" r="24" fill="white"/>
+  <text x="188" y="152" fill="#1A1A2E" font-size="7" font-weight="bold" text-anchor="middle">My</text>
+  <text x="188" y="163" fill="#1A1A2E" font-size="7" font-weight="bold" text-anchor="middle">Plate</text>
+
+  <!-- ── FOOD ICONS inside sections ── -->
+  <!-- Fruits (top-right): orange circle -->
+  <circle cx="240" cy="95" r="16" fill="#FF8C00" opacity="0.9"/>
+  <line x1="240" y1="79" x2="240" y2="74" stroke="#1A936F" stroke-width="2.5"/>
+  <circle cx="248" cy="90" r="12" fill="#FF6B00" opacity="0.5"/>
+
+  <!-- Protein (bottom-right): egg shape -->
+  <ellipse cx="248" cy="218" rx="16" ry="20" fill="white" stroke="#DDCCAA" stroke-width="1.5"/>
+  <circle cx="248" cy="222" r="10" fill="#FFBF46" opacity="0.8"/>
+
+  <!-- Grains (bottom-left): rice grains -->
+  <ellipse cx="132" cy="215" rx="9" ry="4" fill="#E8C840" transform="rotate(-30 132 215)"/>
+  <ellipse cx="145" cy="222" rx="9" ry="4" fill="#E8C840" transform="rotate(20 145 222)"/>
+  <ellipse cx="122" cy="228" rx="9" ry="4" fill="#E8C840" transform="rotate(-10 122 228)"/>
+  <ellipse cx="142" cy="210" rx="9" ry="4" fill="#E8C840" transform="rotate(40 142 210)"/>
+
+  <!-- Vegetables (top-left): leaf shapes -->
+  <path d="M140 95 C130 80 148 72 155 85 C160 95 150 105 140 95 Z" fill="#4DC080" opacity="0.9"/>
+  <path d="M128 105 C118 90 136 82 143 95 C148 105 138 115 128 105 Z" fill="#2EC4B6" opacity="0.8"/>
+  <line x1="140" y1="95" x2="148" y2="88" stroke="#1A6A1A" stroke-width="1"/>
+  <line x1="128" y1="105" x2="136" y2="98" stroke="#1A6A1A" stroke-width="1"/>
+
+  <!-- ── SECTION LABELS ── -->
+  <text x="252" y="68" fill="white" font-size="10" font-weight="bold" text-anchor="middle">Fruits</text>
+  <text x="255" y="245" fill="white" font-size="10" font-weight="bold" text-anchor="middle">Protein</text>
+  <text x="125" y="248" fill="white" font-size="10" font-weight="bold" text-anchor="middle">Grains</text>
+  <text x="122" y="68" fill="white" font-size="10" font-weight="bold" text-anchor="middle">Vegetables</text>
+
+  <!-- ── WATER GLASS (right side) ── -->
+  <!-- Glass outline -->
+  <path d="M342 100 L335 240 L365 240 L358 100 Z" fill="#2EC4B6" opacity="0.18" stroke="#2EC4B6" stroke-width="2"/>
+  <!-- Water fill -->
+  <path d="M339 155 L335 240 L365 240 L361 155 Z" fill="#2EC4B6" opacity="0.45"/>
+  <!-- Rim -->
+  <ellipse cx="350" cy="100" rx="16" ry="5" fill="none" stroke="#2EC4B6" stroke-width="2"/>
+  <ellipse cx="350" cy="240" rx="15" ry="4" fill="none" stroke="#2EC4B6" stroke-width="2"/>
+  <!-- Glass label -->
+  <text x="350" y="265" fill="#2EC4B6" font-size="10" font-weight="bold" text-anchor="middle">Water</text>
+  <text x="350" y="278" fill="#555" font-size="8" text-anchor="middle">Drink 8 cups</text>
+  <text x="350" y="290" fill="#555" font-size="8" text-anchor="middle">per day!</text>
+</svg>

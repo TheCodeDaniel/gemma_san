@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Background (space) -->
+  <rect width="400" height="300" fill="#0A1628"/>
+
+  <!-- Title -->
+  <text x="200" y="22" fill="white" font-size="13" font-weight="bold" text-anchor="middle">Layers of the Earth</text>
+
+  <!-- ── Concentric circles (largest to smallest) ── -->
+  <!-- Crust (outermost) -->
+  <circle cx="200" cy="158" r="120" fill="#5C4033"/>
+  <!-- Mantle -->
+  <circle cx="200" cy="158" r="95" fill="#FF8C42"/>
+  <!-- Outer Core -->
+  <circle cx="200" cy="158" r="62" fill="#E63946"/>
+  <!-- Inner Core -->
+  <circle cx="200" cy="158" r="35" fill="#FFBF46"/>
+
+  <!-- Subtle highlight on inner core -->
+  <ellipse cx="190" cy="148" rx="18" ry="14" fill="#FFD980" opacity="0.4"/>
+
+  <!-- Cross-section cut indicator (left side wedge) -->
+  <path d="M200 158 L113 98 L113 218 Z" fill="#0A1628" opacity="0.25"/>
+
+  <!-- ── Leader lines + labels (right side) ── -->
+
+  <!-- Crust label -->
+  <line x1="294" y1="108" x2="320" y2="88" stroke="#A0836E" stroke-width="1.5"/>
+  <circle cx="294" cy="108" r="3" fill="#A0836E"/>
+  <text x="323" y="84" fill="#A0836E" font-size="11" font-weight="bold">Crust</text>
+  <text x="323" y="97" fill="#9E9E9E" font-size="9">~5–70 km thick</text>
+
+  <!-- Mantle label -->
+  <line x1="278" y1="130" x2="328" y2="130" stroke="#FF8C42" stroke-width="1.5"/>
+  <circle cx="278" cy="130" r="3" fill="#FF8C42"/>
+  <text x="331" y="125" fill="#FF8C42" font-size="11" font-weight="bold">Mantle</text>
+  <text x="331" y="138" fill="#9E9E9E" font-size="9">Hot rock</text>
+
+  <!-- Outer Core label -->
+  <line x1="254" y1="157" x2="328" y2="168" stroke="#E63946" stroke-width="1.5"/>
+  <circle cx="254" cy="157" r="3" fill="#E63946"/>
+  <text x="331" y="163" fill="#E63946" font-size="11" font-weight="bold">Outer Core</text>
+  <text x="331" y="176" fill="#9E9E9E" font-size="9">Liquid iron</text>
+
+  <!-- Inner Core label -->
+  <line x1="228" y1="175" x2="328" y2="208" stroke="#FFBF46" stroke-width="1.5"/>
+  <circle cx="228" cy="175" r="3" fill="#FFBF46"/>
+  <text x="331" y="203" fill="#FFBF46" font-size="11" font-weight="bold">Inner Core</text>
+  <text x="331" y="216" fill="#9E9E9E" font-size="9">Solid iron, ~5000°C</text>
+
+  <!-- Temperature gradient label (left side) -->
+  <text x="15" y="100" fill="#9CB4CC" font-size="9" transform="rotate(-90,15,170)">← cooler</text>
+  <text x="22" y="100" fill="#FF8C42" font-size="9" transform="rotate(-90,22,170)">hotter →</text>
+
+  <!-- Stars (background decoration) -->
+  <circle cx="25"  cy="35"  r="1"   fill="white" opacity="0.6"/>
+  <circle cx="60"  cy="20"  r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="10"  cy="60"  r="1"   fill="white" opacity="0.7"/>
+  <circle cx="380" cy="40"  r="1"   fill="white" opacity="0.5"/>
+  <circle cx="395" cy="75"  r="1.5" fill="white" opacity="0.6"/>
+</svg>

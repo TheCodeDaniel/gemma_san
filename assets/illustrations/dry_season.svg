@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Hot sky gradient (flat colour) -->
+  <rect width="400" height="300" fill="#FFD060"/>
+  <!-- Lower sky (hotter, more orange) -->
+  <rect y="160" width="400" height="140" fill="#FFAA20" opacity="0.4"/>
+
+  <!-- Title -->
+  <text x="200" y="22" fill="#5C3010" font-size="13" font-weight="bold" text-anchor="middle">Dry Season</text>
+
+  <!-- ── SUN (large, blazing) ── -->
+  <!-- Outer glow -->
+  <circle cx="318" cy="78" r="60" fill="#FFBF46" opacity="0.18"/>
+  <circle cx="318" cy="78" r="48" fill="#FFBF46" opacity="0.2"/>
+  <!-- Sun body -->
+  <circle cx="318" cy="78" r="38" fill="#FFBF46"/>
+  <!-- Inner bright spot -->
+  <circle cx="308" cy="68" r="16" fill="#FFE080" opacity="0.5"/>
+  <!-- Long blazing rays -->
+  <line x1="318" y1="32" x2="318" y2="18" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="352" y1="44" x2="362" y2="34" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="366" y1="78" x2="380" y2="78" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="352" y1="112" x2="362" y2="122" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="318" y1="124" x2="318" y2="138" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="284" y1="112" x2="274" y2="122" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="270" y1="78" x2="256" y2="78" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="284" y1="44" x2="274" y2="34" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <!-- Diagonal half-rays -->
+  <line x1="344" y1="38" x2="352" y2="28" stroke="#FFBF46" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="362" y1="58" x2="374" y2="52" stroke="#FFBF46" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- "No rain" cloud (empty, faded) -->
+  <ellipse cx="98" cy="75" rx="52" ry="25" fill="#F0D8A0" opacity="0.5"/>
+  <ellipse cx="65"  cy="88" rx="32" ry="22" fill="#F0D8A0" opacity="0.5"/>
+  <ellipse cx="134" cy="86" rx="28" ry="20" fill="#F0D8A0" opacity="0.5"/>
+  <text x="98" y="82" fill="#CC9900" font-size="9" font-weight="bold" text-anchor="middle">No rain</text>
+
+  <!-- ── HEAT WAVES (shimmer lines above ground) ── -->
+  <path d="M10 168 C35 163 55 173 80 168 C105 163 125 173 150 168 C175 163 195 173 220 168 C245 163 265 173 290 168 C315 163 335 173 360 168 C385 163 395 168 400 168"
+        fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.4"/>
+  <path d="M10 177 C35 172 55 182 80 177 C105 172 125 182 150 177 C175 172 195 182 220 177 C245 172 265 182 290 177 C315 172 335 182 360 177"
+        fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.3"/>
+  <path d="M10 186 C35 181 55 191 80 186 C105 181 125 191 150 186 C175 181 195 191 220 186"
+        fill="none" stroke="#FF8C00" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- ── DRY GROUND (cracked earth) ── -->
+  <rect x="0" y="200" width="400" height="100" fill="#8B5A2B"/>
+  <!-- Parched soil shade -->
+  <rect x="0" y="200" width="400" height="20" fill="#A06A30" opacity="0.5"/>
+
+  <!-- Crack lines across the dry earth -->
+  <path d="M30  210 C50 220 45 235 70 240" fill="none" stroke="#5C3010" stroke-width="2" stroke-linecap="round"/>
+  <path d="M70  240 C80 248 95 242 110 252" fill="none" stroke="#5C3010" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M115 215 C135 228 130 242 155 248" fill="none" stroke="#5C3010" stroke-width="2" stroke-linecap="round"/>
+  <path d="M155 248 C170 255 168 268 188 272" fill="none" stroke="#5C3010" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M200 212 C218 222 215 238 240 242" fill="none" stroke="#5C3010" stroke-width="2" stroke-linecap="round"/>
+  <path d="M240 242 C255 250 252 262 270 268" fill="none" stroke="#5C3010" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M285 210 C300 225 298 238 320 244" fill="none" stroke="#5C3010" stroke-width="2" stroke-linecap="round"/>
+  <path d="M355 215 C368 228 365 244 385 250" fill="none" stroke="#5C3010" stroke-width="2" stroke-linecap="round"/>
+  <path d="M80  210 C88 218 85 228 95 235" fill="none" stroke="#5C3010" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+  <path d="M195 232 C205 238 202 252 215 256" fill="none" stroke="#5C3010" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- ── BARE TREE (dead/dormant) ── -->
+  <!-- Trunk -->
+  <rect x="148" y="120" width="22" height="82" rx="6" fill="#5C3010"/>
+  <!-- Main branches -->
+  <line x1="159" y1="140" x2="115" y2="108" stroke="#5C3010" stroke-width="8" stroke-linecap="round"/>
+  <line x1="159" y1="148" x2="196" y2="112" stroke="#5C3010" stroke-width="8" stroke-linecap="round"/>
+  <!-- Sub-branches -->
+  <line x1="115" y1="108" x2="92"  y2="92"  stroke="#5C3010" stroke-width="5" stroke-linecap="round"/>
+  <line x1="115" y1="108" x2="108" y2="90"  stroke="#5C3010" stroke-width="4" stroke-linecap="round"/>
+  <line x1="92"  y1="92"  x2="82"  y2="78"  stroke="#5C3010" stroke-width="3" stroke-linecap="round"/>
+  <line x1="196" y1="112" x2="218" y2="95"  stroke="#5C3010" stroke-width="5" stroke-linecap="round"/>
+  <line x1="196" y1="112" x2="205" y2="94"  stroke="#5C3010" stroke-width="4" stroke-linecap="round"/>
+  <line x1="218" y1="95"  x2="228" y2="80"  stroke="#5C3010" stroke-width="3" stroke-linecap="round"/>
+  <line x1="159" y1="130" x2="138" y2="118" stroke="#5C3010" stroke-width="5" stroke-linecap="round"/>
+  <line x1="138" y1="118" x2="125" y2="105" stroke="#5C3010" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="159" y1="130" x2="178" y2="118" stroke="#5C3010" stroke-width="5" stroke-linecap="round"/>
+  <line x1="178" y1="118" x2="190" y2="104" stroke="#5C3010" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Dry fallen leaf -->
+  <ellipse cx="135" cy="205" rx="9" ry="5" fill="#A06028" transform="rotate(-20 135 205)" opacity="0.7"/>
+  <ellipse cx="185" cy="207" rx="8" ry="4" fill="#A06028" transform="rotate(15 185 207)" opacity="0.7"/>
+
+  <!-- ── LABELS ── -->
+  <text x="330" y="72" fill="#8B5A00" font-size="10" font-weight="bold" text-anchor="middle">Hot sun</text>
+  <text x="163" y="115" fill="#5C3010" font-size="9" font-weight="bold" text-anchor="middle">Bare tree</text>
+  <text x="200" y="222" fill="#FFDD90" font-size="9" font-weight="bold" text-anchor="middle">Cracked soil — no water</text>
+  <text x="200" y="290" fill="#FFDDAA" font-size="9" text-anchor="middle">Long dry period with little or no rain</text>
+</svg>

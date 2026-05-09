@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
@@ -9,6 +10,7 @@ import '../../data/app_database.dart';
 import '../../data/memory_dao.dart';
 import '../../services/gemma/gemma_service.dart';
 import '../../services/gemma/tutor_response.dart';
+import '../../services/illustration/illustration_registry.dart';
 import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
 
@@ -88,7 +90,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
     try {
       await for (final response in widget.gemmaService.generate(prompt)) {
-        setState(() => _messages.add(_Message(isUser: false, text: response.spokenText, mode: response.mode)));
+        setState(() => _messages.add(_Message(
+          isUser: false,
+          text: response.spokenText,
+          mode: response.mode,
+          illustrationTopicId: response.illustrationTopicId,
+        )));
         _scrollToBottom();
 
         if (response.languageCode != null) {
@@ -275,10 +282,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
 // ── Data ───────────────────────────────────────────────────────────────────
 
 class _Message {
-  const _Message({required this.isUser, required this.text, this.mode});
+  const _Message({required this.isUser, required this.text, this.mode, this.illustrationTopicId});
   final bool isUser;
   final String text;
   final TutorMode? mode;
+  final String? illustrationTopicId;
 }
 
 // ── Private widgets ────────────────────────────────────────────────────────
@@ -291,6 +299,9 @@ class _ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isUser = message.isUser;
+    final assetPath = message.illustrationTopicId != null
+        ? IllustrationRegistry.getAssetPath(message.illustrationTopicId!)
+        : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -310,6 +321,10 @@ class _ChatBubble extends StatelessWidget {
             child: Column(
               crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
+                if (assetPath != null) ...[
+                  _IllustrationView(assetPath: assetPath),
+                  const SizedBox(height: 6),
+                ],
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
@@ -339,6 +354,119 @@ class _ChatBubble extends StatelessWidget {
           ),
           if (isUser) const SizedBox(width: 6),
         ],
+      ),
+    );
+  }
+}
+
+class _IllustrationView extends StatefulWidget {
+  const _IllustrationView({required this.assetPath});
+  final String assetPath;
+
+  @override
+  State<_IllustrationView> createState() => _IllustrationViewState();
+}
+
+class _IllustrationViewState extends State<_IllustrationView> {
+  double _opacity = 0.0;
+  String? _svgData;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await DefaultAssetBundle.of(context).loadString(widget.assetPath);
+      if (mounted) {
+        setState(() {
+          _svgData = data;
+          _opacity = 1.0;
+        });
+      }
+    } catch (_) {
+      // SVG file not yet placed — silently show nothing.
+    }
+  }
+
+  void _openFullscreen() {
+    final svg = _svgData;
+    if (svg == null) return;
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close',
+      barrierColor: Colors.black87,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (ctx, _, _) => Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 5.0,
+                child: SvgPicture.string(svg, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.of(ctx).padding.top + 8,
+              right: 12,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                onPressed: () => Navigator.of(ctx).pop(),
+                tooltip: 'Close',
+              ),
+            ),
+            Positioned(
+              bottom: MediaQuery.of(ctx).padding.bottom + 16,
+              left: 0,
+              right: 0,
+              child: const Text(
+                'Pinch to zoom',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_svgData == null) return const SizedBox.shrink();
+    final thumbWidth = MediaQuery.of(context).size.width * 0.65;
+    return AnimatedOpacity(
+      opacity: _opacity,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeIn,
+      child: GestureDetector(
+        onTap: _openFullscreen,
+        child: Stack(
+          children: [
+            SvgPicture.string(
+              _svgData!,
+              width: thumbWidth,
+              fit: BoxFit.contain,
+            ),
+            Positioned(
+              top: 6,
+              right: 6,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black45,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.fullscreen, color: Colors.white, size: 18),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

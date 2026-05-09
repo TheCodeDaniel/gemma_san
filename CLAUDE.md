@@ -121,7 +121,8 @@ features/<name>/
 | 8   | Practice mode: phonics drilling loop, fuzzy STT eval, 5 levels  | Done                                                                                                         |
 | 9   | Adaptive practice: SRS scheduler, SQLite persistence, session stats | Done                                                                                                     |
 | 10  | Persistent memory: working memory, cross-session injection, remember tool, ConversationScreen | Done                                                                                  |
-| 11  | Onboarding flow                                                 | Upcoming                                                                                                     |
+| 11  | SVG illustration library: 22 topics, show_illustration tool, inline fade-in + tap-to-fullscreen | Done — all 22 SVGs generated; tap opens InteractiveViewer (pinch 0.5×–5×)            |
+| 12  | Onboarding flow                                                 | Upcoming                                                                                                     |
 
 ---
 

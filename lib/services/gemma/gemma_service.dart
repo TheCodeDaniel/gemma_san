@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../data/memory_dao.dart';
+import '../illustration/illustration_registry.dart';
 import 'tool_definitions.dart';
 import 'tutor_response.dart';
 
@@ -180,7 +181,20 @@ class GemmaService {
         final spokenText = (call.args['spoken_response'] as String?) ?? '';
         final langCode = call.args['language_code'] as String?;
 
-        if (call.name == 'remember') {
+        if (call.name == 'show_illustration') {
+          final topicId = (call.args['topic_id'] as String?) ?? '';
+          // Validate against registry — Gemma may hallucinate a value outside the enum.
+          final resolvedId = IllustrationRegistry.hasIllustration(topicId) ? topicId : null;
+          debugPrint('[Illustration] topic=$topicId resolved=$resolvedId');
+          _addTurn(role: 'assistant', text: spokenText);
+          yield TutorResponse(
+            mode: TutorMode.direct,
+            spokenText: spokenText,
+            languageCode: langCode,
+            illustrationTopicId: resolvedId,
+            metadata: call.args,
+          );
+        } else if (call.name == 'remember') {
           final fact = (call.args['fact'] as String?) ?? '';
           if (fact.isNotEmpty) {
             final key = 'fact_${DateTime.now().millisecondsSinceEpoch}';

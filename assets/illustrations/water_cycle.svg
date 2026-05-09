@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <defs>
+    <marker id="ao" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#FF6B35"/>
+    </marker>
+    <marker id="ag" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#1A936F"/>
+    </marker>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="400" height="300" fill="#E8F4FD"/>
+
+  <!-- Sun rays -->
+  <line x1="350" y1="5"  x2="350" y2="16" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="376" y1="13" x2="367" y2="23" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="390" y1="38" x2="378" y2="41" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <line x1="324" y1="13" x2="333" y2="23" stroke="#FFBF46" stroke-width="4" stroke-linecap="round"/>
+  <!-- Sun -->
+  <circle cx="350" cy="45" r="28" fill="#FFBF46"/>
+
+  <!-- Cloud (4 overlapping ellipses) -->
+  <ellipse cx="152" cy="83" rx="50" ry="26" fill="#9CB4CC"/>
+  <ellipse cx="122" cy="95" rx="30" ry="21" fill="#9CB4CC"/>
+  <ellipse cx="186" cy="93" rx="28" ry="19" fill="#9CB4CC"/>
+  <ellipse cx="152" cy="101" rx="46" ry="18" fill="#9CB4CC"/>
+
+  <!-- Rain drops -->
+  <ellipse cx="132" cy="129" rx="5" ry="9" fill="#2EC4B6"/>
+  <ellipse cx="150" cy="138" rx="5" ry="9" fill="#2EC4B6"/>
+  <ellipse cx="168" cy="129" rx="5" ry="9" fill="#2EC4B6"/>
+  <ellipse cx="141" cy="152" rx="4" ry="7" fill="#2EC4B6" opacity="0.6"/>
+  <ellipse cx="161" cy="150" rx="4" ry="7" fill="#2EC4B6" opacity="0.6"/>
+
+  <!-- Land (2 hills) -->
+  <ellipse cx="58"  cy="278" rx="95" ry="36" fill="#1A936F"/>
+  <ellipse cx="335" cy="272" rx="105" ry="42" fill="#1A936F"/>
+
+  <!-- Ocean / river -->
+  <rect x="115" y="248" width="175" height="40" rx="8" fill="#2EC4B6"/>
+
+  <!-- Evaporation arrow (dashed orange): ocean up to cloud -->
+  <path d="M108 246 C90 205 92 165 120 118"
+        fill="none" stroke="#FF6B35" stroke-width="2.5" stroke-dasharray="7,5"
+        marker-end="url(#ao)"/>
+
+  <!-- Runoff arrow (solid green): right hill back to ocean -->
+  <path d="M272 259 Q300 268 312 257"
+        fill="none" stroke="#1A936F" stroke-width="2.5"
+        marker-end="url(#ag)"/>
+
+  <!-- Labels -->
+  <text x="50"  y="216" fill="#FF6B35" font-size="11" font-weight="bold">Evaporation</text>
+  <text x="176" y="70"  fill="#3D5A80" font-size="11" font-weight="bold">Condensation</text>
+  <text x="172" y="164" fill="#2EC4B6" font-size="11" font-weight="bold">Precipitation</text>
+  <text x="278" y="242" fill="#1A936F" font-size="11" font-weight="bold">Runoff</text>
+  <text x="202" y="276" fill="white"   font-size="11" font-weight="bold" text-anchor="middle">Ocean / River</text>
+</svg>

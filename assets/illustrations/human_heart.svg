@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#FFF0F2"/>
+  <!-- Title -->
+  <text x="200" y="22" fill="#1A1A2E" font-size="13" font-weight="bold" text-anchor="middle">Human Heart</text>
+
+  <!-- Main heart body -->
+  <path d="M200 255 C145 225 68 195 68 140 C68 92 100 70 140 70 C163 70 183 84 200 102 C217 84 237 70 260 70 C300 70 332 92 332 140 C332 195 255 225 200 255 Z"
+        fill="#E63946"/>
+
+  <!-- Right side slightly lighter (right ventricle + atrium) -->
+  <path d="M200 255 C255 225 332 195 332 140 C332 92 300 70 260 70 C237 70 217 84 200 102 Z"
+        fill="#C62828" opacity="0.55"/>
+
+  <!-- Interventricular septum -->
+  <path d="M200 102 C197 152 197 202 200 255"
+        fill="none" stroke="#C62828" stroke-width="2.5" stroke-dasharray="5,3"/>
+
+  <!-- Atrioventricular groove (separates atria from ventricles) -->
+  <path d="M88 162 Q200 148 312 162"
+        fill="none" stroke="#C62828" stroke-width="2" stroke-dasharray="4,3" opacity="0.7"/>
+
+  <!-- Aorta (exits left ventricle, arches upward) -->
+  <path d="M188 82 C178 50 215 32 248 46 C274 56 280 80 274 94"
+        fill="none" stroke="#2EC4B6" stroke-width="11" stroke-linecap="round"/>
+  <!-- Aorta inner highlight -->
+  <path d="M188 82 C178 50 215 32 248 46 C274 56 280 80 274 94"
+        fill="none" stroke="#4DE8E0" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Pulmonary trunk (exits right ventricle) -->
+  <path d="M217 88 C232 68 258 68 268 84"
+        fill="none" stroke="#6A4C93" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Superior vena cava (into right atrium, top right) -->
+  <rect x="306" y="66" width="18" height="54" rx="9" fill="#9CB4CC"/>
+  <!-- Inferior vena cava (into right atrium, lower right) -->
+  <rect x="306" y="158" width="18" height="40" rx="9" fill="#9CB4CC"/>
+
+  <!-- Chamber labels -->
+  <text x="143" y="128" fill="white" font-size="9" font-weight="bold" text-anchor="middle">Left</text>
+  <text x="143" y="140" fill="white" font-size="9" font-weight="bold" text-anchor="middle">atrium</text>
+
+  <text x="258" y="128" fill="white" font-size="9" font-weight="bold" text-anchor="middle">Right</text>
+  <text x="258" y="140" fill="white" font-size="9" font-weight="bold" text-anchor="middle">atrium</text>
+
+  <text x="150" y="202" fill="white" font-size="9" font-weight="bold" text-anchor="middle">Left</text>
+  <text x="150" y="214" fill="white" font-size="9" font-weight="bold" text-anchor="middle">ventricle</text>
+
+  <text x="250" y="202" fill="white" font-size="9" font-weight="bold" text-anchor="middle">Right</text>
+  <text x="250" y="214" fill="white" font-size="9" font-weight="bold" text-anchor="middle">ventricle</text>
+
+  <!-- External vessel labels -->
+  <text x="195" y="38" fill="#2EC4B6" font-size="10" font-weight="bold" text-anchor="middle">Aorta</text>
+  <text x="278" y="62" fill="#6A4C93" font-size="9" font-weight="bold" text-anchor="start">Pulmonary</text>
+  <text x="278" y="74" fill="#6A4C93" font-size="9" font-weight="bold" text-anchor="start">trunk</text>
+  <text x="328" y="92" fill="#9CB4CC" font-size="8" text-anchor="start">Vena</text>
+  <text x="328" y="104" fill="#9CB4CC" font-size="8" text-anchor="start">cava</text>
+</svg>

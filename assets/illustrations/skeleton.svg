@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" font-family="Arial,sans-serif">
+  <!-- Background -->
+  <rect width="300" height="420" fill="#F5F5F0"/>
+  <!-- Title -->
+  <text x="150" y="18" fill="#1A1A2E" font-size="12" font-weight="bold" text-anchor="middle">Human Skeleton</text>
+
+  <!-- ── SKULL ── -->
+  <circle cx="150" cy="58" r="38" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1.5"/>
+  <!-- Eye sockets -->
+  <ellipse cx="136" cy="55" rx="9" ry="8" fill="#CCCCBB"/>
+  <ellipse cx="164" cy="55" rx="9" ry="8" fill="#CCCCBB"/>
+  <!-- Nasal cavity -->
+  <path d="M145 66 L150 74 L155 66" fill="#CCCCBB" stroke="#AAAAAA" stroke-width="0.5"/>
+  <!-- Teeth (mandible) -->
+  <ellipse cx="150" cy="90" rx="24" ry="12" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1.5"/>
+  <line x1="130" y1="90" x2="170" y2="90" stroke="#CCCCBB" stroke-width="1"/>
+  <line x1="138" y1="82" x2="138" y2="98" stroke="#CCCCBB" stroke-width="0.8" opacity="0.6"/>
+  <line x1="146" y1="82" x2="146" y2="98" stroke="#CCCCBB" stroke-width="0.8" opacity="0.6"/>
+  <line x1="154" y1="82" x2="154" y2="98" stroke="#CCCCBB" stroke-width="0.8" opacity="0.6"/>
+  <line x1="162" y1="82" x2="162" y2="98" stroke="#CCCCBB" stroke-width="0.8" opacity="0.6"/>
+
+  <!-- ── SPINE (cervical → lumbar) ── -->
+  <rect x="146" y="105" width="8" height="165" rx="3" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <!-- Vertebrae discs (8 visible) -->
+  <rect x="143" y="110" width="14" height="6" rx="2" fill="#DDDDCC"/>
+  <rect x="143" y="124" width="14" height="6" rx="2" fill="#DDDDCC"/>
+  <rect x="143" y="138" width="14" height="6" rx="2" fill="#DDDDCC"/>
+  <rect x="143" y="152" width="14" height="6" rx="2" fill="#DDDDCC"/>
+  <rect x="143" y="166" width="14" height="6" rx="2" fill="#DDDDCC"/>
+  <rect x="143" y="180" width="14" height="6" rx="2" fill="#DDDDCC"/>
+  <rect x="143" y="216" width="14" height="6" rx="2" fill="#DDDDCC"/>
+  <rect x="143" y="232" width="14" height="6" rx="2" fill="#DDDDCC"/>
+
+  <!-- ── CLAVICLES (collar bones) ── -->
+  <path d="M150 112 C125 112 95 125 78 140" fill="none" stroke="#F5F5DC" stroke-width="7" stroke-linecap="round"/>
+  <path d="M150 112 C175 112 205 125 222 140" fill="none" stroke="#F5F5DC" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- ── RIBCAGE ── -->
+  <ellipse cx="150" cy="182" rx="56" ry="68" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1.5"/>
+  <ellipse cx="150" cy="182" rx="38" ry="55" fill="#F5F5F0"/>
+  <!-- Rib pairs (5 pairs) -->
+  <path d="M150 148 C120 148 98 158 95 170" fill="none" stroke="#DDDDCC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M150 148 C180 148 202 158 205 170" fill="none" stroke="#DDDDCC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M150 161 C115 161 92 172 88 184" fill="none" stroke="#DDDDCC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M150 161 C185 161 208 172 212 184" fill="none" stroke="#DDDDCC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M150 175 C112 175 90 186 88 198" fill="none" stroke="#DDDDCC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M150 175 C188 175 210 186 212 198" fill="none" stroke="#DDDDCC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M150 190 C113 190 94 200 93 212" fill="none" stroke="#DDDDCC" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M150 190 C187 190 206 200 207 212" fill="none" stroke="#DDDDCC" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M150 205 C116 205 98 213 98 222" fill="none" stroke="#DDDDCC" stroke-width="3" stroke-linecap="round"/>
+  <path d="M150 205 C184 205 202 213 202 222" fill="none" stroke="#DDDDCC" stroke-width="3" stroke-linecap="round"/>
+  <!-- Sternum (center front) -->
+  <rect x="145" y="145" width="10" height="85" rx="4" fill="#EEEECC" stroke="#AAAAAA" stroke-width="1"/>
+
+  <!-- ── ARM BONES ── -->
+  <!-- Left humerus -->
+  <rect x="58" y="142" width="18" height="70" rx="8" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <!-- Left forearm (radius/ulna) -->
+  <rect x="53" y="216" width="14" height="60" rx="6" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <rect x="70" y="216" width="10" height="60" rx="5" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="0.8" opacity="0.7"/>
+  <!-- Left hand (schematic) -->
+  <ellipse cx="60" cy="284" rx="12" ry="9" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+
+  <!-- Right humerus -->
+  <rect x="224" y="142" width="18" height="70" rx="8" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <!-- Right forearm -->
+  <rect x="220" y="216" width="14" height="60" rx="6" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <rect x="237" y="216" width="10" height="60" rx="5" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="0.8" opacity="0.7"/>
+  <!-- Right hand -->
+  <ellipse cx="240" cy="284" rx="12" ry="9" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+
+  <!-- ── PELVIS ── -->
+  <path d="M108 272 C90 265 84 275 88 290 C92 305 110 310 130 308 C142 307 150 298 150 298 C150 298 158 307 170 308 C190 310 208 305 212 290 C216 275 210 265 192 272 C178 278 165 280 150 278 C135 280 122 278 108 272 Z"
+        fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1.5"/>
+  <!-- Pelvis inner opening -->
+  <ellipse cx="150" cy="290" rx="28" ry="18" fill="#EEEECC"/>
+
+  <!-- ── LEG BONES ── -->
+  <!-- Left femur -->
+  <rect x="100" y="308" width="22" height="82" rx="9" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <!-- Left patella (kneecap) -->
+  <ellipse cx="111" cy="394" rx="10" ry="8" fill="#EEEECC" stroke="#AAAAAA" stroke-width="1"/>
+  <!-- Left tibia / fibula -->
+  <rect x="103" y="400" width="14" height="55" rx="6" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <rect x="119" y="403" width="9" height="50" rx="4" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="0.8" opacity="0.7"/>
+
+  <!-- Right femur -->
+  <rect x="178" y="308" width="22" height="82" rx="9" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <!-- Right patella -->
+  <ellipse cx="189" cy="394" rx="10" ry="8" fill="#EEEECC" stroke="#AAAAAA" stroke-width="1"/>
+  <!-- Right tibia / fibula -->
+  <rect x="178" y="400" width="14" height="55" rx="6" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="1"/>
+  <rect x="194" y="403" width="9" height="50" rx="4" fill="#F5F5DC" stroke="#AAAAAA" stroke-width="0.8" opacity="0.7"/>
+
+  <!-- ── Labels (right side) ── -->
+  <text x="258" y="62" fill="#8B6914" font-size="10" font-weight="bold">Skull</text>
+  <text x="258" y="182" fill="#8B6914" font-size="10" font-weight="bold">Ribcage</text>
+  <text x="258" y="215" fill="#8B6914" font-size="10" font-weight="bold">Spine</text>
+  <text x="258" y="295" fill="#8B6914" font-size="10" font-weight="bold">Pelvis</text>
+  <text x="258" y="355" fill="#8B6914" font-size="10" font-weight="bold">Femur</text>
+
+  <!-- Left-side labels -->
+  <text x="38" y="180" fill="#8B6914" font-size="10" font-weight="bold" text-anchor="end">Humerus</text>
+  <text x="38" y="250" fill="#8B6914" font-size="10" font-weight="bold" text-anchor="end">Forearm</text>
+</svg>

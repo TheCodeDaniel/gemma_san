@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" font-family="Arial,sans-serif">
+  <!-- Dark microscope background -->
+  <rect width="400" height="300" fill="#0A1628"/>
+  <!-- Circular microscope view vignette -->
+  <circle cx="200" cy="150" r="185" fill="#0D1E35" opacity="0.4"/>
+
+  <!-- Title -->
+  <text x="200" y="22" fill="white" font-size="13" font-weight="bold" text-anchor="middle">Germs and Microbes</text>
+
+  <!-- ══════ 1. ROD BACTERIUM (Bacillus) — top-left ══════ -->
+  <ellipse cx="90" cy="82" rx="36" ry="16" fill="#FF6B35" opacity="0.9"/>
+  <!-- Flagellum (wavy tail) -->
+  <path d="M126 80 C140 72 148 85 162 78 C170 74 174 80 178 88" fill="none" stroke="#FF8C56" stroke-width="2" stroke-linecap="round"/>
+  <!-- Cell membrane highlight -->
+  <ellipse cx="80" cy="76" rx="20" ry="7" fill="#FF8C56" opacity="0.35"/>
+  <!-- Label -->
+  <text x="90" y="108" fill="#FF6B35" font-size="10" font-weight="bold" text-anchor="middle">Rod bacterium</text>
+  <text x="90" y="120" fill="#9CB4CC" font-size="8" text-anchor="middle">(bacillus)</text>
+
+  <!-- ══════ 2. SPHERICAL BACTERIA (Coccus) — top-right ══════ -->
+  <!-- Cluster of 4 cocci (streptococcus) -->
+  <circle cx="298" cy="72" r="20" fill="#FF6B35" opacity="0.9"/>
+  <circle cx="337" cy="72" r="20" fill="#FF6B35" opacity="0.9"/>
+  <circle cx="298" cy="108" r="20" fill="#FF6B35" opacity="0.9"/>
+  <circle cx="337" cy="108" r="20" fill="#FF6B35" opacity="0.9"/>
+  <!-- Highlights -->
+  <circle cx="291" cy="65" r="8" fill="#FF8C56" opacity="0.3"/>
+  <circle cx="330" cy="65" r="8" fill="#FF8C56" opacity="0.3"/>
+  <!-- Label -->
+  <text x="317" y="140" fill="#FF6B35" font-size="10" font-weight="bold" text-anchor="middle">Coccus bacteria</text>
+  <text x="317" y="152" fill="#9CB4CC" font-size="8" text-anchor="middle">(spherical cluster)</text>
+
+  <!-- ══════ 3. VIRUS — bottom-left ══════ -->
+  <!-- Viral capsid (icosahedral, simplified as circle) -->
+  <circle cx="95" cy="218" r="32" fill="#2EC4B6" opacity="0.88"/>
+  <!-- Surface proteins / spikes -->
+  <line x1="95" y1="186" x2="95" y2="178" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="95" cy="176" r="4" fill="#2EC4B6"/>
+  <line x1="118" y1="196" x2="124" y2="188" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="126" cy="186" r="4" fill="#2EC4B6"/>
+  <line x1="127" y1="218" x2="135" y2="218" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="137" cy="218" r="4" fill="#2EC4B6"/>
+  <line x1="118" y1="240" x2="124" y2="248" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="126" cy="250" r="4" fill="#2EC4B6"/>
+  <line x1="95" y1="250" x2="95" y2="258" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="95" cy="260" r="4" fill="#2EC4B6"/>
+  <line x1="72" y1="240" x2="66" y2="248" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="64" cy="250" r="4" fill="#2EC4B6"/>
+  <line x1="63" y1="218" x2="55" y2="218" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="53" cy="218" r="4" fill="#2EC4B6"/>
+  <line x1="72" y1="196" x2="66" y2="188" stroke="#2EC4B6" stroke-width="3"/>
+  <circle cx="64" cy="186" r="4" fill="#2EC4B6"/>
+  <!-- RNA/DNA inside -->
+  <circle cx="95" cy="218" r="14" fill="#1A936F" opacity="0.7"/>
+  <!-- Highlight -->
+  <circle cx="86" cy="210" r="8" fill="#4DFFF0" opacity="0.2"/>
+  <!-- Label -->
+  <text x="95" y="278" fill="#2EC4B6" font-size="10" font-weight="bold" text-anchor="middle">Virus</text>
+  <text x="95" y="290" fill="#9CB4CC" font-size="8" text-anchor="middle">(with surface spikes)</text>
+
+  <!-- ══════ 4. SPIRAL BACTERIUM (Spirillum) — bottom-right ══════ -->
+  <path d="M258 175 C268 165 278 180 288 170 C298 160 308 175 318 165 C328 155 338 170 348 162"
+        fill="none" stroke="#FFBF46" stroke-width="10" stroke-linecap="round"/>
+  <!-- Flagella -->
+  <path d="M258 175 C248 182 242 196 235 200" fill="none" stroke="#FFBF46" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M348 162 C358 155 368 168 375 162" fill="none" stroke="#FFBF46" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Label -->
+  <text x="303" y="210" fill="#FFBF46" font-size="10" font-weight="bold" text-anchor="middle">Spiral bacterium</text>
+  <text x="303" y="222" fill="#9CB4CC" font-size="8" text-anchor="middle">(spirillum)</text>
+
+  <!-- Background floating dots for depth -->
+  <circle cx="178" cy="65" r="2" fill="white" opacity="0.2"/>
+  <circle cx="210" cy="95" r="2" fill="white" opacity="0.2"/>
+  <circle cx="188" cy="235" r="2" fill="white" opacity="0.2"/>
+  <circle cx="240" cy="260" r="2" fill="white" opacity="0.2"/>
+  <circle cx="165" cy="170" r="3" fill="#FF6B35" opacity="0.15"/>
+</svg>
