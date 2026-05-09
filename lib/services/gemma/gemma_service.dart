@@ -6,7 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/core/parsing/sdk_response_parser.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
+import '../../data/memory_dao.dart';
 import 'tool_definitions.dart';
 import 'tutor_response.dart';
 
@@ -33,12 +35,22 @@ const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
 const _devModelPath = String.fromEnvironment('DEV_MODEL_PATH', defaultValue: '');
 
 const _maxTokens = 2048;
+const _maxTurns = 6; // 3 full exchanges kept in working memory
 
 typedef DownloadProgressCallback = void Function(int percent);
+
+typedef _Turn = ({String role, String text});
 
 class GemmaService {
   InferenceModel? _model;
   bool _initializing = false;
+
+  // ── Working memory ─────────────────────────────────────────────────────────
+  final List<_Turn> _turns = [];
+  MemoryDao? _memoryDao;
+  String? _sessionId;
+  String _childId = 'default';
+  String _injectedMemory = '';
 
   bool get isReady => _model != null;
 
@@ -96,18 +108,64 @@ class GemmaService {
     }
   }
 
+  // ── Session lifecycle ──────────────────────────────────────────────────────
+
+  /// Call when the child opens a conversation. Creates a DB session row and
+  /// loads memory context for injection into subsequent generate() calls.
+  Future<void> startSession(String childId, Database db) async {
+    if (_sessionId != null) await endSession();
+
+    _childId = childId;
+    _memoryDao = MemoryDao(db);
+    _sessionId = await _memoryDao!.createSession(childId);
+    _turns.clear();
+    _injectedMemory = await _buildMemoryContext(childId);
+    debugPrint('[Memory] session started: $_sessionId, context=${_injectedMemory.length} chars');
+  }
+
+  /// Call when the child closes the conversation. Serializes the session turns
+  /// as a compact summary and saves to DB for future injection.
+  ///
+  /// NOTE: InferenceModel is a native FFI object and cannot cross isolate
+  /// boundaries. Compaction is pure-Dart JSON serialisation — no model call.
+  Future<void> endSession() async {
+    final sessionId = _sessionId;
+    final dao = _memoryDao;
+    if (sessionId == null || dao == null) return;
+
+    final summary = _compactSession();
+    await dao.closeSession(
+      sessionId: sessionId,
+      endedAt: DateTime.now().millisecondsSinceEpoch,
+      turnCount: _turns.length,
+      summaryJson: summary,
+    );
+    debugPrint('[Memory] session $sessionId closed — turns=${_turns.length} summary=$summary');
+
+    _turns.clear();
+    _sessionId = null;
+    _memoryDao = null;
+    _injectedMemory = '';
+    _childId = 'default';
+  }
+
+  // ── Generate ───────────────────────────────────────────────────────────────
+
   Stream<TutorResponse> generate(String prompt) async* {
     final model = _model;
     if (model == null) throw StateError('GemmaService.initialize() not called');
+
+    _addTurn(role: 'user', text: prompt);
+    final fullPrompt = _buildPromptWithContext(prompt);
 
     debugPrint('[Gemma] creating session (tools=${kGemmaTools.length})…');
     final session = await model.createSession(tools: kGemmaTools, systemInstruction: kSystemPrompt);
 
     try {
-      await session.addQueryChunk(Message.text(text: prompt, isUser: true));
+      await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
 
       final sw = Stopwatch()..start();
-      await session.getResponse(); // collects full response into lastRawResponse
+      await session.getResponse();
       debugPrint('[Gemma] response in ${sw.elapsed}');
 
       final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
@@ -118,29 +176,98 @@ class GemmaService {
       if (calls.isNotEmpty) {
         final call = calls.first;
         debugPrint('[Gemma] tool call: ${call.name} args=${call.args}');
-        final mode = switch (call.name) {
-          'socratic_teach' => TutorMode.socratic,
-          'direct_teach' => TutorMode.direct,
-          'encourage' => TutorMode.encourage,
-          _ => TutorMode.direct,
-        };
+
         final spokenText = (call.args['spoken_response'] as String?) ?? '';
         final langCode = call.args['language_code'] as String?;
-        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+
+        if (call.name == 'remember') {
+          final fact = (call.args['fact'] as String?) ?? '';
+          if (fact.isNotEmpty) {
+            final key = 'fact_${DateTime.now().millisecondsSinceEpoch}';
+            await _memoryDao?.saveFact(_childId, key, fact);
+            debugPrint('[Memory] saveFact key=$key value=$fact');
+          }
+          _addTurn(role: 'assistant', text: spokenText);
+          yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+        } else {
+          final mode = switch (call.name) {
+            'socratic_teach' => TutorMode.socratic,
+            'direct_teach' => TutorMode.direct,
+            'encourage' => TutorMode.encourage,
+            _ => TutorMode.direct,
+          };
+          _addTurn(role: 'assistant', text: spokenText);
+          yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+        }
       } else {
         // Fallback: model replied with plain text instead of a tool call.
-        // Extract text from the raw response and wrap as direct_teach.
         final text = raw != null ? _extractPlainText(raw) : '';
-        debugPrint('[Gemma] no tool call in response — falling back to direct');
-        yield TutorResponse(
-          mode: TutorMode.direct,
-          spokenText: text.isNotEmpty ? text : 'E get small wahala, try again.',
-        );
+        debugPrint('[Gemma] no tool call — falling back to direct');
+        final spokenText = text.isNotEmpty ? text : 'E get small wahala, try again.';
+        _addTurn(role: 'assistant', text: spokenText);
+        yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
       }
     } finally {
       await session.close();
     }
   }
+
+  Future<void> dispose() async {
+    await endSession();
+    await _model?.close();
+    _model = null;
+    _initializing = false;
+  }
+
+  // ── Private: working memory ────────────────────────────────────────────────
+
+  void _addTurn({required String role, required String text}) {
+    _turns.add((role: role, text: text));
+    if (_turns.length > _maxTurns) _turns.removeAt(0);
+  }
+
+  String _buildPromptWithContext(String currentPrompt) {
+    final buf = StringBuffer();
+
+    if (_injectedMemory.isNotEmpty) {
+      buf.writeln(_injectedMemory);
+      buf.writeln();
+    }
+
+    // Include prior turns (all but the user turn we just added).
+    final priorTurns = _turns.length > 1 ? _turns.sublist(0, _turns.length - 1) : <_Turn>[];
+    if (priorTurns.isNotEmpty) {
+      buf.writeln('[Recent conversation:]');
+      for (final t in priorTurns) {
+        final label = t.role == 'user' ? 'Child' : 'Gemma-San';
+        buf.writeln('$label: ${t.text}');
+      }
+      buf.writeln();
+    }
+
+    buf.write(currentPrompt);
+    return buf.toString();
+  }
+
+  /// Pure-Dart compaction — serialises user turns for cross-session injection.
+  String _compactSession() {
+    final userTurns = _turns
+        .where((t) => t.role == 'user')
+        .map((t) => t.text)
+        .take(5)
+        .toList();
+    return jsonEncode({'user_turns': userTurns, 'turn_count': _turns.length});
+  }
+
+  Future<String> _buildMemoryContext(String childId) async {
+    final dao = _memoryDao;
+    if (dao == null) return '';
+    final facts = await dao.allFacts(childId);
+    final sessions = await dao.recentSessions(childId, limit: 3);
+    return MemoryDao.buildMemoryContext(facts, sessions);
+  }
+
+  // ── Private: model download & loading ─────────────────────────────────────
 
   static String _extractPlainText(String raw) {
     try {
@@ -157,21 +284,11 @@ class GemmaService {
     }
   }
 
-  Future<void> dispose() async {
-    await _model?.close();
-    _model = null;
-    _initializing = false;
-  }
-
-  // ── Private helpers ────────────────────────────────────────────────────────
-
   static Future<String> _localModelPath() async {
     final dir = await getApplicationDocumentsDirectory();
     return '${dir.path}/$_modelFilename';
   }
 
-  /// Marker written next to the model file only after a successful download.
-  /// Its presence means the model file is complete and safe to load.
   static String _markerPath(String modelPath) => '$modelPath.complete';
 
   static bool _isDownloadComplete(String modelPath) =>
@@ -225,7 +342,7 @@ class GemmaService {
           }
       }
 
-      final contentLength = response.contentLength; // -1 if server omits it
+      final contentLength = response.contentLength;
       sink = file.openWrite();
       int received = 0;
       int lastReported = -1;
@@ -248,17 +365,11 @@ class GemmaService {
       await sink.close();
       sink = null;
 
-      // Write completion marker — only reached if stream finished without error.
       await File(_markerPath(savePath)).writeAsString('ok');
-
       onProgress?.call(100);
-      debugPrint(
-        '[Gemma] download finished — '
-        '${(received / 1024 / 1024).toStringAsFixed(1)} MB',
-      );
+      debugPrint('[Gemma] download finished — ${(received / 1024 / 1024).toStringAsFixed(1)} MB');
     } catch (e) {
       await sink?.close().catchError((_) {});
-      // Delete both the partial model and any stale marker.
       await _cleanPartial(savePath);
       rethrow;
     } finally {

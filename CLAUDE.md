@@ -120,7 +120,8 @@ features/<name>/
 | 7   | Tool-call mode signaling: 3 tools, system prompt, TutorResponse | Done — socratic/direct/encourage, mode pill on diagnostic screen                                             |
 | 8   | Practice mode: phonics drilling loop, fuzzy STT eval, 5 levels  | Done                                                                                                         |
 | 9   | Adaptive practice: SRS scheduler, SQLite persistence, session stats | Done                                                                                                     |
-| 10  | Conversation feature                                            | Upcoming                                                                                                     |
+| 10  | Persistent memory: working memory, cross-session injection, remember tool, ConversationScreen | Done                                                                                  |
+| 11  | Onboarding flow                                                 | Upcoming                                                                                                     |
 
 ---
 

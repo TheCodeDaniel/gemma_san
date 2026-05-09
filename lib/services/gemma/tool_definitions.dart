@@ -12,8 +12,11 @@ Rules:
 - Call socratic_teach when the child is working through a concept step by step. Use stage=probe to explore what they know, stage=build to deepen understanding, stage=resolve to confirm they got it.
 - Call direct_teach when the child asks a direct factual question, or says they don't know twice in a row.
 - Call encourage when the child is tired, frustrated, or struggling emotionally.
+- Call remember when the child tells you their name, age, hobby, family members, or any personal fact worth keeping across sessions. Store the fact and give a friendly spoken reply.
 
-Keep spoken_response short: 4–6 sentences for teaching, 1–2 sentences for encourage.
+Keep spoken_response short: 4–6 sentences for teaching, 1–2 sentences for encourage and remember.
+
+If memory context appears in square brackets at the start of the message, use it naturally to personalise your reply — do not repeat it back verbatim.
 ''';
 
 const _languageCodeParam = {
@@ -72,6 +75,25 @@ const kGemmaTools = [
         ..._languageCodeParam,
       },
       'required': ['spoken_response', 'language_code'],
+    },
+  ),
+  Tool(
+    name: 'remember',
+    description: 'Store a personal fact about the child to recall in future sessions.',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'fact': {
+          'type': 'string',
+          'description': 'The fact to remember, phrased as a statement (e.g. "child likes football", "child\'s name is Amara", "child is 8 years old").',
+        },
+        'spoken_response': {
+          'type': 'string',
+          'description': 'Warm acknowledgement to say out loud to the child (1–2 sentences).',
+        },
+        ..._languageCodeParam,
+      },
+      'required': ['fact', 'spoken_response', 'language_code'],
     },
   ),
 ];

@@ -9,6 +9,7 @@ import '../../services/gemma/gemma_service.dart';
 import '../../services/gemma/tutor_response.dart';
 import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
+import '../conversation/conversation_screen.dart';
 import '../practice/practice_screen.dart';
 
 class DiagnosticScreen extends StatefulWidget {
@@ -139,6 +140,18 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
     }
   }
 
+  void _openConversation() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ConversationScreen(
+          gemmaService: _gemmaService,
+          sttService: _sttService,
+          ttsService: _ttsService,
+        ),
+      ),
+    );
+  }
+
   void _openPractice() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => PracticeScreen(sttService: _sttService)),
@@ -266,7 +279,13 @@ class _DiagnosticScreenState extends State<DiagnosticScreen> {
               ],
               if (_bothReady && !_loading) ...[
                 const SizedBox(height: 8),
-                FilledButton.tonal(onPressed: _openPractice, child: const Text('Practice')),
+                Row(
+                  children: [
+                    Expanded(child: FilledButton.tonal(onPressed: _openConversation, child: const Text('Chat'))),
+                    const SizedBox(width: 8),
+                    Expanded(child: FilledButton.tonal(onPressed: _openPractice, child: const Text('Practice'))),
+                  ],
+                ),
               ],
               const SizedBox(height: 12),
               Expanded(
