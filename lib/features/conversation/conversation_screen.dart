@@ -22,11 +22,15 @@ class ConversationScreen extends StatefulWidget {
     required this.gemmaService,
     required this.sttService,
     required this.ttsService,
+    this.childId = 'default',
+    this.ageRange,
   });
 
   final GemmaService gemmaService;
   final SttService sttService;
   final TtsService ttsService;
+  final String childId;
+  final String? ageRange;
 
   @override
   State<ConversationScreen> createState() => _ConversationScreenState();
@@ -80,7 +84,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   Future<void> _initSession() async {
     final db = await AppDatabase.get();
-    await widget.gemmaService.startSession('default', db);
+    await widget.gemmaService.startSession(
+      widget.childId,
+      db,
+      ageRange: widget.ageRange,
+    );
     if (mounted) setState(() => _sessionReady = true);
   }
 

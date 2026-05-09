@@ -51,6 +51,7 @@ class GemmaService {
   MemoryDao? _memoryDao;
   String? _sessionId;
   String _childId = 'default';
+  String? _ageRange;
   String _injectedMemory = '';
 
   bool get isReady => _model != null;
@@ -113,10 +114,11 @@ class GemmaService {
 
   /// Call when the child opens a conversation. Creates a DB session row and
   /// loads memory context for injection into subsequent generate() calls.
-  Future<void> startSession(String childId, Database db) async {
+  Future<void> startSession(String childId, Database db, {String? ageRange}) async {
     if (_sessionId != null) await endSession();
 
     _childId = childId;
+    _ageRange = ageRange;
     _memoryDao = MemoryDao(db);
     _sessionId = await _memoryDao!.createSession(childId);
     _turns.clear();
@@ -148,6 +150,7 @@ class GemmaService {
     _memoryDao = null;
     _injectedMemory = '';
     _childId = 'default';
+    _ageRange = null;
   }
 
   // ── Generate ───────────────────────────────────────────────────────────────
@@ -278,7 +281,10 @@ class GemmaService {
     if (dao == null) return '';
     final facts = await dao.allFacts(childId);
     final sessions = await dao.recentSessions(childId, limit: 3);
-    return MemoryDao.buildMemoryContext(facts, sessions);
+    final memCtx = MemoryDao.buildMemoryContext(facts, sessions);
+    if (_ageRange == null) return memCtx;
+    final ageCtx = '[Child age group: $_ageRange — match vocabulary and examples to this age]\n';
+    return memCtx.isEmpty ? ageCtx : '$ageCtx$memCtx';
   }
 
   // ── Private: model download & loading ─────────────────────────────────────

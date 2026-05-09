@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -9,17 +10,19 @@ import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
 import '../conversation/conversation_screen.dart';
 import '../diagnostic/diagnostic_screen.dart';
+import '../onboarding/age_picker_screen.dart';
+import '../onboarding/session_provider.dart';
 import '../practice/practice_screen.dart';
 import 'widgets/mama_san_widget.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _gemmaService = GemmaService();
   final _sttService = SttService();
   final _ttsService = TtsService();
@@ -99,14 +102,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _goConversation() {
     if (!_ready) return;
+    final childId = ref.read(currentAvatarIdProvider);
+    final ageRange = ref.read(currentAgeRangeProvider);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ConversationScreen(
           gemmaService: _gemmaService,
           sttService: _sttService,
           ttsService: _ttsService,
+          childId: childId,
+          ageRange: ageRange,
         ),
       ),
+    );
+  }
+
+  void _goSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AgePickerScreen(isFromSettings: true)),
     );
   }
 
@@ -135,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _TopBar(onDebugLongPress: _goDiagnostic),
+              _TopBar(onDebugLongPress: _goDiagnostic, onSettings: _goSettings),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Owl ──────────────────────────────────────────────────────
@@ -202,16 +215,40 @@ class _HomeScreenState extends State<HomeScreen> {
 // ── Top bar ────────────────────────────────────────────────────────────────
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.onDebugLongPress});
+  const _TopBar({required this.onDebugLongPress, required this.onSettings});
   final VoidCallback onDebugLongPress;
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: GestureDetector(
-        onLongPress: onDebugLongPress,
-        child: Text('Gemma-San', style: AppText.title(color: AppColors.terracotta)),
+      child: Row(
+        children: [
+          const SizedBox(width: AppSpacing.minTap),
+          Expanded(
+            child: GestureDetector(
+              onLongPress: onDebugLongPress,
+              child: Text(
+                'Gemma-San',
+                style: AppText.title(color: AppColors.terracotta),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onSettings,
+            child: SizedBox(
+              width: AppSpacing.minTap,
+              height: AppSpacing.minTap,
+              child: Icon(
+                PhosphorIconsRegular.slidersHorizontal,
+                color: AppColors.charcoal.withValues(alpha: 0.5),
+                size: 22,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
