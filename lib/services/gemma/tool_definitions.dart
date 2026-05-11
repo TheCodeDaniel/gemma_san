@@ -89,7 +89,8 @@ final kGemmaTools = [
       'properties': {
         'fact': {
           'type': 'string',
-          'description': 'The fact to remember, phrased as a statement (e.g. "child likes football", "child\'s name is Amara", "child is 8 years old").',
+          'description':
+              'The fact to remember, phrased as a statement (e.g. "child likes football", "child\'s name is Amara", "child is 8 years old").',
         },
         'spoken_response': {
           'type': 'string',
@@ -102,7 +103,8 @@ final kGemmaTools = [
   ),
   Tool(
     name: 'show_illustration',
-    description: 'Display a pre-built illustration alongside a spoken explanation. '
+    description:
+        'Display a pre-built illustration alongside a spoken explanation. '
         'ONLY call this when the child asks about one of these exact topic IDs — '
         'do not guess or approximate: ${IllustrationRegistry.allTopicIds.join(", ")}.',
     parameters: {

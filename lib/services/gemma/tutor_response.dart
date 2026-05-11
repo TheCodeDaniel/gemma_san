@@ -11,9 +11,11 @@ class TutorResponse {
 
   final TutorMode mode;
   final String spokenText;
+
   /// BCP-47 language tag from the model (e.g. 'en', 'ha', 'yo', 'ig').
   /// Null means unknown — TTS will keep its current language.
   final String? languageCode;
+
   /// If set, the conversation UI should render the matching SVG inline.
   /// Null means no illustration for this response.
   final String? illustrationTopicId;

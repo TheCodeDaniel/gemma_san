@@ -205,7 +205,12 @@ class GemmaService {
             debugPrint('[Memory] saveFact key=$key value=$fact');
           }
           _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+          yield TutorResponse(
+            mode: TutorMode.direct,
+            spokenText: spokenText,
+            languageCode: langCode,
+            metadata: call.args,
+          );
         } else {
           final mode = switch (call.name) {
             'socratic_teach' => TutorMode.socratic,
@@ -268,11 +273,7 @@ class GemmaService {
 
   /// Pure-Dart compaction — serialises user turns for cross-session injection.
   String _compactSession() {
-    final userTurns = _turns
-        .where((t) => t.role == 'user')
-        .map((t) => t.text)
-        .take(5)
-        .toList();
+    final userTurns = _turns.where((t) => t.role == 'user').map((t) => t.text).take(5).toList();
     return jsonEncode({'user_turns': userTurns, 'turn_count': _turns.length});
   }
 

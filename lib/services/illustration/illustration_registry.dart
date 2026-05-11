@@ -34,6 +34,5 @@ class IllustrationRegistry {
   static bool hasIllustration(String topicId) => allTopicIds.contains(topicId);
 
   /// Returns the asset path for [topicId], or null if unrecognised.
-  static String? getAssetPath(String topicId) =>
-      hasIllustration(topicId) ? '$_base/$topicId.svg' : null;
+  static String? getAssetPath(String topicId) => hasIllustration(topicId) ? '$_base/$topicId.svg' : null;
 }

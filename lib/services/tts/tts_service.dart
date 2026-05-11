@@ -76,9 +76,9 @@ class TtsService {
   Future<void> _setTtsLanguage(String langCode) async {
     final candidates = [
       '$langCode-$_deviceCountry', // e.g. en-NG, ha-NG
-      langCode,                    // e.g. en, ha
-      'en-$_deviceCountry',        // en-NG fallback
-      'en-US',                     // last resort
+      langCode, // e.g. en, ha
+      'en-$_deviceCountry', // en-NG fallback
+      'en-US', // last resort
     ];
     for (final lang in candidates) {
       if (await _tts.setLanguage(lang) == 1) {
