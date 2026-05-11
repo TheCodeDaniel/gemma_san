@@ -28,7 +28,12 @@ class GemmaSanApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Gemma-San', theme: buildAppTheme(), home: const _AppRouter());
+    return MaterialApp(
+      title: 'Gemma-San',
+      theme: buildAppTheme(),
+      home: const _AppRouter(),
+      debugShowCheckedModeBanner: false,
+    );
   }
 }
 

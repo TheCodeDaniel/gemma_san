@@ -12,17 +12,13 @@ class AgePickerScreen extends ConsumerWidget {
   final bool isFromSettings;
 
   static const _ages = [
-    (label: '6 – 7',   emoji: '🌱', hint: 'Just starting out'),
-    (label: '8 – 9',   emoji: '⭐', hint: 'Growing learner'),
+    (label: '6 – 7', emoji: '🌱', hint: 'Just starting out'),
+    (label: '8 – 9', emoji: '⭐', hint: 'Growing learner'),
     (label: '10 – 11', emoji: '📖', hint: 'Getting smarter'),
-    (label: '12+',     emoji: '🚀', hint: 'Almost a pro'),
+    (label: '12+', emoji: '🚀', hint: 'Almost a pro'),
   ];
 
-  Future<void> _onPick(
-    BuildContext context,
-    WidgetRef ref,
-    String range,
-  ) async {
+  Future<void> _onPick(BuildContext context, WidgetRef ref, String range) async {
     await OnboardingPrefs.setAgeRange(range);
     ref.read(currentAgeRangeProvider.notifier).state = range;
 
@@ -30,9 +26,7 @@ class AgePickerScreen extends ConsumerWidget {
     if (isFromSettings) {
       Navigator.of(context).pop();
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const PermissionsScreen()),
-      );
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const PermissionsScreen()));
     }
   }
 
@@ -54,8 +48,7 @@ class AgePickerScreen extends ConsumerWidget {
                     width: AppSpacing.minTap,
                     height: AppSpacing.minTap,
                     alignment: Alignment.center,
-                    child: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: AppColors.charcoal, size: 20),
+                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.charcoal, size: 20),
                   ),
                 ),
               ],
@@ -97,12 +90,7 @@ class AgePickerScreen extends ConsumerWidget {
 }
 
 class _AgeCard extends StatefulWidget {
-  const _AgeCard({
-    required this.label,
-    required this.emoji,
-    required this.hint,
-    required this.onTap,
-  });
+  const _AgeCard({required this.label, required this.emoji, required this.hint, required this.onTap});
 
   final String label, emoji, hint;
   final VoidCallback onTap;
@@ -119,9 +107,7 @@ class _AgeCardState extends State<_AgeCard> with SingleTickerProviderStateMixin 
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.94).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _scale = Tween<double>(begin: 1.0, end: 0.94).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
@@ -155,11 +141,7 @@ class _AgeCardState extends State<_AgeCard> with SingleTickerProviderStateMixin 
               const SizedBox(height: AppSpacing.sm),
               Text(widget.label, style: AppText.title()),
               const SizedBox(height: 2),
-              Text(
-                widget.hint,
-                style: AppText.caption(),
-                textAlign: TextAlign.center,
-              ),
+              Text(widget.hint, style: AppText.caption(), textAlign: TextAlign.center),
             ],
           ),
         ),

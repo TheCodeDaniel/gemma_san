@@ -52,7 +52,10 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
     setState(() => _tappedId = id);
     ref.read(currentAvatarIdProvider.notifier).state = id;
 
-    await Future.delayed(const Duration(milliseconds: 220));
+    await Future.wait([
+      OnboardingPrefs.setOnboarded(),
+      Future.delayed(const Duration(milliseconds: 220)),
+    ]);
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
