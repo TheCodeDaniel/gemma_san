@@ -172,9 +172,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
-              Text('Mama San', style: AppText.caption(color: AppColors.terracotta)),
+              Text('Gemma-San', style: AppText.caption(color: AppColors.terracotta)),
               const SizedBox(height: 6),
-              Text('Welcome back, my pikin!', style: AppText.heading(), textAlign: TextAlign.center),
+              Text('Welcome back!', style: AppText.heading(), textAlign: TextAlign.center),
               const SizedBox(height: 6),
               Text(
                 'What do you want to do today?',
@@ -190,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               AppButton(
-                label: 'Make I teach you',
+                label: 'Start Learning',
                 icon: PhosphorIconsRegular.chatsCircle,
                 color: AppColors.terracotta,
                 enabled: _ready,

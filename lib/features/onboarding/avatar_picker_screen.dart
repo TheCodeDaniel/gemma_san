@@ -74,10 +74,10 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.lg),
-              Text('Who you be today?', style: AppText.heading()),
+              Text('Pick your avatar', style: AppText.heading()),
               const SizedBox(height: 6),
               Text(
-                'Pick your character for this session.',
+                'Choose who you\'ll be in this session.',
                 style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.55)),
               ),
               const SizedBox(height: AppSpacing.xl),

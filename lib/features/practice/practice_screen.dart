@@ -12,7 +12,6 @@ import '../home/widgets/mama_san_widget.dart';
 import 'practice_service.dart';
 import 'widgets/big_mic_button.dart';
 import 'widgets/feedback_banner.dart';
-import 'widgets/practice_header.dart';
 import 'widgets/summary_screen.dart';
 import 'widgets/word_card.dart';
 
@@ -39,11 +38,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
   bool _loaded = false;
 
   OwlState get _owlState => switch (_phase) {
-        _Phase.recording => OwlState.listening,
-        _Phase.evaluating => OwlState.thinking,
-        _Phase.feedback => _lastCorrect ? OwlState.speaking : OwlState.idle,
-        _Phase.ready => OwlState.idle,
-      };
+    _Phase.recording => OwlState.listening,
+    _Phase.evaluating => OwlState.thinking,
+    _Phase.feedback => _lastCorrect ? OwlState.speaking : OwlState.idle,
+    _Phase.ready => OwlState.idle,
+  };
 
   @override
   void initState() {
@@ -133,16 +132,28 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.warmCream,
+      appBar: AppBar(
+        title: const Text('Practice'),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: AppSpacing.md),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.terracottaLight,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _service.tried == 0 ? 'Ready' : '${_service.score} / ${_service.tried}',
+              style: AppText.label(color: AppColors.terracotta).copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(
             children: [
-              PracticeHeader(
-                score: _service.score,
-                tried: _service.tried,
-                onEnd: () => Navigator.of(context).pop(),
-              ),
               const SizedBox(height: AppSpacing.sm),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -161,8 +172,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 350),
                     transitionBuilder: (child, animation) {
-                      final rotate = Tween(begin: math.pi, end: 0.0)
-                          .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
+                      final rotate = Tween(
+                        begin: math.pi,
+                        end: 0.0,
+                      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
                       return AnimatedBuilder(
                         animation: rotate,
                         child: child,
@@ -202,10 +215,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
   }
 
   static String _phaseHint(_Phase phase) => switch (phase) {
-        _Phase.ready => 'Tap the mic and say the word',
-        _Phase.recording => 'Listening… tap to stop',
-        _Phase.evaluating => 'Checking…',
-        _Phase.feedback => '',
-      };
+    _Phase.ready => 'Tap the mic and say the word',
+    _Phase.recording => 'Listening… tap to stop',
+    _Phase.evaluating => 'Checking…',
+    _Phase.feedback => '',
+  };
 }
-

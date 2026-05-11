@@ -34,29 +34,18 @@ class AgePickerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.warmCream,
+      appBar: isFromSettings ? AppBar(backgroundColor: AppColors.warmCream, elevation: 0) : null,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isFromSettings) ...[
-                const SizedBox(height: AppSpacing.sm),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: AppSpacing.minTap,
-                    height: AppSpacing.minTap,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.charcoal, size: 20),
-                  ),
-                ),
-              ],
               const SizedBox(height: AppSpacing.lg),
-              Text('How old you be?', style: AppText.heading()),
+              Text('How old are you?', style: AppText.heading()),
               const SizedBox(height: 6),
               Text(
-                'I go teach you the right way for your age.',
+                'I\'ll tailor my teaching to your age group.',
                 style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.55)),
               ),
               const SizedBox(height: AppSpacing.xl),

@@ -3,7 +3,7 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import '../illustration/illustration_registry.dart';
 
 const kSystemPrompt = '''
-You are Gemma-San, a warm and patient tutor for children across Africa.
+You are Gemma-San, a warm and patient AI tutor for children.
 
 Always reply in the same language the child used.
 Set language_code to the BCP-47 code of the language you used (e.g. en, ha, yo, ig, sw, fr, am, zu, pcm).

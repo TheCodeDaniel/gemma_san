@@ -13,7 +13,6 @@ import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
 import '../home/widgets/mama_san_widget.dart';
 import 'widgets/chat_bubble.dart';
-import 'widgets/conv_header.dart';
 import 'widgets/conv_input_row.dart';
 import 'widgets/mode_pill.dart';
 
@@ -195,10 +194,21 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.warmCream,
+      appBar: AppBar(
+        title: const Text('Conversation'),
+        actions: [
+          if (_speaking)
+            IconButton(
+              icon: const Icon(Icons.volume_off_rounded, color: AppColors.terracotta),
+              onPressed: widget.ttsService.stop,
+            )
+          else
+            const SizedBox(width: AppSpacing.minTap),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            ConvHeader(speaking: _speaking, onStopTts: widget.ttsService.stop),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Column(
@@ -253,7 +263,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.terracotta),
                           ),
                           const SizedBox(width: 8),
-                          Text('Mama San is thinking…', style: AppText.caption()),
+                          Text('Gemma-San is thinking…', style: AppText.caption()),
                         ],
                       ),
                     )

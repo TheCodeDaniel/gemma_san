@@ -16,10 +16,10 @@ class SummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final pct = stats.itemsPracticed == 0 ? 0 : (stats.correct * 100 ~/ stats.itemsPracticed);
     final message = pct == 100
-        ? 'You don pass all! You too much!'
+        ? 'You got them all! Amazing work!'
         : pct >= 70
-        ? 'Good work! Practice more, you go shine!'
-        : 'No worry, try am again — you go get am!';
+        ? 'Great job! Keep practicing to get even better!'
+        : 'No worries — try again, you\'ve got this!';
 
     final scoreColor = pct == 100
         ? AppColors.deepGreen

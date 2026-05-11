@@ -82,13 +82,13 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'I need to hear you!',
+                'Microphone Access',
                 style: AppText.heading(),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'So I fit hear you when you talk,\nI need to use the phone mic.',
+                'So I can hear you speak,\nI need access to your microphone.',
                 style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.6)),
                 textAlign: TextAlign.center,
               ),
@@ -97,7 +97,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
               // Primary CTA
               _PillButton(
-                label: 'Okay, give access',
+                label: 'Allow Microphone',
                 color: AppColors.terracotta,
                 loading: _requesting,
                 onTap: _requesting ? null : _requestMic,

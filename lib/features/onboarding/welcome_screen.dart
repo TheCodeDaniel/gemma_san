@@ -21,13 +21,13 @@ class WelcomeScreen extends StatelessWidget {
               const MamaSanWidget(state: OwlState.idle, size: 200),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Hi! I be Mama San.',
+                'Hi! I\'m Gemma-San.',
                 style: AppText.heading(),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'I dey here to teach you, my pikin.\nAsk me anything — I go answer!',
+                'I\'m here to teach and learn with you.\nAsk me anything — let\'s explore together!',
                 style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.6)),
                 textAlign: TextAlign.center,
               ),
@@ -96,7 +96,7 @@ class _WelcomeButtonState extends State<_WelcomeButton>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Make we start', style: AppText.button()),
+              Text('Get Started', style: AppText.button()),
               const SizedBox(width: AppSpacing.sm),
               const Icon(PhosphorIconsRegular.arrowRight, color: Colors.white, size: 20),
             ],
