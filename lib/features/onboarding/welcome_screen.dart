@@ -20,11 +20,7 @@ class WelcomeScreen extends StatelessWidget {
               const Spacer(flex: 2),
               const MamaSanWidget(state: OwlState.idle, size: 200),
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Hi! I\'m Gemma-San.',
-                style: AppText.heading(),
-                textAlign: TextAlign.center,
-              ),
+              Text('Hi! I\'m Gemma-San.', style: AppText.heading(), textAlign: TextAlign.center),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'I\'m here to teach and learn with you.\nAsk me anything — let\'s explore together!',
@@ -33,9 +29,8 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const Spacer(flex: 3),
               _WelcomeButton(
-                onTap: () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const AgePickerScreen()),
-                ),
+                onTap: () =>
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AgePickerScreen())),
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
@@ -54,8 +49,7 @@ class _WelcomeButton extends StatefulWidget {
   State<_WelcomeButton> createState() => _WelcomeButtonState();
 }
 
-class _WelcomeButtonState extends State<_WelcomeButton>
-    with SingleTickerProviderStateMixin {
+class _WelcomeButtonState extends State<_WelcomeButton> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _scale;
 
@@ -63,9 +57,7 @@ class _WelcomeButtonState extends State<_WelcomeButton>
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
@@ -96,7 +88,7 @@ class _WelcomeButtonState extends State<_WelcomeButton>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Get Started', style: AppText.button()),
+              Text('Let\'s start', style: AppText.button()),
               const SizedBox(width: AppSpacing.sm),
               const Icon(PhosphorIconsRegular.arrowRight, color: Colors.white, size: 20),
             ],

@@ -17,21 +17,21 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
   String? _tappedId;
 
   static const _avatars = [
-    (emoji: '🦁', id: 'lion',      name: 'Lion'),
-    (emoji: '🐘', id: 'elephant',  name: 'Elephant'),
+    (emoji: '🦁', id: 'lion', name: 'Lion'),
+    (emoji: '🐘', id: 'elephant', name: 'Elephant'),
     (emoji: '🦋', id: 'butterfly', name: 'Butterfly'),
-    (emoji: '🐒', id: 'monkey',    name: 'Monkey'),
-    (emoji: '🦜', id: 'parrot',    name: 'Parrot'),
-    (emoji: '🐠', id: 'fish',      name: 'Fish'),
+    (emoji: '🐒', id: 'monkey', name: 'Monkey'),
+    (emoji: '🦜', id: 'parrot', name: 'Parrot'),
+    (emoji: '🐠', id: 'fish', name: 'Fish'),
   ];
 
   static const _avatarColors = [
     AppColors.terracottaLight,
     AppColors.deepGreenLight,
-    Color(0xFFFFF3CC),  // soft yellow
+    Color(0xFFFFF3CC), // soft yellow
     AppColors.warmCreamDark,
-    Color(0xFFD4EAD4),  // soft sage
-    Color(0xFFCCE5FF),  // soft blue
+    Color(0xFFD4EAD4), // soft sage
+    Color(0xFFCCE5FF), // soft blue
   ];
 
   @override
@@ -52,15 +52,10 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
     setState(() => _tappedId = id);
     ref.read(currentAvatarIdProvider.notifier).state = id;
 
-    await Future.wait([
-      OnboardingPrefs.setOnboarded(),
-      Future.delayed(const Duration(milliseconds: 220)),
-    ]);
+    await Future.wait([OnboardingPrefs.setOnboarded(), Future.delayed(const Duration(milliseconds: 220))]);
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
@@ -77,7 +72,7 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
               Text('Pick your avatar', style: AppText.heading()),
               const SizedBox(height: 6),
               Text(
-                'Choose who you\'ll be in this session.',
+                'Who do you want to be today ?',
                 style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.55)),
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -140,9 +135,7 @@ class _AvatarCard extends StatelessWidget {
             color: selected ? bgColor : Colors.white,
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
             border: Border.all(
-              color: selected
-                  ? AppColors.terracotta
-                  : AppColors.warmCreamDark,
+              color: selected ? AppColors.terracotta : AppColors.warmCreamDark,
               width: selected ? 2.5 : 1.5,
             ),
             boxShadow: selected ? AppShadows.floating : AppShadows.card,

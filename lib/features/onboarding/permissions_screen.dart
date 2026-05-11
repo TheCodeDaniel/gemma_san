@@ -17,9 +17,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   bool _requesting = false;
 
   void _proceed() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const AvatarPickerScreen()),
-    );
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AvatarPickerScreen()));
   }
 
   Future<void> _requestMic() async {
@@ -29,10 +27,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     if (status.isDenied || status.isPermanentlyDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'No worries! You can still type your answers.',
-            style: AppText.body(color: Colors.white),
-          ),
+          content: Text('No worries! You can still type your answers.', style: AppText.body(color: Colors.white)),
           backgroundColor: AppColors.charcoal,
           duration: const Duration(seconds: 2),
         ),
@@ -70,22 +65,14 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                         boxShadow: AppShadows.button(AppColors.terracotta),
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
-                        PhosphorIconsRegular.microphone,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      child: const Icon(PhosphorIconsRegular.microphone, color: Colors.white, size: 22),
                     ),
                   ),
                 ],
               ),
 
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Microphone Access',
-                style: AppText.heading(),
-                textAlign: TextAlign.center,
-              ),
+              Text('I need to hear you', style: AppText.heading(), textAlign: TextAlign.center),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'So I can hear you speak,\nI need access to your microphone.',
@@ -97,7 +84,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
               // Primary CTA
               _PillButton(
-                label: 'Allow Microphone',
+                label: 'Okay, Give Access',
                 color: AppColors.terracotta,
                 loading: _requesting,
                 onTap: _requesting ? null : _requestMic,
@@ -115,10 +102,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                     borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    'Not now',
-                    style: AppText.button(color: AppColors.charcoal.withValues(alpha: 0.5)),
-                  ),
+                  child: Text('Not now', style: AppText.button(color: AppColors.charcoal.withValues(alpha: 0.5))),
                 ),
               ),
 
@@ -132,12 +116,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 }
 
 class _PillButton extends StatefulWidget {
-  const _PillButton({
-    required this.label,
-    required this.color,
-    required this.onTap,
-    this.loading = false,
-  });
+  const _PillButton({required this.label, required this.color, required this.onTap, this.loading = false});
 
   final String label;
   final Color color;
@@ -156,9 +135,7 @@ class _PillButtonState extends State<_PillButton> with SingleTickerProviderState
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override

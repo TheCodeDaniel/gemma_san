@@ -45,7 +45,7 @@ class AgePickerScreen extends ConsumerWidget {
               Text('How old are you?', style: AppText.heading()),
               const SizedBox(height: 6),
               Text(
-                'I\'ll tailor my teaching to your age group.',
+                'I will teach you by your age',
                 style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.55)),
               ),
               const SizedBox(height: AppSpacing.xl),
