@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
@@ -6,7 +7,19 @@ import 'features/onboarding/avatar_picker_screen.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/welcome_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarContrastEnforced: false,
+    ),
+  );
   runApp(const ProviderScope(child: GemmaSanApp()));
 }
 
@@ -15,11 +28,7 @@ class GemmaSanApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Gemma-San',
-      theme: buildAppTheme(),
-      home: const _AppRouter(),
-    );
+    return MaterialApp(title: 'Gemma-San', theme: buildAppTheme(), home: const _AppRouter());
   }
 }
 
@@ -37,10 +46,7 @@ class _AppRouterState extends State<_AppRouter> {
       future: OnboardingPrefs.hasOnboarded,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Scaffold(
-            backgroundColor: Color(0xFFF5ECD7),
-            body: SizedBox.shrink(),
-          );
+          return const Scaffold(backgroundColor: Color(0xFFF5ECD7), body: SizedBox.shrink());
         }
         return snapshot.data! ? const AvatarPickerScreen() : const WelcomeScreen();
       },
