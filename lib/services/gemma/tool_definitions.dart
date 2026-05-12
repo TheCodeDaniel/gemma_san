@@ -33,21 +33,52 @@ const _languageCodeParam = {
 final kGemmaTools = [
   Tool(
     name: 'socratic_teach',
-    description: 'Guide the child to discover the answer themselves through questions.',
+    description:
+        'Teach by asking ONE guiding question per turn. '
+        'NEVER give the full answer — lead the child to discover it. '
+        'Stage rules: '
+        'probe = ask what the child already knows or thinks (use concrete, '
+        'answerable questions like "When you see plant, wetin you think e dey eat?" '
+        'NOT vague ones like "What do you know about this?"). '
+        'build = affirm what\'s correct in the child\'s answer, add ONE small '
+        'new fact or hint, then ask the next guiding question. '
+        'resolve = briefly summarize what the child figured out, then ask a '
+        'comprehension check that requires APPLYING the concept, not just '
+        'repeating it.',
     parameters: {
       'type': 'object',
       'properties': {
         'spoken_response': {
           'type': 'string',
-          'description': 'What to say out loud — a guiding question or hint, in the child\'s language.',
+          'description':
+              'What to say out loud. MUST contain exactly one question for '
+              'the child to answer. Keep to 2-4 sentences maximum. Use the '
+              'child\'s language. Use Nigerian examples (yam, NEPA, danfo, '
+              'akara, generator) where possible.',
         },
         'stage': {
           'type': 'string',
           'enum': ['probe', 'build', 'resolve'],
-          'description': 'probe: explore prior knowledge. build: deepen understanding. resolve: confirm understanding.',
+          'description':
+              'probe: first turn on a new topic — discover what the child '
+              'already knows. '
+              'build: middle turns — add one fact, ask one question, repeat. '
+              'resolve: child has reached understanding — summarize and '
+              'test with an application question.',
         },
-        'target_concept': {'type': 'string', 'description': 'The concept being taught this turn.'},
-        'next_concept_step': {'type': 'string', 'description': 'The micro-step towards the concept to reach next.'},
+        'target_concept': {
+          'type': 'string',
+          'description':
+              'The specific concept being taught (e.g., "photosynthesis", '
+              '"plants need sunlight to make food").',
+        },
+        'next_concept_step': {
+          'type': 'string',
+          'description':
+              'The ONE micro-step the child needs to grasp next before '
+              'reaching the target concept (e.g., "plants need sunlight" '
+              'before "plants use sunlight to make food").',
+        },
         ..._languageCodeParam,
       },
       'required': ['spoken_response', 'stage', 'target_concept', 'next_concept_step', 'language_code'],
@@ -55,17 +86,35 @@ final kGemmaTools = [
   ),
   Tool(
     name: 'direct_teach',
-    description: 'Give a clear direct explanation for factual questions or when the child is stuck.',
+    description:
+        'Give a clear direct explanation. Use this ONLY when: '
+        '(1) the child asks a pure fact question ("what is the capital of..."), '
+        '(2) the child has said "I don\'t know" or equivalent twice in a row, '
+        '(3) the child explicitly asks for the answer ("just tell me"), or '
+        '(4) the child shows frustration (very short responses, "abeg"). '
+        'For all other questions, use socratic_teach instead.',
     parameters: {
       'type': 'object',
       'properties': {
         'subject': {
           'type': 'string',
           'description':
-              'The main topic or concept being explained — a short noun phrase (e.g. "photosynthesis", "water cycle", "addition").',
+              'The main topic being explained — short noun phrase '
+              '(e.g., "photosynthesis", "water cycle").',
         },
-        'spoken_response': {'type': 'string', 'description': 'Clear explanation in the child\'s language.'},
-        'follow_up_check': {'type': 'string', 'description': 'A simple question to check the child understood.'},
+        'spoken_response': {
+          'type': 'string',
+          'description':
+              'Clear explanation in 3-5 sentences. Use simple words. '
+              'Include one relatable Nigerian example. Use the child\'s '
+              'language.',
+        },
+        'follow_up_check': {
+          'type': 'string',
+          'description':
+              'A simple question to verify the child understood. Should '
+              'require applying the concept, not just repeating it.',
+        },
         ..._languageCodeParam,
       },
       'required': ['subject', 'spoken_response', 'follow_up_check', 'language_code'],
@@ -73,13 +122,19 @@ final kGemmaTools = [
   ),
   Tool(
     name: 'encourage',
-    description: 'Warm brief encouragement when the child is struggling or emotionally discouraged.',
+    description:
+        'Brief warm encouragement when the child is struggling emotionally. '
+        'Use sparingly — 1-2 sentences only, then return to teaching on '
+        'the NEXT turn. Do not use encourage twice in a row.',
     parameters: {
       'type': 'object',
       'properties': {
         'spoken_response': {
           'type': 'string',
-          'description': 'Short warm encouragement in the child\'s language (1–2 sentences).',
+          'description':
+              'Short warm encouragement (1-2 sentences). Affirm effort, '
+              'not ability. Say things like "You dey try well well!" not '
+              '"You are smart." Never condescending.',
         },
         ..._languageCodeParam,
       },
