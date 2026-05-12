@@ -35,8 +35,8 @@ const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
 // Leave empty (or omit) in production builds.
 const _devModelPath = String.fromEnvironment('DEV_MODEL_PATH', defaultValue: '');
 
-const _maxTokens = 2048;
-const _maxTurns = 6; // 3 full exchanges kept in working memory
+const _maxTokens = 4096;
+const _maxTurns = 4; // 2 full exchanges kept in working memory
 
 const _summarySystemPrompt =
     'You are a learning assistant. Call the lesson_summary function with '
@@ -200,7 +200,15 @@ class GemmaService {
       final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
       debugPrint('[Gemma] raw response: $raw');
 
-      final calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
+      // Primary path: SDK converts <|tool_call>...<tool_call|> to OpenAI JSON.
+      var calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
+
+      // Fallback: C library streamed raw Gemma 4 tokens instead of JSON.
+      // Parses <|tool_call>call:name{key:<"|>val<"|>,...} directly.
+      if (calls.isEmpty && raw != null) {
+        calls = _parseRawGemma4Calls(raw);
+        if (calls.isNotEmpty) debugPrint('[Gemma] used raw-format fallback parser');
+      }
 
       if (calls.isNotEmpty) {
         final call = calls.first;
@@ -261,10 +269,10 @@ class GemmaService {
           yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
         }
       } else {
-        // Fallback: model replied with plain text instead of a tool call.
-        final text = raw != null ? _extractPlainText(raw) : '';
-        debugPrint('[Gemma] no tool call — falling back to direct');
-        final spokenText = text.isNotEmpty ? text : 'E get small wahala, try again.';
+        // Last resort: salvage spoken_response from truncated/malformed output.
+        final salvaged = raw != null ? _salvageSpokenText(raw) : null;
+        debugPrint('[Gemma] no tool call — salvaged=${salvaged != null}');
+        final spokenText = salvaged ?? 'Something went wrong — please try again.';
         _addTurn(role: 'assistant', text: spokenText);
         yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
       }
@@ -349,7 +357,11 @@ class GemmaService {
       buf.writeln('[Recent conversation:]');
       for (final t in priorTurns) {
         final label = t.role == 'user' ? 'Child' : 'Gemma-San';
-        buf.writeln('$label: ${t.text}');
+        // Truncate long assistant responses — they burn ~200-300 tokens each turn.
+        final text = (t.role == 'assistant' && t.text.length > 200)
+            ? '${t.text.substring(0, 200)}…'
+            : t.text;
+        buf.writeln('$label: $text');
       }
       buf.writeln();
     }
@@ -368,14 +380,67 @@ class GemmaService {
     final dao = _memoryDao;
     if (dao == null) return '';
     final facts = await dao.allFacts(childId);
-    final sessions = await dao.recentSessions(childId, limit: 3);
+    final sessions = await dao.recentSessions(childId, limit: 2);
     final memCtx = MemoryDao.buildMemoryContext(facts, sessions);
+
     if (_ageRange == null) return memCtx;
-    final ageCtx = '[Child age group: $_ageRange — match vocabulary and examples to this age]\n';
-    return memCtx.isEmpty ? ageCtx : '$ageCtx$memCtx';
+    final ageLine = 'Child age group: $_ageRange — adjust vocabulary to this age.';
+    if (memCtx.isEmpty) {
+      return '[BACKGROUND — context only, do not answer this:\n$ageLine]';
+    }
+    // Inject age line inside the existing block so the model sees one header.
+    return memCtx.replaceFirst(
+      '[BACKGROUND — context only, do not answer this:\n',
+      '[BACKGROUND — context only, do not answer this:\n$ageLine\n',
+    );
   }
 
   // ── Private: model download & loading ─────────────────────────────────────
+
+  /// Parse the native Gemma 4 token format emitted when the C library does not
+  /// convert to OpenAI JSON:
+  ///   `<|tool_call>call:funcname{key:<"|>value<"|>,...}<tool_call|>`
+  static List<FunctionCallResponse> _parseRawGemma4Calls(String raw) {
+    const marker = '<|tool_call>call:';
+    final start = raw.indexOf(marker);
+    if (start < 0) return const [];
+
+    final rest = raw.substring(start + marker.length);
+    final braceIdx = rest.indexOf('{');
+    if (braceIdx < 0) return const [];
+
+    final name = rest.substring(0, braceIdx).trim();
+    if (name.isEmpty) return const [];
+
+    final argsStr = rest.substring(braceIdx + 1);
+    final args = <String, dynamic>{};
+
+    // Matches both delimiter forms: <"|> (4 chars) and <|"|> (5 chars).
+    final re = RegExp(r'(\w+):<\|?"?\|?>(.*?)<\|?"?\|?>', dotAll: true);
+    for (final m in re.allMatches(argsStr)) {
+      args[m.group(1)!] = m.group(2)!;
+    }
+
+    if (args.isEmpty) return const [];
+    return [FunctionCallResponse(name: name, args: args)];
+  }
+
+  /// Extract just the spoken_response value from raw/truncated Gemma 4 output
+  /// when full tool-call parsing has already failed.
+  static String? _salvageSpokenText(String raw) {
+    for (final delim in ['<"|>', '<|"|>']) {
+      final key = 'spoken_response:$delim';
+      final idx = raw.indexOf(key);
+      if (idx < 0) continue;
+      final start = idx + key.length;
+      final end = raw.indexOf(delim, start);
+      final text = end > start
+          ? raw.substring(start, end).trim()
+          : raw.substring(start).replaceAll(RegExp(r'[,}].*$', dotAll: true), '').trim();
+      if (text.length > 3) return text;
+    }
+    return null;
+  }
 
   static String _extractPlainText(String raw) {
     try {
