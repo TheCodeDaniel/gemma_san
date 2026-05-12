@@ -6,7 +6,7 @@ class AppDatabase {
   static Future<Database> get() async {
     _db ??= await openDatabase(
       'gemma_san.db',
-      version: 2,
+      version: 3,
       onCreate: _create,
       onUpgrade: _upgrade,
     );
@@ -16,10 +16,12 @@ class AppDatabase {
   static Future<void> _create(Database db, int version) async {
     await _createV1(db);
     await _createV2(db);
+    await _createV3(db);
   }
 
   static Future<void> _upgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _createV2(db);
+    if (oldVersion < 3) await _createV3(db);
   }
 
   static Future<void> _createV1(Database db) async {
@@ -59,5 +61,9 @@ class AppDatabase {
         PRIMARY KEY (child_id, key)
       )
     ''');
+  }
+
+  static Future<void> _createV3(Database db) async {
+    await db.execute('ALTER TABLE sessions ADD COLUMN lesson_summary TEXT');
   }
 }

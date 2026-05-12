@@ -13,6 +13,7 @@ class SessionRecord {
     this.endedAt,
     this.turnCount = 0,
     this.summaryJson,
+    this.lessonSummary,
   });
 
   final String sessionId;
@@ -22,6 +23,7 @@ class SessionRecord {
   final int? endedAt;
   final int turnCount;
   final String? summaryJson;
+  final String? lessonSummary;
 
   factory SessionRecord.fromMap(Map<String, dynamic> m) => SessionRecord(
     sessionId: m['session_id'] as String,
@@ -31,7 +33,48 @@ class SessionRecord {
     endedAt: m['ended_at'] as int?,
     turnCount: m['turn_count'] as int,
     summaryJson: m['summary_json'] as String?,
+    lessonSummary: m['lesson_summary'] as String?,
   );
+}
+
+// ── Lesson history ──────────────────────────────────────────────────────────
+
+enum MasteryLevel { learning, gettingThere, mastered }
+
+class LessonTopic {
+  const LessonTopic({
+    required this.topic,
+    required this.lastVisited,
+    required this.sessionCount,
+    this.lastSummaryAt,
+    this.lessonSummaryJson,
+  });
+
+  final String topic;
+  final int lastVisited;
+  final int sessionCount;
+  final int? lastSummaryAt;
+  final String? lessonSummaryJson;
+
+  MasteryLevel get mastery => sessionCount >= 4
+      ? MasteryLevel.mastered
+      : sessionCount >= 2
+      ? MasteryLevel.gettingThere
+      : MasteryLevel.learning;
+
+  bool get needsNewSummary =>
+      lessonSummaryJson == null ||
+      (lastSummaryAt != null && lastVisited > lastSummaryAt!);
+
+  String get displayName {
+    if (topic.contains('_')) {
+      return topic
+          .split('_')
+          .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+          .join(' ');
+    }
+    return topic.isNotEmpty ? '${topic[0].toUpperCase()}${topic.substring(1)}' : topic;
+  }
 }
 
 class MemoryFact {
@@ -85,6 +128,64 @@ class MemoryDao {
       where: 'session_id = ?',
       whereArgs: [sessionId],
     );
+  }
+
+  Future<void> updateSessionTopic(String sessionId, String topic) async {
+    await _db.rawUpdate(
+      'UPDATE sessions SET topic = ? WHERE session_id = ? AND topic IS NULL',
+      [topic.toLowerCase().trim(), sessionId],
+    );
+  }
+
+  Future<List<LessonTopic>> allTopicsForChild(String childId) async {
+    final rows = await _db.rawQuery('''
+      SELECT
+        s.topic,
+        MAX(s.ended_at)  AS last_visited,
+        COUNT(*)         AS session_count,
+        (SELECT s2.lesson_summary FROM sessions s2
+         WHERE s2.child_id = s.child_id AND s2.topic = s.topic
+           AND s2.lesson_summary IS NOT NULL
+         ORDER BY s2.ended_at DESC LIMIT 1) AS lesson_summary,
+        (SELECT s3.ended_at FROM sessions s3
+         WHERE s3.child_id = s.child_id AND s3.topic = s.topic
+           AND s3.lesson_summary IS NOT NULL
+         ORDER BY s3.ended_at DESC LIMIT 1) AS last_summary_at
+      FROM sessions s
+      WHERE s.child_id = ? AND s.topic IS NOT NULL AND s.ended_at IS NOT NULL
+      GROUP BY s.topic
+      ORDER BY last_visited DESC
+    ''', [childId]);
+
+    return rows.map((m) => LessonTopic(
+      topic: m['topic'] as String,
+      lastVisited: m['last_visited'] as int,
+      sessionCount: m['session_count'] as int,
+      lastSummaryAt: m['last_summary_at'] as int?,
+      lessonSummaryJson: m['lesson_summary'] as String?,
+    )).toList();
+  }
+
+  Future<List<String>> sessionSummariesForTopic(String childId, String topic) async {
+    final rows = await _db.query(
+      'sessions',
+      columns: ['summary_json'],
+      where: 'child_id = ? AND topic = ? AND summary_json IS NOT NULL',
+      whereArgs: [childId, topic],
+      orderBy: 'started_at ASC',
+    );
+    return rows.map((m) => m['summary_json'] as String).toList();
+  }
+
+  Future<void> saveLessonSummary(String childId, String topic, String summaryJson) async {
+    await _db.rawUpdate('''
+      UPDATE sessions SET lesson_summary = ?
+      WHERE session_id = (
+        SELECT session_id FROM sessions
+        WHERE child_id = ? AND topic = ? AND ended_at IS NOT NULL
+        ORDER BY ended_at DESC LIMIT 1
+      )
+    ''', [summaryJson, childId, topic]);
   }
 
   Future<List<SessionRecord>> recentSessions(String childId, {int limit = 3}) async {

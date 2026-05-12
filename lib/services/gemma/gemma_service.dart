@@ -38,6 +38,31 @@ const _devModelPath = String.fromEnvironment('DEV_MODEL_PATH', defaultValue: '')
 const _maxTokens = 2048;
 const _maxTurns = 6; // 3 full exchanges kept in working memory
 
+const _summarySystemPrompt =
+    'You are a learning assistant. Call the lesson_summary function with '
+    'a child-friendly paragraph summary (max 80 words) and 3–5 key concept '
+    'sentences. Use simple English a child can understand.';
+
+final _summaryTool = Tool(
+  name: 'lesson_summary',
+  description: 'Output a structured lesson summary for a child.',
+  parameters: {
+    'type': 'object',
+    'properties': {
+      'summary': {
+        'type': 'string',
+        'description': 'A child-friendly paragraph summary of what was learned (max 80 words).',
+      },
+      'key_concepts': {
+        'type': 'array',
+        'items': {'type': 'string'},
+        'description': '3–5 key things the child learned, each as a short sentence.',
+      },
+    },
+    'required': ['summary', 'key_concepts'],
+  },
+);
+
 typedef DownloadProgressCallback = void Function(int percent);
 
 typedef _Turn = ({String role, String text});
@@ -181,6 +206,18 @@ class GemmaService {
         final call = calls.first;
         debugPrint('[Gemma] tool call: ${call.name} args=${call.args}');
 
+        // Auto-detect topic from first call that carries a concept signal.
+        if (_sessionId != null && _memoryDao != null) {
+          final String? detected = switch (call.name) {
+            'socratic_teach' => (call.args['target_concept'] as String?)?.toLowerCase().trim(),
+            'show_illustration' => call.args['topic_id'] as String?,
+            _ => null,
+          };
+          if (detected != null && detected.isNotEmpty) {
+            await _memoryDao!.updateSessionTopic(_sessionId!, detected);
+          }
+        }
+
         final spokenText = (call.args['spoken_response'] as String?) ?? '';
         final langCode = call.args['language_code'] as String?;
 
@@ -229,6 +266,54 @@ class GemmaService {
         _addTurn(role: 'assistant', text: spokenText);
         yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
       }
+    } finally {
+      await session.close();
+    }
+  }
+
+  /// Generates a child-friendly lesson summary from past session data for [topic].
+  /// Returns a `(summary, concepts)` record. The caller is responsible for caching
+  /// the result via [MemoryDao.saveLessonSummary].
+  Future<({String summary, List<String> concepts})> generateLessonSummary({
+    required String topic,
+    required List<String> sessionSummaries,
+  }) async {
+    final model = _model;
+    if (model == null || sessionSummaries.isEmpty) {
+      return (
+        summary: 'You have been exploring "$topic". Keep learning!',
+        concepts: <String>[],
+      );
+    }
+
+    final prompt =
+        'Summarize what this child has learned about "$topic" in simple English. '
+        'Session data: ${sessionSummaries.take(5).join('; ')}';
+
+    final session = await model.createSession(
+      tools: [_summaryTool],
+      systemInstruction: _summarySystemPrompt,
+    );
+
+    try {
+      await session.addQueryChunk(Message.text(text: prompt, isUser: true));
+      await session.getResponse();
+
+      final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
+      if (raw == null) {
+        return (summary: 'You have been exploring "$topic"!', concepts: <String>[]);
+      }
+
+      final calls = SdkResponseParser.extractToolCalls(raw);
+      if (calls.isEmpty) {
+        return (summary: _extractPlainText(raw), concepts: <String>[]);
+      }
+
+      final args = calls.first.args;
+      final summary = (args['summary'] as String?) ?? '';
+      final conceptsRaw = args['key_concepts'];
+      final concepts = conceptsRaw is List ? conceptsRaw.cast<String>() : <String>[];
+      return (summary: summary, concepts: concepts);
     } finally {
       await session.close();
     }

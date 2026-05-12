@@ -10,6 +10,7 @@ import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
 import '../conversation/conversation_screen.dart';
 import '../diagnostic/diagnostic_screen.dart';
+import '../history/lessons_screen.dart';
 import '../onboarding/age_picker_screen.dart';
 import '../onboarding/session_provider.dart';
 import '../practice/practice_screen.dart';
@@ -131,6 +132,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  void _goLessons() {
+    final childId = ref.read(currentAvatarIdProvider);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LessonsScreen(
+          childId: childId,
+          gemmaService: _gemmaService,
+          sttService: _sttService,
+          ttsService: _ttsService,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -203,6 +218,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 color: AppColors.deepGreen,
                 enabled: _sttReady,
                 onTap: _goPractice,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                label: 'My Lessons',
+                icon: PhosphorIconsRegular.books,
+                color: AppColors.forest,
+                enabled: true,
+                onTap: _goLessons,
               ),
               const SizedBox(height: AppSpacing.xl),
             ],

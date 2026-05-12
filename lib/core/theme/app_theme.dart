@@ -21,6 +21,9 @@ class AppColors {
   static const socratic = Color(0xFF2C5F4A); // green
   static const direct = Color(0xFF3D5A80); // slate blue
   static const encourage = Color(0xFFE76F51); // warm orange-red
+
+  // My Lessons — deep forest green, distinct from deepGreen
+  static const forest = Color(0xFF1A3C2E);
 }
 
 // ── Spacing / radii ────────────────────────────────────────────────────────

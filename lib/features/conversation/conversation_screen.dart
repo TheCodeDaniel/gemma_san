@@ -24,6 +24,7 @@ class ConversationScreen extends StatefulWidget {
     required this.ttsService,
     this.childId = 'default',
     this.ageRange,
+    this.initialText,
   });
 
   final GemmaService gemmaService;
@@ -31,6 +32,9 @@ class ConversationScreen extends StatefulWidget {
   final TtsService ttsService;
   final String childId;
   final String? ageRange;
+
+  /// Pre-fills the text input so the child just needs to tap Send.
+  final String? initialText;
 
   @override
   State<ConversationScreen> createState() => _ConversationScreenState();
@@ -69,6 +73,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
     _promptController.addListener(() {
       if (mounted) setState(() {});
     });
+    if (widget.initialText != null) {
+      _promptController.text = widget.initialText!;
+    }
     _initSession();
   }
 
