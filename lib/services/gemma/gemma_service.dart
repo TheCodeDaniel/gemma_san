@@ -206,10 +206,12 @@ class GemmaService {
         final call = calls.first;
         debugPrint('[Gemma] tool call: ${call.name} args=${call.args}');
 
-        // Auto-detect topic from first call that carries a concept signal.
+        // Auto-detect topic. Only fires until topic is set (updateSessionTopic
+        // ignores the call if a topic already exists for this session).
         if (_sessionId != null && _memoryDao != null) {
           final String? detected = switch (call.name) {
             'socratic_teach' => (call.args['target_concept'] as String?)?.toLowerCase().trim(),
+            'direct_teach' => (call.args['subject'] as String?)?.toLowerCase().trim(),
             'show_illustration' => call.args['topic_id'] as String?,
             _ => null,
           };

@@ -46,17 +46,25 @@ class _LessonsScreenState extends State<LessonsScreen> {
   }
 
   void _openSummary(LessonTopic topic) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LessonSummaryScreen(
-          topic: topic,
-          childId: widget.childId,
-          gemmaService: widget.gemmaService,
-          sttService: widget.sttService,
-          ttsService: widget.ttsService,
-        ),
-      ),
-    ).then((_) => setState(() => _topicsFuture = _loadTopics()));
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => LessonSummaryScreen(
+              topic: topic,
+              childId: widget.childId,
+              gemmaService: widget.gemmaService,
+              sttService: widget.sttService,
+              ttsService: widget.ttsService,
+            ),
+          ),
+        )
+        .then((_) {
+          if (!mounted) return;
+          final next = _loadTopics();
+          setState(() {
+            _topicsFuture = next;
+          });
+        });
   }
 
   @override
@@ -68,19 +76,14 @@ class _LessonsScreenState extends State<LessonsScreen> {
         future: _topicsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.forest),
-            );
+            return const Center(child: CircularProgressIndicator(color: AppColors.forest));
           }
           final topics = snapshot.data ?? [];
           if (topics.isEmpty) return const _EmptyLessonsState();
           return ListView.builder(
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: topics.length,
-            itemBuilder: (_, i) => _LessonCard(
-              topic: topics[i],
-              onTap: () => _openSummary(topics[i]),
-            ),
+            itemBuilder: (_, i) => _LessonCard(topic: topics[i], onTap: () => _openSummary(topics[i])),
           );
         },
       ),
@@ -148,24 +151,13 @@ class _LessonCard extends StatelessWidget {
             _Thumbnail(topicId: topic.topic, hasIllustration: hasIllustration),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.md,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      topic.displayName,
-                      style: AppText.title(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(topic.displayName, style: AppText.title(), maxLines: 2, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
-                    Text(
-                      _formatDate(topic.lastVisited),
-                      style: AppText.caption(),
-                    ),
+                    Text(_formatDate(topic.lastVisited), style: AppText.caption()),
                     const SizedBox(height: AppSpacing.sm),
                     _MasteryBadge(mastery: topic.mastery),
                   ],
@@ -174,11 +166,7 @@ class _LessonCard extends StatelessWidget {
             ),
             const Padding(
               padding: EdgeInsets.only(right: AppSpacing.md),
-              child: Icon(
-                PhosphorIconsRegular.caretRight,
-                size: 18,
-                color: AppColors.charcoal,
-              ),
+              child: Icon(PhosphorIconsRegular.caretRight, size: 18, color: AppColors.charcoal),
             ),
           ],
         ),
@@ -205,13 +193,15 @@ class _Thumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const radius = Radius.circular(AppSpacing.cardRadius);
-    const rrect = BorderRadius.only(topLeft: radius, bottomLeft: radius);
-    const size = 84.0;
+    const size = 100.0;
 
     if (hasIllustration) {
-      return ClipRRect(
-        borderRadius: rrect,
+      return Container(
+        margin: EdgeInsets.all(16),
+        width: size,
+        height: size,
+        clipBehavior: Clip.antiAlias,
+        decoration: const BoxDecoration(shape: BoxShape.circle),
         child: SvgPicture.asset(
           IllustrationRegistry.getAssetPath(topicId)!,
           width: size,
@@ -224,10 +214,7 @@ class _Thumbnail extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.deepGreenLight,
-        borderRadius: rrect,
-      ),
+      decoration: const BoxDecoration(color: AppColors.deepGreenLight),
       alignment: Alignment.center,
       child: const Icon(PhosphorIconsRegular.bookOpenText, color: AppColors.deepGreen, size: 32),
     );

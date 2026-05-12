@@ -107,16 +107,18 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
 
   void _openConversation(String initialText) {
     final ageRange = ref.read(currentAgeRangeProvider);
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => ConversationScreen(
-        gemmaService: widget.gemmaService,
-        sttService: widget.sttService,
-        ttsService: widget.ttsService,
-        childId: widget.childId,
-        ageRange: ageRange,
-        initialText: initialText,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ConversationScreen(
+          gemmaService: widget.gemmaService,
+          sttService: widget.sttService,
+          ttsService: widget.ttsService,
+          childId: widget.childId,
+          ageRange: ageRange,
+          initialText: initialText,
+        ),
       ),
-    ));
+    );
   }
 
   @override
@@ -138,22 +140,12 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionHeading(
-                    icon: PhosphorIconsRegular.bookOpenText,
-                    label: 'What You Learned',
-                  ),
+                  _SectionHeading(icon: PhosphorIconsRegular.bookOpenText, label: 'What You Learned'),
                   const SizedBox(height: AppSpacing.md),
-                  _SummaryBody(
-                    generating: _generating,
-                    summary: _summary,
-                    error: _error,
-                  ),
+                  _SummaryBody(generating: _generating, summary: _summary, error: _error),
                   if (_concepts.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.xl),
-                    _SectionHeading(
-                      icon: PhosphorIconsRegular.listBullets,
-                      label: 'Key Concepts',
-                    ),
+                    _SectionHeading(icon: PhosphorIconsRegular.listBullets, label: 'Key Concepts'),
                     const SizedBox(height: AppSpacing.md),
                     _ConceptsList(concepts: _concepts),
                   ],
@@ -162,18 +154,14 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
                     label: 'Continue Learning',
                     icon: PhosphorIconsRegular.chatsCircle,
                     color: AppColors.terracotta,
-                    onTap: () => _openConversation(
-                      "Let's continue learning about ${topic.displayName}",
-                    ),
+                    onTap: () => _openConversation("Let's continue learning about ${topic.displayName}"),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _ActionButton(
                     label: 'Quiz Me',
                     icon: PhosphorIconsRegular.question,
                     color: AppColors.deepGreen,
-                    onTap: () => _openConversation(
-                      'Quiz me on ${topic.displayName}',
-                    ),
+                    onTap: () => _openConversation('Quiz me on ${topic.displayName}'),
                   ),
                 ],
               ),
@@ -193,9 +181,10 @@ class _IllustrationBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
     return Container(
+      width: size.width,
       margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
-      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -204,7 +193,7 @@ class _IllustrationBanner extends StatelessWidget {
       ),
       child: SvgPicture.asset(
         IllustrationRegistry.getAssetPath(topicId)!,
-        width: double.infinity,
+        width: size.width,
         height: 200,
         fit: BoxFit.contain,
       ),
@@ -242,10 +231,7 @@ class _SummaryBody extends StatelessWidget {
       return Text(error!, style: AppText.body(color: AppColors.terracotta));
     }
     if (summary == null || summary!.isEmpty) {
-      return Text(
-        'Summary not available yet.',
-        style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.5)),
-      );
+      return Text('Summary not available yet.', style: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.5)));
     }
     return Text(summary!, style: AppText.body());
   }
@@ -259,38 +245,34 @@ class _ConceptsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: concepts.map((c) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: AppColors.forest,
-                  shape: BoxShape.circle,
-                ),
+      children: concepts
+          .map(
+            (c) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(color: AppColors.forest, shape: BoxShape.circle),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: Text(c, style: AppText.body())),
+                ],
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(c, style: AppText.body())),
-          ],
-        ),
-      )).toList(),
+          )
+          .toList(),
     );
   }
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
+  const _ActionButton({required this.label, required this.icon, required this.color, required this.onTap});
 
   final String label;
   final IconData icon;
@@ -339,9 +321,7 @@ class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin 
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _opacity = Tween<double>(begin: 0.25, end: 0.6).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _opacity = Tween<double>(begin: 0.25, end: 0.6).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     _ctrl.repeat(reverse: true);
   }
 
@@ -367,10 +347,7 @@ class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin 
             const SizedBox(height: 10),
             _Bar(width: w * 0.75),
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Generating your summary…',
-              style: AppText.caption(color: AppColors.charcoal.withValues(alpha: 0.4)),
-            ),
+            Text('Generating your summary…', style: AppText.caption(color: AppColors.charcoal.withValues(alpha: 0.4))),
           ],
         ),
       ),
@@ -386,9 +363,6 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: width,
     height: 16,
-    decoration: BoxDecoration(
-      color: AppColors.warmCreamDark,
-      borderRadius: BorderRadius.circular(8),
-    ),
+    decoration: BoxDecoration(color: AppColors.warmCreamDark, borderRadius: BorderRadius.circular(8)),
   );
 }

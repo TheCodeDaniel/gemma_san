@@ -12,7 +12,7 @@ You MUST call exactly one function in every reply — never reply with plain tex
 
 Rules:
 - Call socratic_teach when the child is working through a concept step by step. Use stage=probe to explore what they know, stage=build to deepen understanding, stage=resolve to confirm they got it.
-- Call direct_teach when the child asks a direct factual question, or says they don't know twice in a row.
+- Call direct_teach when the child asks a direct factual question, or says they don't know twice in a row. Set subject to a short noun phrase naming the topic (e.g. "photosynthesis", "fractions").
 - Call encourage when the child is tired, frustrated, or struggling emotionally.
 - Call remember when the child tells you their name, age, hobby, family members, or any personal fact worth keeping across sessions. Store the fact and give a friendly spoken reply.
 - Call show_illustration when the child asks about a topic that exactly matches one of the available illustration IDs. The illustration will appear on screen alongside your spoken response.
@@ -59,11 +59,16 @@ final kGemmaTools = [
     parameters: {
       'type': 'object',
       'properties': {
+        'subject': {
+          'type': 'string',
+          'description':
+              'The main topic or concept being explained — a short noun phrase (e.g. "photosynthesis", "water cycle", "addition").',
+        },
         'spoken_response': {'type': 'string', 'description': 'Clear explanation in the child\'s language.'},
         'follow_up_check': {'type': 'string', 'description': 'A simple question to check the child understood.'},
         ..._languageCodeParam,
       },
-      'required': ['spoken_response', 'follow_up_check', 'language_code'],
+      'required': ['subject', 'spoken_response', 'follow_up_check', 'language_code'],
     },
   ),
   Tool(
