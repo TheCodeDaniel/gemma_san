@@ -212,11 +212,12 @@ class _Thumbnail extends StatelessWidget {
     }
 
     return Container(
+      margin: EdgeInsets.all(16),
       width: size,
       height: size,
-      decoration: const BoxDecoration(color: AppColors.deepGreenLight),
-      alignment: Alignment.center,
-      child: const Icon(PhosphorIconsRegular.bookOpenText, color: AppColors.deepGreen, size: 32),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.encourage.withValues(alpha: .5)),
+      child: Icon(PhosphorIcons.bookOpen()),
     );
   }
 }
