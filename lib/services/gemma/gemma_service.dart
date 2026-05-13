@@ -392,6 +392,9 @@ class GemmaService {
       buf.writeln();
     }
 
+    if (priorTurns.isEmpty) {
+      buf.writeln('[FIRST TURN]');
+    }
     buf.write(currentPrompt);
     return buf.toString();
   }
