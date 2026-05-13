@@ -156,7 +156,18 @@ class _ImageView extends StatelessWidget {
     final w = MediaQuery.of(context).size.width * 0.65;
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      child: Image.file(File(imagePath), width: w, fit: BoxFit.cover),
+      child: Image.file(
+        File(imagePath),
+        width: w,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Container(
+          width: w,
+          height: w * 0.65,
+          color: AppColors.warmCreamDark,
+          alignment: Alignment.center,
+          child: const Icon(Icons.image_not_supported_rounded, color: AppColors.charcoal, size: 32),
+        ),
+      ),
     );
   }
 }

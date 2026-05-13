@@ -103,7 +103,7 @@ features/<name>/
 
 ## Known Limitations (v1)
 
-- **Vision / camera**: Blocked by `libLiteRtLm.so` rejecting Gemma 4's 3-subgraph vision encoder ("must have exactly one signature but got 3"). Not patchable client-side — fix requires Google to update the native binary. Camera/multimodal deferred to v2.
+- **Vision / camera**: Camera UI is fully wired (`image_picker` → preview → `GemmaService.generateWithImage`). Currently blocked at inference: `libLiteRtLm.so` rejects Gemma 4's 3-subgraph vision encoder ("must have exactly one signature but got 3"). Not patchable client-side — fix requires Google to update the native binary. When that lands, flip `GemmaService._supportsVision` to `true` and uncomment the vision call block. Camera/multimodal activation deferred to v2.
 
 ---
 
@@ -122,7 +122,9 @@ features/<name>/
 | 9   | Adaptive practice: SRS scheduler, SQLite persistence, session stats | Done                                                                                                     |
 | 10  | Persistent memory: working memory, cross-session injection, remember tool, ConversationScreen | Done                                                                                  |
 | 11  | SVG illustration library: 22 topics, show_illustration tool, inline fade-in + tap-to-fullscreen | Done — all 22 SVGs generated; tap opens InteractiveViewer (pinch 0.5×–5×)            |
-| 12  | Onboarding flow                                                 | Upcoming                                                                                                     |
+| 12  | Onboarding flow                                                 | Done — avatar picker (10 options), age selector, permissions flow; avatar ID persisted via SharedPreferences  |
+| 13  | Comprehensive fix pass Groups 1–4                               | Done — back-button TTS/inference stop; per-turn SQLite persistence + orphan recovery; quiz mode (quiz_question tool, dedicated system prompt, 5-question flow); first-turn greeting rule; TTS language detection (en-NG > en-GB > en-US); avatar display in home/chat/lessons; mascot AnimatedCrossFade collapse; slide+fade page transitions; camera UI restored with graceful vision fallback |
+| 14  | Meta quality pass (Group 5)                                     | Done — flutter analyze clean, _ImageView errorBuilder, CLAUDE.md updated                                     |
 
 ---
 
