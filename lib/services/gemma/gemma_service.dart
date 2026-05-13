@@ -307,6 +307,32 @@ class GemmaService {
     }
   }
 
+  // When the upstream flutter_gemma fix lands, flip this to true and uncomment
+  // the vision call block inside generateWithImage().
+  static const bool _supportsVision = false;
+
+  Stream<TutorResponse> generateWithImage(Uint8List imageBytes) async* {
+    if (!_supportsVision) {
+      debugPrint('[Gemma] Vision not supported — returning fallback');
+      yield const TutorResponse(
+        spokenText: "I can't see pictures clearly yet — coming soon! "
+            'For now, tell me what you see and I\'ll help.',
+        mode: TutorMode.direct,
+      );
+      return;
+    }
+    // ignore: dead_code
+    // try {
+    //   final session = await _model!.createSession(tools: kGemmaTools, systemInstruction: kSystemPrompt);
+    //   await session.addQueryChunk(Message.withImage(image: imageBytes, isUser: true));
+    //   await session.getResponse();
+    //   // ... parse and yield TutorResponse as in generate()
+    //   await session.close();
+    // } catch (e) {
+    //   yield const TutorResponse(spokenText: "I had trouble seeing that. Try again?", mode: TutorMode.direct);
+    // }
+  }
+
   /// Generates a child-friendly lesson summary from past session data for [topic].
   /// Returns a `(summary, concepts)` record. The caller is responsible for caching
   /// the result via [MemoryDao.saveLessonSummary].

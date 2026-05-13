@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -13,6 +15,7 @@ class ChatBubble extends StatelessWidget {
     required this.text,
     this.mode,
     this.illustrationTopicId,
+    this.imagePath,
     this.avatarId,
     super.key,
   });
@@ -21,6 +24,7 @@ class ChatBubble extends StatelessWidget {
   final String text;
   final TutorMode? mode;
   final String? illustrationTopicId;
+  final String? imagePath;
   final String? avatarId;
 
   @override
@@ -40,8 +44,9 @@ class ChatBubble extends StatelessWidget {
             child: Column(
               crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
+                if (imagePath != null) ...[_ImageView(imagePath: imagePath!), const SizedBox(height: 6)],
                 if (assetPath != null) ...[IllustrationView(assetPath: assetPath), const SizedBox(height: 6)],
-                _Bubble(isUser: isUser, text: text),
+                if (text.isNotEmpty) _Bubble(isUser: isUser, text: text),
                 if (!isUser && mode != null) ...[const SizedBox(height: 4), ModeTag(mode: mode!)],
               ],
             ),
@@ -138,6 +143,20 @@ class _Bubble extends StatelessWidget {
         border: Border.all(color: AppColors.warmCreamDark, width: 1),
       ),
       child: Text(text, style: AppText.body()),
+    );
+  }
+}
+
+class _ImageView extends StatelessWidget {
+  const _ImageView({required this.imagePath});
+  final String imagePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.of(context).size.width * 0.65;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: Image.file(File(imagePath), width: w, fit: BoxFit.cover),
     );
   }
 }

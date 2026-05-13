@@ -13,6 +13,7 @@ class ConvInputRow extends StatelessWidget {
     required this.canSend,
     required this.onMicTap,
     required this.onSend,
+    this.onCameraTap,
     super.key,
   });
 
@@ -20,6 +21,7 @@ class ConvInputRow extends StatelessWidget {
   final bool recording, transcribing, busy, sessionReady, canSend;
   final VoidCallback onMicTap;
   final VoidCallback onSend;
+  final VoidCallback? onCameraTap;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +41,13 @@ class ConvInputRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          if (onCameraTap != null) ...[
+            _CameraButton(
+              disabled: busy || !sessionReady || recording,
+              onTap: onCameraTap!,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           MicPill(
             recording: recording,
             transcribing: transcribing,
@@ -157,6 +166,67 @@ class _MicPillState extends State<MicPill> with SingleTickerProviderStateMixin {
                   color: Colors.white,
                   size: 22,
                 ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraButton extends StatefulWidget {
+  const _CameraButton({required this.disabled, required this.onTap});
+  final bool disabled;
+  final VoidCallback onTap;
+
+  @override
+  State<_CameraButton> createState() => _CameraButtonState();
+}
+
+class _CameraButtonState extends State<_CameraButton> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.disabled
+        ? AppColors.charcoal.withValues(alpha: 0.15)
+        : AppColors.deepGreen;
+    return GestureDetector(
+      onTapDown: widget.disabled ? null : (_) => _ctrl.forward(),
+      onTapUp: widget.disabled
+          ? null
+          : (_) {
+              _ctrl.reverse();
+              widget.onTap();
+            },
+      onTapCancel: () => _ctrl.reverse(),
+      child: ScaleTransition(
+        scale: _scale,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: AppSpacing.minTap,
+          height: AppSpacing.minTap,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: widget.disabled ? [] : AppShadows.button(color),
+          ),
+          alignment: Alignment.center,
+          child: Icon(PhosphorIconsRegular.camera, color: Colors.white, size: 22),
         ),
       ),
     );

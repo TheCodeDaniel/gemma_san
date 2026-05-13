@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
+import '../../core/route_transitions.dart';
 import '../../core/theme/app_theme.dart';
+import '../camera/camera_capture_screen.dart';
 import '../../data/app_database.dart';
 import '../../services/gemma/gemma_service.dart';
 import '../../services/gemma/tool_definitions.dart';
@@ -51,6 +55,7 @@ class ConversationScreen extends StatefulWidget {
 
 class _ConversationScreenState extends State<ConversationScreen> {
   final _recorder = AudioRecorder();
+  final _picker = ImagePicker();
   final _promptController = TextEditingController();
   final _scrollController = ScrollController();
   final _messages = <_ChatEntry>[];
@@ -156,6 +161,67 @@ class _ConversationScreenState extends State<ConversationScreen> {
         for (final sentence in response.spokenText.split(_sentenceSplit)) {
           final s = sentence.trim();
           if (s.isNotEmpty) widget.ttsService.enqueue(s);
+        }
+      },
+      onError: (Object e) {
+        if (mounted) {
+          setState(() => _messages.add(_ChatEntry(isUser: false, text: 'Something went wrong: $e')));
+        }
+        completer.complete();
+      },
+      onDone: completer.complete,
+      cancelOnError: true,
+    );
+
+    try {
+      await completer.future;
+    } finally {
+      _generateSub = null;
+      if (mounted) setState(() => _generating = false);
+      _scrollToBottom();
+    }
+  }
+
+  Future<void> _onCameraTap() async {
+    if (_generating || _transcribing || _recording) return;
+    if (!await Permission.camera.request().isGranted) return;
+
+    final file = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (file == null || !mounted) return;
+
+    final confirmed = await Navigator.of(context).push<XFile?>(
+      slideRoute(CameraCaptureScreen(initialFile: file)),
+    );
+    if (confirmed == null || !mounted) return;
+
+    final bytes = await confirmed.readAsBytes();
+    await _sendWithImage(bytes, confirmed.path);
+  }
+
+  Future<void> _sendWithImage(Uint8List bytes, String path) async {
+    await widget.ttsService.stop();
+
+    setState(() {
+      _messages.add(_ChatEntry(isUser: true, text: '', imagePath: path));
+      _generating = true;
+      _currentMode = null;
+    });
+    _scrollToBottom();
+
+    final completer = Completer<void>();
+    _generateSub = widget.gemmaService.generateWithImage(bytes).listen(
+      (response) {
+        if (!mounted) return;
+        setState(() {
+          _currentMode = response.mode;
+          _messages.add(_ChatEntry(isUser: false, text: response.spokenText, mode: response.mode));
+        });
+        _scrollToBottom();
+        if (response.languageCode != null) {
+          widget.ttsService.setResponseLanguage(response.languageCode!);
+        }
+        for (final s in response.spokenText.split(_sentenceSplit)) {
+          if (s.trim().isNotEmpty) widget.ttsService.enqueue(s.trim());
         }
       },
       onError: (Object e) {
@@ -317,6 +383,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           text: m.text,
                           mode: m.mode,
                           illustrationTopicId: m.illustrationTopicId,
+                          imagePath: m.imagePath,
                           avatarId: m.isUser ? widget.childId : null,
                         );
                       },
@@ -350,6 +417,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
               canSend: canSend,
               onMicTap: _toggleMic,
               onSend: _send,
+              onCameraTap: _onCameraTap,
             ),
           ],
         ),
@@ -360,11 +428,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
 }
 
 class _ChatEntry {
-  const _ChatEntry({required this.isUser, required this.text, this.mode, this.illustrationTopicId});
+  const _ChatEntry({required this.isUser, required this.text, this.mode, this.illustrationTopicId, this.imagePath});
   final bool isUser;
   final String text;
   final TutorMode? mode;
   final String? illustrationTopicId;
+  final String? imagePath;
 }
 
 class _EmptyPlaceholder extends StatelessWidget {
