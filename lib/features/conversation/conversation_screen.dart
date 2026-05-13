@@ -68,6 +68,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   static final _sentenceSplit = RegExp(r'(?<=[.!?])\s+');
 
+  bool get _hasMessages => _messages.isNotEmpty;
+
   OwlState get _owlState {
     if (_recording) return OwlState.listening;
     if (_transcribing || _generating) return OwlState.thinking;
@@ -247,7 +249,16 @@ class _ConversationScreenState extends State<ConversationScreen> {
       appBar: AppBar(
         title: widget.quizMode
             ? Text('Quiz: $_quizQuestionNumber/5')
-            : const Text('Conversation'),
+            : _hasMessages
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MamaSanWidget(state: _owlState, size: 36),
+                      const SizedBox(width: 8),
+                      ConvModePill(mode: _currentMode),
+                    ],
+                  )
+                : const Text('Conversation'),
         actions: [
           if (_speaking)
             IconButton(
@@ -261,29 +272,37 @@ class _ConversationScreenState extends State<ConversationScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Column(
-                children: [
-                  MamaSanWidget(state: _owlState, size: 120),
-                  const SizedBox(height: 4),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: _sessionReady
-                        ? const SizedBox(height: 16)
-                        : SizedBox(
-                            height: 16,
-                            child: LinearProgressIndicator(
-                              backgroundColor: AppColors.warmCreamDark,
-                              valueColor: const AlwaysStoppedAnimation(AppColors.terracotta),
+            AnimatedCrossFade(
+              firstChild: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Column(
+                  children: [
+                    MamaSanWidget(state: _owlState, size: 120),
+                    const SizedBox(height: 4),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: _sessionReady
+                          ? const SizedBox(height: 16)
+                          : SizedBox(
+                              height: 16,
+                              child: LinearProgressIndicator(
+                                backgroundColor: AppColors.warmCreamDark,
+                                valueColor: const AlwaysStoppedAnimation(AppColors.terracotta),
+                              ),
                             ),
-                          ),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Say something to get started!',
+                      style: AppText.caption(color: AppColors.charcoal.withValues(alpha: 0.45)),
+                    ),
+                  ],
+                ),
               ),
+              secondChild: const SizedBox.shrink(),
+              crossFadeState: _hasMessages ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 300),
             ),
-            ConvModePill(mode: _currentMode),
-            const SizedBox(height: 4),
             Expanded(
               child: _messages.isEmpty && !_generating
                   ? const _EmptyPlaceholder()
@@ -298,6 +317,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           text: m.text,
                           mode: m.mode,
                           illustrationTopicId: m.illustrationTopicId,
+                          avatarId: m.isUser ? widget.childId : null,
                         );
                       },
                     ),

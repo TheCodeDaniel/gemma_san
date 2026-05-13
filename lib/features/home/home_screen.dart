@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../core/avatar_data.dart';
+import '../../core/route_transitions.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/gemma/gemma_service.dart';
 import '../../services/stt/stt_service.dart';
@@ -12,6 +14,7 @@ import '../conversation/conversation_screen.dart';
 import '../diagnostic/diagnostic_screen.dart';
 import '../history/lessons_screen.dart';
 import '../onboarding/age_picker_screen.dart';
+import '../onboarding/avatar_picker_screen.dart';
 import '../onboarding/session_provider.dart';
 import '../practice/practice_screen.dart';
 import 'widgets/app_button.dart';
@@ -106,44 +109,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!_ready) return;
     final childId = ref.read(currentAvatarIdProvider);
     final ageRange = ref.read(currentAgeRangeProvider);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ConversationScreen(
-          gemmaService: _gemmaService,
-          sttService: _sttService,
-          ttsService: _ttsService,
-          childId: childId,
-          ageRange: ageRange,
-        ),
-      ),
-    );
+    Navigator.of(context).push(slideRoute(ConversationScreen(
+      gemmaService: _gemmaService,
+      sttService: _sttService,
+      ttsService: _ttsService,
+      childId: childId,
+      ageRange: ageRange,
+    )));
   }
 
   void _goSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AgePickerScreen(isFromSettings: true)),
-    );
+    Navigator.of(context).push(slideRoute(const AgePickerScreen(isFromSettings: true)));
   }
 
   void _goPractice() {
     if (!_sttReady) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => PracticeScreen(sttService: _sttService)),
-    );
+    Navigator.of(context).push(slideRoute(PracticeScreen(sttService: _sttService)));
   }
 
   void _goLessons() {
     final childId = ref.read(currentAvatarIdProvider);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LessonsScreen(
-          childId: childId,
-          gemmaService: _gemmaService,
-          sttService: _sttService,
-          ttsService: _ttsService,
-        ),
-      ),
-    );
+    Navigator.of(context).push(slideRoute(LessonsScreen(
+      childId: childId,
+      gemmaService: _gemmaService,
+      sttService: _sttService,
+      ttsService: _ttsService,
+    )));
   }
 
   @override
@@ -187,9 +178,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
-              Text('Gemma-San', style: AppText.caption(color: AppColors.terracotta)),
-              const SizedBox(height: 6),
-              Text('Welcome back!', style: AppText.heading(), textAlign: TextAlign.center),
+              Consumer(
+                builder: (_, ref, _) {
+                  final avatarId = ref.watch(currentAvatarIdProvider);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(slideRoute(const AvatarPickerScreen())),
+                        child: _AvatarBubble(avatarId: avatarId, size: 48),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Gemma-San', style: AppText.caption(color: AppColors.terracotta)),
+                          Text('Welcome back!', style: AppText.heading()),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
               const SizedBox(height: 6),
               Text(
                 'What do you want to do today?',
@@ -234,4 +244,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+}
+
+class _AvatarBubble extends StatelessWidget {
+  const _AvatarBubble({required this.avatarId, required this.size});
+  final String avatarId;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AvatarData.colorFor(avatarId),
+          border: Border.all(color: AppColors.warmCreamDark, width: 1.5),
+          boxShadow: AppShadows.card,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          AvatarData.emojiFor(avatarId),
+          style: TextStyle(fontSize: size * 0.55),
+        ),
+      );
 }

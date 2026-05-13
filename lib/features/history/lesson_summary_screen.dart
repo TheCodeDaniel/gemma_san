@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../core/route_transitions.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/app_database.dart';
 import '../../data/memory_dao.dart';
@@ -107,18 +108,14 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
 
   void _openConversation(String initialText) {
     final ageRange = ref.read(currentAgeRangeProvider);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ConversationScreen(
-          gemmaService: widget.gemmaService,
-          sttService: widget.sttService,
-          ttsService: widget.ttsService,
-          childId: widget.childId,
-          ageRange: ageRange,
-          initialText: initialText,
-        ),
-      ),
-    );
+    Navigator.of(context).push(slideRoute(ConversationScreen(
+      gemmaService: widget.gemmaService,
+      sttService: widget.sttService,
+      ttsService: widget.ttsService,
+      childId: widget.childId,
+      ageRange: ageRange,
+      initialText: initialText,
+    )));
   }
 
   void _openQuiz() {
@@ -127,20 +124,16 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
       if (_concepts.isNotEmpty) 'Key concepts: ${_concepts.join('; ')}',
     ].join('\n');
     final ageRange = ref.read(currentAgeRangeProvider);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ConversationScreen(
-          gemmaService: widget.gemmaService,
-          sttService: widget.sttService,
-          ttsService: widget.ttsService,
-          childId: widget.childId,
-          ageRange: ageRange,
-          quizMode: true,
-          quizContext: quizContext.isNotEmpty ? quizContext : null,
-          quizTopic: widget.topic.displayName,
-        ),
-      ),
-    );
+    Navigator.of(context).push(slideRoute(ConversationScreen(
+      gemmaService: widget.gemmaService,
+      sttService: widget.sttService,
+      ttsService: widget.ttsService,
+      childId: widget.childId,
+      ageRange: ageRange,
+      quizMode: true,
+      quizContext: quizContext.isNotEmpty ? quizContext : null,
+      quizTopic: widget.topic.displayName,
+    )));
   }
 
   @override

@@ -79,7 +79,7 @@ class AppShadows {
   AppShadows._();
 
   static List<BoxShadow> card = [
-    BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.10), blurRadius: 8, offset: const Offset(0, 3)),
+    BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.18), blurRadius: 10, offset: const Offset(0, 4)),
   ];
 
   static List<BoxShadow> button(Color color) => [

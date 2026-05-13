@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/avatar_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../home/home_screen.dart';
 import 'onboarding_prefs.dart';
@@ -16,24 +17,6 @@ class AvatarPickerScreen extends ConsumerStatefulWidget {
 class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
   String? _tappedId;
 
-  static const _avatars = [
-    (emoji: '🦁', id: 'lion', name: 'Lion'),
-    (emoji: '🐘', id: 'elephant', name: 'Elephant'),
-    (emoji: '🦋', id: 'butterfly', name: 'Butterfly'),
-    (emoji: '🐒', id: 'monkey', name: 'Monkey'),
-    (emoji: '🦜', id: 'parrot', name: 'Parrot'),
-    (emoji: '🐠', id: 'fish', name: 'Fish'),
-  ];
-
-  static const _avatarColors = [
-    AppColors.terracottaLight,
-    AppColors.deepGreenLight,
-    Color(0xFFFFF3CC), // soft yellow
-    AppColors.warmCreamDark,
-    Color(0xFFD4EAD4), // soft sage
-    Color(0xFFCCE5FF), // soft blue
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -42,17 +25,26 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
 
   Future<void> _loadAgeRange() async {
     final range = await OnboardingPrefs.ageRange;
+    final savedAvatarId = await OnboardingPrefs.avatarId;
     if (mounted) {
       ref.read(currentAgeRangeProvider.notifier).state = range;
+      if (savedAvatarId != null) {
+        ref.read(currentAvatarIdProvider.notifier).state = savedAvatarId;
+        setState(() => _tappedId = savedAvatarId);
+      }
     }
   }
 
   Future<void> _onAvatarTap(String id) async {
-    if (_tappedId != null) return;
+    if (_tappedId != null && _tappedId == id) return;
     setState(() => _tappedId = id);
     ref.read(currentAvatarIdProvider.notifier).state = id;
 
-    await Future.wait([OnboardingPrefs.setOnboarded(), Future.delayed(const Duration(milliseconds: 220))]);
+    await Future.wait([
+      OnboardingPrefs.setOnboarded(),
+      OnboardingPrefs.setAvatarId(id),
+      Future.delayed(const Duration(milliseconds: 220)),
+    ]);
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
@@ -84,14 +76,14 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
                     crossAxisSpacing: AppSpacing.md,
                     childAspectRatio: 0.88,
                   ),
-                  itemCount: _avatars.length,
+                  itemCount: AvatarData.all.length,
                   itemBuilder: (_, i) {
-                    final a = _avatars[i];
+                    final a = AvatarData.all[i];
                     final selected = _tappedId == a.id;
                     return _AvatarCard(
                       emoji: a.emoji,
-                      name: a.name,
-                      bgColor: _avatarColors[i],
+                      name: a.id[0].toUpperCase() + a.id.substring(1),
+                      bgColor: a.color,
                       selected: selected,
                       onTap: () => _onAvatarTap(a.id),
                     );

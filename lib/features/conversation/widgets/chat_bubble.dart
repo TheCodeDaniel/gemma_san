@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../core/avatar_data.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/gemma/tutor_response.dart';
 import '../../../services/illustration/illustration_registry.dart';
@@ -12,6 +13,7 @@ class ChatBubble extends StatelessWidget {
     required this.text,
     this.mode,
     this.illustrationTopicId,
+    this.avatarId,
     super.key,
   });
 
@@ -19,6 +21,7 @@ class ChatBubble extends StatelessWidget {
   final String text;
   final TutorMode? mode;
   final String? illustrationTopicId;
+  final String? avatarId;
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +46,30 @@ class ChatBubble extends StatelessWidget {
               ],
             ),
           ),
-          if (isUser) const SizedBox(width: 8),
+          if (isUser) ...[const SizedBox(width: 8), _ChildAvatar(avatarId: avatarId)],
         ],
       ),
+    );
+  }
+}
+
+class _ChildAvatar extends StatelessWidget {
+  const _ChildAvatar({required this.avatarId});
+  final String? avatarId;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = avatarId ?? 'default';
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AvatarData.colorFor(id),
+        border: Border.all(color: AppColors.warmCreamDark, width: 1),
+      ),
+      alignment: Alignment.center,
+      child: Text(AvatarData.emojiFor(id), style: const TextStyle(fontSize: 14)),
     );
   }
 }
