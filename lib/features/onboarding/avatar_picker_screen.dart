@@ -16,6 +16,7 @@ class AvatarPickerScreen extends ConsumerStatefulWidget {
 
 class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
   String? _tappedId;
+  bool _navigating = false;
 
   @override
   void initState() {
@@ -36,8 +37,11 @@ class _AvatarPickerScreenState extends ConsumerState<AvatarPickerScreen> {
   }
 
   Future<void> _onAvatarTap(String id) async {
-    if (_tappedId != null && _tappedId == id) return;
-    setState(() => _tappedId = id);
+    if (_navigating) return;
+    setState(() {
+      _tappedId = id;
+      _navigating = true;
+    });
     ref.read(currentAvatarIdProvider.notifier).state = id;
 
     await Future.wait([
