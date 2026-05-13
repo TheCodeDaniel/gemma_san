@@ -442,6 +442,7 @@ class _ModePill extends StatelessWidget {
       TutorMode.socratic => ('? Socratic', Colors.green),
       TutorMode.direct => ('📖 Direct', Colors.blue),
       TutorMode.encourage => ('❤ Encourage', Colors.pink),
+      TutorMode.quiz => ('🏆 Quiz', Colors.purple),
     };
     return Align(
       alignment: Alignment.centerLeft,

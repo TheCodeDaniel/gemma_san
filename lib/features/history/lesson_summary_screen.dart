@@ -121,6 +121,28 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
     );
   }
 
+  void _openQuiz() {
+    final quizContext = [
+      if (_summary != null && _summary!.isNotEmpty) 'Summary: $_summary',
+      if (_concepts.isNotEmpty) 'Key concepts: ${_concepts.join('; ')}',
+    ].join('\n');
+    final ageRange = ref.read(currentAgeRangeProvider);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ConversationScreen(
+          gemmaService: widget.gemmaService,
+          sttService: widget.sttService,
+          ttsService: widget.ttsService,
+          childId: widget.childId,
+          ageRange: ageRange,
+          quizMode: true,
+          quizContext: quizContext.isNotEmpty ? quizContext : null,
+          quizTopic: widget.topic.displayName,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topic = widget.topic;
@@ -161,7 +183,7 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
                     label: 'Quiz Me',
                     icon: PhosphorIconsRegular.question,
                     color: AppColors.deepGreen,
-                    onTap: () => _openConversation('Quiz me on ${topic.displayName}'),
+                    onTap: _openQuiz,
                   ),
                 ],
               ),

@@ -78,6 +78,8 @@ class GemmaService {
   String _childId = 'default';
   String? _ageRange;
   String _injectedMemory = '';
+  List<Tool>? _sessionTools;
+  String? _sessionSystemPrompt;
 
   bool get isReady => _model != null;
 
@@ -139,12 +141,21 @@ class GemmaService {
 
   /// Call when the child opens a conversation. Creates a DB session row and
   /// loads memory context for injection into subsequent generate() calls.
-  Future<void> startSession(String childId, Database db, {String? ageRange}) async {
+  Future<void> startSession(
+    String childId,
+    Database db, {
+    String? ageRange,
+    List<Tool>? toolsOverride,
+    String? systemInstructionOverride,
+  }) async {
     if (_sessionId != null) await endSession();
 
     _childId = childId;
     _ageRange = ageRange;
+    _sessionTools = toolsOverride;
+    _sessionSystemPrompt = systemInstructionOverride;
     _memoryDao = MemoryDao(db);
+    await _memoryDao!.closeOrphanedSessions(childId);
     _sessionId = await _memoryDao!.createSession(childId);
     _turns.clear();
     _injectedMemory = await _buildMemoryContext(childId);
@@ -176,6 +187,8 @@ class GemmaService {
     _injectedMemory = '';
     _childId = 'default';
     _ageRange = null;
+    _sessionTools = null;
+    _sessionSystemPrompt = null;
   }
 
   // ── Generate ───────────────────────────────────────────────────────────────
@@ -187,8 +200,10 @@ class GemmaService {
     _addTurn(role: 'user', text: prompt);
     final fullPrompt = _buildPromptWithContext(prompt);
 
-    debugPrint('[Gemma] creating session (tools=${kGemmaTools.length})…');
-    final session = await model.createSession(tools: kGemmaTools, systemInstruction: kSystemPrompt);
+    final tools = _sessionTools ?? kGemmaTools;
+    final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
+    debugPrint('[Gemma] creating session (tools=${tools.length})…');
+    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
 
     try {
       await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
@@ -228,7 +243,10 @@ class GemmaService {
           }
         }
 
-        final spokenText = (call.args['spoken_response'] as String?) ?? '';
+        // quiz_question uses 'spoken_question'; all other tools use 'spoken_response'.
+        final spokenText = call.name == 'quiz_question'
+            ? (call.args['spoken_question'] as String?) ?? ''
+            : (call.args['spoken_response'] as String?) ?? '';
         final langCode = call.args['language_code'] as String?;
 
         if (call.name == 'show_illustration') {
@@ -263,6 +281,7 @@ class GemmaService {
             'socratic_teach' => TutorMode.socratic,
             'direct_teach' => TutorMode.direct,
             'encourage' => TutorMode.encourage,
+            'quiz_question' => TutorMode.quiz,
             _ => TutorMode.direct,
           };
           _addTurn(role: 'assistant', text: spokenText);
@@ -275,6 +294,13 @@ class GemmaService {
         final spokenText = salvaged ?? 'Something went wrong — please try again.';
         _addTurn(role: 'assistant', text: spokenText);
         yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
+      }
+
+      // Persist turn data after every response so force-killed sessions survive.
+      final sid = _sessionId;
+      final dao = _memoryDao;
+      if (sid != null && dao != null) {
+        await dao.persistTurnProgress(sid, _turns.length, _compactSession());
       }
     } finally {
       await session.close();

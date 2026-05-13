@@ -1,4 +1,4 @@
-enum TutorMode { socratic, direct, encourage }
+enum TutorMode { socratic, direct, encourage, quiz }
 
 class TutorResponse {
   const TutorResponse({

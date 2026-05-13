@@ -130,6 +130,23 @@ class MemoryDao {
     );
   }
 
+  Future<void> persistTurnProgress(String sessionId, int turnCount, String summaryJson) async {
+    await _db.update(
+      'sessions',
+      {'turn_count': turnCount, 'summary_json': summaryJson},
+      where: 'session_id = ?',
+      whereArgs: [sessionId],
+    );
+  }
+
+  Future<void> closeOrphanedSessions(String childId) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await _db.rawUpdate('''
+      UPDATE sessions SET ended_at = ?
+      WHERE child_id = ? AND ended_at IS NULL AND turn_count > 0
+    ''', [now, childId]);
+  }
+
   Future<void> updateSessionTopic(String sessionId, String topic) async {
     await _db.rawUpdate(
       'UPDATE sessions SET topic = ? WHERE session_id = ? AND topic IS NULL',

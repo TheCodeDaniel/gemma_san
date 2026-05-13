@@ -8,6 +8,7 @@ import '../../../services/gemma/tutor_response.dart';
       TutorMode.socratic => ('Socratic', PhosphorIconsRegular.question, AppColors.socratic),
       TutorMode.direct => ('Direct', PhosphorIconsRegular.bookOpen, AppColors.direct),
       TutorMode.encourage => ('Encouraging', PhosphorIconsRegular.heart, AppColors.encourage),
+      TutorMode.quiz => ('Quiz', PhosphorIconsRegular.trophy, AppColors.deepGreen),
     };
 
 /// Persistent header pill — faded dots when no mode, coloured when active.

@@ -185,3 +185,49 @@ final kGemmaTools = [
     },
   ),
 ];
+
+final kQuizQuestionTool = Tool(
+  name: 'quiz_question',
+  description:
+      'Ask ONE quiz question about the lesson topic. '
+      'question_number counts from 1 to 5. '
+      'After question 5, use direct_teach to give a short result summary '
+      '("You got X right out of 5"). '
+      'After each child answer, evaluate briefly then ask the next question.',
+  parameters: {
+    'type': 'object',
+    'properties': {
+      'spoken_question': {
+        'type': 'string',
+        'description': 'The question to ask out loud. Clear and answerable in one sentence.',
+      },
+      'expected_answer_hint': {
+        'type': 'string',
+        'description': 'The correct answer (not shown to child — used for evaluation).',
+      },
+      'topic': {'type': 'string', 'description': 'The topic being quizzed.'},
+      'question_number': {
+        'type': 'integer',
+        'description': 'Which question this is (1–5).',
+      },
+      ..._languageCodeParam,
+    },
+    'required': ['spoken_question', 'expected_answer_hint', 'topic', 'question_number', 'language_code'],
+  },
+);
+
+// Quiz mode uses quiz_question + direct_teach (for result) + encourage (for emotional support).
+final kQuizTools = [kQuizQuestionTool, kGemmaTools[1], kGemmaTools[2]];
+
+String kQuizSystemPrompt(String topic, String context) =>
+    'You are Gemma-San, running a 5-question quiz on "$topic" for a child.\n\n'
+    'LESSON CONTEXT (do not read aloud):\n$context\n\n'
+    'Rules:\n'
+    '- You MUST call quiz_question for questions 1–4.\n'
+    '- For question 5 (the last), call quiz_question, then on the NEXT turn call direct_teach '
+    'with a result: "You got X right out of 5! [encouragement]"\n'
+    '- Call encourage ONLY if the child is clearly upset; then return to quiz_question.\n'
+    '- Do NOT use socratic_teach in quiz mode.\n'
+    '- Keep questions short and answerable for a child aged 5–12.\n'
+    '- Always reply in the same language the child used.\n'
+    '- Set language_code to the BCP-47 code you used.\n';
