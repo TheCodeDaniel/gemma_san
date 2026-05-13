@@ -1,0 +1,52 @@
+<svg width="1242" height="2436" viewBox="0 0 1242 2436" xmlns="http://www.w3.org/2000/svg">
+    <!-- Terracotta background filling the whole screen -->
+    <rect x="0" y="0" width="1242" height="2436" fill="#C9572C" />
+
+    <!-- Decorative dots -->
+    <circle cx="180" cy="320" r="10" fill="#F5C842" opacity="0.6" />
+    <circle cx="1080" cy="280" r="12" fill="#F5C842" opacity="0.55" />
+    <circle cx="150" cy="2100" r="10" fill="#F5C842" opacity="0.5" />
+    <circle cx="1100" cy="2150" r="8" fill="#F5C842" opacity="0.5" />
+    <circle cx="250" cy="180" r="6" fill="#F5C842" opacity="0.45" />
+    <circle cx="1000" cy="2280" r="6" fill="#F5C842" opacity="0.45" />
+
+    <!-- Centered owl, scaled up for the larger canvas -->
+    <g transform="translate(621, 1050) scale(2.2)">
+        <!-- Owl body -->
+        <ellipse cx="0" cy="50" rx="100" ry="90" fill="#7A4A2B" />
+        <!-- Belly -->
+        <ellipse cx="0" cy="72" rx="58" ry="55" fill="#FBF6EC" />
+        <!-- Wings -->
+        <path d="M -90 30 Q -110 60, -100 105 Q -85 120, -60 105 Q -80 80, -85 45 Z" fill="#5A3520" />
+        <path d="M 90 30 Q 110 60, 100 105 Q 85 120, 60 105 Q 80 80, 85 45 Z" fill="#5A3520" />
+        <!-- Head -->
+        <ellipse cx="0" cy="-15" rx="90" ry="75" fill="#7A4A2B" />
+        <!-- Ear tufts -->
+        <path d="M -55 -73 L -80 -130 L -35 -94 Z" fill="#5A3520" />
+        <path d="M 55 -73 L 80 -130 L 35 -94 Z" fill="#5A3520" />
+        <!-- Facial disc -->
+        <ellipse cx="0" cy="-10" rx="68" ry="60" fill="#FBF6EC" />
+        <!-- Eye whites -->
+        <circle cx="-28" cy="-20" r="20" fill="#FBF6EC" stroke="#3A2515" stroke-width="2.5" />
+        <circle cx="28" cy="-20" r="20" fill="#FBF6EC" stroke="#3A2515" stroke-width="2.5" />
+        <!-- Inner eyes amber -->
+        <circle cx="-28" cy="-20" r="13" fill="#F5C842" />
+        <circle cx="28" cy="-20" r="13" fill="#F5C842" />
+        <!-- Pupils -->
+        <circle cx="-26" cy="-19" r="6.5" fill="#2A1A0F" />
+        <circle cx="30" cy="-19" r="6.5" fill="#2A1A0F" />
+        <!-- Eye highlights -->
+        <circle cx="-29" cy="-22" r="2" fill="#FBF6EC" />
+        <circle cx="27" cy="-22" r="2" fill="#FBF6EC" />
+        <!-- Beak -->
+        <path d="M 0 8 L -12 24 L 12 24 Z" fill="#E07A3C" />
+    </g>
+
+    <!-- Wordmark -->
+    <text x="621" y="1480" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="120" font-weight="700" fill="#FBF6EC">Gemma-San</text>
+
+    <!-- Tagline -->
+    <text x="621" y="1560" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="48" fill="#FBF6EC" opacity="0.75">Your friendly tutor</text>
+</svg>
