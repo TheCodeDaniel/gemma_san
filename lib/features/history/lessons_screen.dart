@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../core/avatar_data.dart';
+import '../../core/route_transitions.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/app_database.dart';
 import '../../data/memory_dao.dart';
@@ -48,15 +50,13 @@ class _LessonsScreenState extends State<LessonsScreen> {
   void _openSummary(LessonTopic topic) {
     Navigator.of(context)
         .push(
-          MaterialPageRoute(
-            builder: (_) => LessonSummaryScreen(
-              topic: topic,
-              childId: widget.childId,
-              gemmaService: widget.gemmaService,
-              sttService: widget.sttService,
-              ttsService: widget.ttsService,
-            ),
-          ),
+          slideRoute(LessonSummaryScreen(
+            topic: topic,
+            childId: widget.childId,
+            gemmaService: widget.gemmaService,
+            sttService: widget.sttService,
+            ttsService: widget.ttsService,
+          )),
         )
         .then((_) {
           if (!mounted) return;
@@ -83,7 +83,11 @@ class _LessonsScreenState extends State<LessonsScreen> {
           return ListView.builder(
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: topics.length,
-            itemBuilder: (_, i) => _LessonCard(topic: topics[i], onTap: () => _openSummary(topics[i])),
+            itemBuilder: (_, i) => _LessonCard(
+              topic: topics[i],
+              avatarId: widget.childId,
+              onTap: () => _openSummary(topics[i]),
+            ),
           );
         },
       ),
@@ -127,9 +131,10 @@ class _EmptyLessonsState extends StatelessWidget {
 // ── Lesson card ──────────────────────────────────────────────────────────────
 
 class _LessonCard extends StatelessWidget {
-  const _LessonCard({required this.topic, required this.onTap});
+  const _LessonCard({required this.topic, required this.avatarId, required this.onTap});
 
   final LessonTopic topic;
+  final String avatarId;
   final VoidCallback onTap;
 
   @override
@@ -148,7 +153,26 @@ class _LessonCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            _Thumbnail(topicId: topic.topic, hasIllustration: hasIllustration),
+            Stack(
+              children: [
+                _Thumbnail(topicId: topic.topic, hasIllustration: hasIllustration),
+                Positioned(
+                  bottom: 10,
+                  left: 10,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AvatarData.colorFor(avatarId),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(AvatarData.emojiFor(avatarId), style: const TextStyle(fontSize: 14)),
+                  ),
+                ),
+              ],
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),

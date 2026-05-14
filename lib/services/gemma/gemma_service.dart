@@ -18,7 +18,7 @@ import 'tutor_response.dart';
 // encoders that flutter_gemma 0.14.x rejects. Text generation works fine.
 const _modelUrl =
     'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/'
-    'resolve/main/gemma-4-E2B-it.litertlm';
+    'resolve/7fa1d78473894f7e736a21d920c3aa80f950c0db/gemma-4-E2B-it.litertlm';
 
 const _modelFilename = 'gemma-4-E2B-it.litertlm';
 
@@ -78,6 +78,8 @@ class GemmaService {
   String _childId = 'default';
   String? _ageRange;
   String _injectedMemory = '';
+  List<Tool>? _sessionTools;
+  String? _sessionSystemPrompt;
 
   bool get isReady => _model != null;
 
@@ -127,7 +129,7 @@ class GemmaService {
       final backend = _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu;
       debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens, vision=false)…');
       final swLoad = Stopwatch()..start();
-      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: false);
+      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: true);
       debugPrint('[Gemma] model ready — load time: ${swLoad.elapsed}');
     } catch (_) {
       _initializing = false;
@@ -139,12 +141,21 @@ class GemmaService {
 
   /// Call when the child opens a conversation. Creates a DB session row and
   /// loads memory context for injection into subsequent generate() calls.
-  Future<void> startSession(String childId, Database db, {String? ageRange}) async {
+  Future<void> startSession(
+    String childId,
+    Database db, {
+    String? ageRange,
+    List<Tool>? toolsOverride,
+    String? systemInstructionOverride,
+  }) async {
     if (_sessionId != null) await endSession();
 
     _childId = childId;
     _ageRange = ageRange;
+    _sessionTools = toolsOverride;
+    _sessionSystemPrompt = systemInstructionOverride;
     _memoryDao = MemoryDao(db);
+    await _memoryDao!.closeOrphanedSessions(childId);
     _sessionId = await _memoryDao!.createSession(childId);
     _turns.clear();
     _injectedMemory = await _buildMemoryContext(childId);
@@ -176,6 +187,8 @@ class GemmaService {
     _injectedMemory = '';
     _childId = 'default';
     _ageRange = null;
+    _sessionTools = null;
+    _sessionSystemPrompt = null;
   }
 
   // ── Generate ───────────────────────────────────────────────────────────────
@@ -187,8 +200,10 @@ class GemmaService {
     _addTurn(role: 'user', text: prompt);
     final fullPrompt = _buildPromptWithContext(prompt);
 
-    debugPrint('[Gemma] creating session (tools=${kGemmaTools.length})…');
-    final session = await model.createSession(tools: kGemmaTools, systemInstruction: kSystemPrompt);
+    final tools = _sessionTools ?? kGemmaTools;
+    final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
+    debugPrint('[Gemma] creating session (tools=${tools.length})…');
+    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
 
     try {
       await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
@@ -228,7 +243,10 @@ class GemmaService {
           }
         }
 
-        final spokenText = (call.args['spoken_response'] as String?) ?? '';
+        // quiz_question uses 'spoken_question'; all other tools use 'spoken_response'.
+        final spokenText = call.name == 'quiz_question'
+            ? (call.args['spoken_question'] as String?) ?? ''
+            : (call.args['spoken_response'] as String?) ?? '';
         final langCode = call.args['language_code'] as String?;
 
         if (call.name == 'show_illustration') {
@@ -263,6 +281,7 @@ class GemmaService {
             'socratic_teach' => TutorMode.socratic,
             'direct_teach' => TutorMode.direct,
             'encourage' => TutorMode.encourage,
+            'quiz_question' => TutorMode.quiz,
             _ => TutorMode.direct,
           };
           _addTurn(role: 'assistant', text: spokenText);
@@ -276,6 +295,97 @@ class GemmaService {
         _addTurn(role: 'assistant', text: spokenText);
         yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
       }
+
+      // Persist turn data after every response so force-killed sessions survive.
+      final sid = _sessionId;
+      final dao = _memoryDao;
+      if (sid != null && dao != null) {
+        await dao.persistTurnProgress(sid, _turns.length, _compactSession());
+      }
+    } finally {
+      await session.close();
+    }
+  }
+
+  // When the upstream flutter_gemma fix lands, flip this to true and uncomment
+  // the vision call block inside generateWithImage().
+  static const bool _supportsVision = true;
+
+  Stream<TutorResponse> generateWithImage(Uint8List imageBytes, {String query = ''}) async* {
+    if (!_supportsVision) {
+      debugPrint('[Gemma] Vision not supported — returning fallback');
+      yield const TutorResponse(
+        spokenText:
+            "I can't see pictures clearly yet — coming soon! "
+            'For now, tell me what you see and I\'ll help.',
+        mode: TutorMode.direct,
+      );
+      return;
+    }
+
+    final model = _model;
+    if (model == null) throw StateError('GemmaService.initialize() not called');
+
+    final tools = _sessionTools ?? kGemmaTools;
+    final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
+    debugPrint('[Gemma] createSession for vision…');
+    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
+
+    try {
+      await session.addQueryChunk(
+        Message.withImage(
+          text: query.isNotEmpty ? query : 'What do you see in this picture?',
+          imageBytes: imageBytes,
+          isUser: true,
+        ),
+      );
+
+      final sw = Stopwatch()..start();
+      await session.getResponse();
+      debugPrint('[Gemma] vision response in ${sw.elapsed}');
+
+      final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
+      debugPrint('[Gemma] vision raw: $raw');
+
+      var calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
+      if (calls.isEmpty && raw != null) {
+        calls = _parseRawGemma4Calls(raw);
+        if (calls.isNotEmpty) debugPrint('[Gemma] vision used raw-format fallback parser');
+      }
+
+      if (calls.isNotEmpty) {
+        final call = calls.first;
+        final spokenText = call.name == 'quiz_question'
+            ? (call.args['spoken_question'] as String?) ?? ''
+            : (call.args['spoken_response'] as String?) ?? '';
+        final langCode = call.args['language_code'] as String?;
+        final mode = switch (call.name) {
+          'socratic_teach' => TutorMode.socratic,
+          'direct_teach' => TutorMode.direct,
+          'encourage' => TutorMode.encourage,
+          'quiz_question' => TutorMode.quiz,
+          _ => TutorMode.direct,
+        };
+        _addTurn(role: 'assistant', text: spokenText);
+        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+      } else {
+        final salvaged = raw != null ? _salvageSpokenText(raw) : null;
+        final spokenText = salvaged ?? "I had trouble seeing that picture. Try describing what you see!";
+        _addTurn(role: 'assistant', text: spokenText);
+        yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
+      }
+
+      final sid = _sessionId;
+      final dao = _memoryDao;
+      if (sid != null && dao != null) {
+        await dao.persistTurnProgress(sid, _turns.length, _compactSession());
+      }
+    } catch (e) {
+      debugPrint('[Gemma] Vision inference error: $e');
+      yield const TutorResponse(
+        spokenText: "I had trouble seeing that picture. Try describing what you see!",
+        mode: TutorMode.direct,
+      );
     } finally {
       await session.close();
     }
@@ -290,20 +400,14 @@ class GemmaService {
   }) async {
     final model = _model;
     if (model == null || sessionSummaries.isEmpty) {
-      return (
-        summary: 'You have been exploring "$topic". Keep learning!',
-        concepts: <String>[],
-      );
+      return (summary: 'You have been exploring "$topic". Keep learning!', concepts: <String>[]);
     }
 
     final prompt =
         'Summarize what this child has learned about "$topic" in simple English. '
         'Session data: ${sessionSummaries.take(5).join('; ')}';
 
-    final session = await model.createSession(
-      tools: [_summaryTool],
-      systemInstruction: _summarySystemPrompt,
-    );
+    final session = await model.createSession(tools: [_summaryTool], systemInstruction: _summarySystemPrompt);
 
     try {
       await session.addQueryChunk(Message.text(text: prompt, isUser: true));
@@ -358,14 +462,15 @@ class GemmaService {
       for (final t in priorTurns) {
         final label = t.role == 'user' ? 'Child' : 'Gemma-San';
         // Truncate long assistant responses — they burn ~200-300 tokens each turn.
-        final text = (t.role == 'assistant' && t.text.length > 200)
-            ? '${t.text.substring(0, 200)}…'
-            : t.text;
+        final text = (t.role == 'assistant' && t.text.length > 200) ? '${t.text.substring(0, 200)}…' : t.text;
         buf.writeln('$label: $text');
       }
       buf.writeln();
     }
 
+    if (priorTurns.isEmpty) {
+      buf.writeln('[FIRST TURN]');
+    }
     buf.write(currentPrompt);
     return buf.toString();
   }

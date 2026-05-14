@@ -1,13 +1,18 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
+import '../../core/route_transitions.dart';
 import '../../core/theme/app_theme.dart';
+import '../camera/camera_capture_screen.dart' show CameraCaptureScreen, CameraResult;
 import '../../data/app_database.dart';
 import '../../services/gemma/gemma_service.dart';
+import '../../services/gemma/tool_definitions.dart';
 import '../../services/gemma/tutor_response.dart';
 import '../../services/stt/stt_service.dart';
 import '../../services/tts/tts_service.dart';
@@ -25,6 +30,9 @@ class ConversationScreen extends StatefulWidget {
     this.childId = 'default',
     this.ageRange,
     this.initialText,
+    this.quizMode = false,
+    this.quizContext,
+    this.quizTopic,
   });
 
   final GemmaService gemmaService;
@@ -36,17 +44,24 @@ class ConversationScreen extends StatefulWidget {
   /// Pre-fills the text input so the child just needs to tap Send.
   final String? initialText;
 
+  /// When true, starts a quiz session with [quizContext] + [quizTopic].
+  final bool quizMode;
+  final String? quizContext;
+  final String? quizTopic;
+
   @override
   State<ConversationScreen> createState() => _ConversationScreenState();
 }
 
 class _ConversationScreenState extends State<ConversationScreen> {
   final _recorder = AudioRecorder();
+  final _picker = ImagePicker();
   final _promptController = TextEditingController();
   final _scrollController = ScrollController();
   final _messages = <_ChatEntry>[];
 
   StreamSubscription<bool>? _ttsSub;
+  StreamSubscription<TutorResponse>? _generateSub;
 
   bool _sessionReady = false;
   bool _generating = false;
@@ -54,8 +69,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
   bool _transcribing = false;
   bool _speaking = false;
   TutorMode? _currentMode;
+  int _quizQuestionNumber = 0;
 
   static final _sentenceSplit = RegExp(r'(?<=[.!?])\s+');
+
+  bool get _hasMessages => _messages.isNotEmpty;
 
   OwlState get _owlState {
     if (_recording) return OwlState.listening;
@@ -81,6 +99,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   @override
   void dispose() {
+    widget.ttsService.stop();
+    _generateSub?.cancel();
     _ttsSub?.cancel();
     _recorder.dispose();
     _promptController.dispose();
@@ -91,7 +111,15 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   Future<void> _initSession() async {
     final db = await AppDatabase.get();
-    await widget.gemmaService.startSession(widget.childId, db, ageRange: widget.ageRange);
+    await widget.gemmaService.startSession(
+      widget.childId,
+      db,
+      ageRange: widget.ageRange,
+      toolsOverride: widget.quizMode ? kQuizTools : null,
+      systemInstructionOverride: widget.quizMode && widget.quizContext != null
+          ? kQuizSystemPrompt(widget.quizTopic ?? 'this topic', widget.quizContext!)
+          : null,
+    );
     if (mounted) setState(() => _sessionReady = true);
   }
 
@@ -109,10 +137,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
     });
     _scrollToBottom();
 
-    try {
-      await for (final response in widget.gemmaService.generate(prompt)) {
+    final completer = Completer<void>();
+    _generateSub = widget.gemmaService.generate(prompt).listen(
+      (response) {
+        if (!mounted) return;
         setState(() {
           _currentMode = response.mode;
+          if (response.mode == TutorMode.quiz) _quizQuestionNumber++;
           _messages.add(
             _ChatEntry(
               isUser: false,
@@ -125,17 +156,89 @@ class _ConversationScreenState extends State<ConversationScreen> {
         _scrollToBottom();
 
         if (response.languageCode != null) {
-          await widget.ttsService.setResponseLanguage(response.languageCode!);
+          widget.ttsService.setResponseLanguage(response.languageCode!);
         }
         for (final sentence in response.spokenText.split(_sentenceSplit)) {
           final s = sentence.trim();
           if (s.isNotEmpty) widget.ttsService.enqueue(s);
         }
-      }
-    } catch (e) {
-      setState(() => _messages.add(_ChatEntry(isUser: false, text: 'Something went wrong: $e')));
+      },
+      onError: (Object e) {
+        if (mounted) {
+          setState(() => _messages.add(_ChatEntry(isUser: false, text: 'Something went wrong: $e')));
+        }
+        completer.complete();
+      },
+      onDone: completer.complete,
+      cancelOnError: true,
+    );
+
+    try {
+      await completer.future;
     } finally {
-      setState(() => _generating = false);
+      _generateSub = null;
+      if (mounted) setState(() => _generating = false);
+      _scrollToBottom();
+    }
+  }
+
+  Future<void> _onCameraTap() async {
+    if (_generating || _transcribing || _recording) return;
+    if (!await Permission.camera.request().isGranted) return;
+
+    final file = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (file == null || !mounted) return;
+
+    final result = await Navigator.of(context).push<CameraResult?>(
+      slideRoute(CameraCaptureScreen(initialFile: file)),
+    );
+    if (result == null || !mounted) return;
+
+    final bytes = await result.file.readAsBytes();
+    await _sendWithImage(bytes, result.file.path, result.query);
+  }
+
+  Future<void> _sendWithImage(Uint8List bytes, String path, String query) async {
+    await widget.ttsService.stop();
+
+    setState(() {
+      _messages.add(_ChatEntry(isUser: true, text: query, imagePath: path));
+      _generating = true;
+      _currentMode = null;
+    });
+    _scrollToBottom();
+
+    final completer = Completer<void>();
+    _generateSub = widget.gemmaService.generateWithImage(bytes, query: query).listen(
+      (response) {
+        if (!mounted) return;
+        setState(() {
+          _currentMode = response.mode;
+          _messages.add(_ChatEntry(isUser: false, text: response.spokenText, mode: response.mode));
+        });
+        _scrollToBottom();
+        if (response.languageCode != null) {
+          widget.ttsService.setResponseLanguage(response.languageCode!);
+        }
+        for (final s in response.spokenText.split(_sentenceSplit)) {
+          if (s.trim().isNotEmpty) widget.ttsService.enqueue(s.trim());
+        }
+      },
+      onError: (Object e) {
+        if (mounted) {
+          setState(() => _messages.add(_ChatEntry(isUser: false, text: 'Something went wrong: $e')));
+        }
+        completer.complete();
+      },
+      onDone: completer.complete,
+      cancelOnError: true,
+    );
+
+    try {
+      await completer.future;
+    } finally {
+      _generateSub = null;
+      if (mounted) setState(() => _generating = false);
       _scrollToBottom();
     }
   }
@@ -199,10 +302,29 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final busy = _generating || _transcribing;
     final canSend = _sessionReady && !busy && !_recording && _promptController.text.trim().isNotEmpty;
 
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          widget.ttsService.stop();
+          _generateSub?.cancel();
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.warmCream,
       appBar: AppBar(
-        title: const Text('Conversation'),
+        title: widget.quizMode
+            ? Text('Quiz: $_quizQuestionNumber/5')
+            : _hasMessages
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MamaSanWidget(state: _owlState, size: 36),
+                      const SizedBox(width: 8),
+                      ConvModePill(mode: _currentMode),
+                    ],
+                  )
+                : const Text('Conversation'),
         actions: [
           if (_speaking)
             IconButton(
@@ -216,29 +338,37 @@ class _ConversationScreenState extends State<ConversationScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Column(
-                children: [
-                  MamaSanWidget(state: _owlState, size: 120),
-                  const SizedBox(height: 4),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: _sessionReady
-                        ? const SizedBox(height: 16)
-                        : SizedBox(
-                            height: 16,
-                            child: LinearProgressIndicator(
-                              backgroundColor: AppColors.warmCreamDark,
-                              valueColor: const AlwaysStoppedAnimation(AppColors.terracotta),
+            AnimatedCrossFade(
+              firstChild: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Column(
+                  children: [
+                    MamaSanWidget(state: _owlState, size: 120),
+                    const SizedBox(height: 4),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: _sessionReady
+                          ? const SizedBox(height: 16)
+                          : SizedBox(
+                              height: 16,
+                              child: LinearProgressIndicator(
+                                backgroundColor: AppColors.warmCreamDark,
+                                valueColor: const AlwaysStoppedAnimation(AppColors.terracotta),
+                              ),
                             ),
-                          ),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Say something to get started!',
+                      style: AppText.caption(color: AppColors.charcoal.withValues(alpha: 0.45)),
+                    ),
+                  ],
+                ),
               ),
+              secondChild: const SizedBox.shrink(),
+              crossFadeState: _hasMessages ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 300),
             ),
-            ConvModePill(mode: _currentMode),
-            const SizedBox(height: 4),
             Expanded(
               child: _messages.isEmpty && !_generating
                   ? const _EmptyPlaceholder()
@@ -253,6 +383,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           text: m.text,
                           mode: m.mode,
                           illustrationTopicId: m.illustrationTopicId,
+                          imagePath: m.imagePath,
+                          avatarId: m.isUser ? widget.childId : null,
                         );
                       },
                     ),
@@ -285,20 +417,23 @@ class _ConversationScreenState extends State<ConversationScreen> {
               canSend: canSend,
               onMicTap: _toggleMic,
               onSend: _send,
+              onCameraTap: _onCameraTap,
             ),
           ],
         ),
       ),
-    );
+    ),  // Scaffold
+  );    // PopScope
   }
 }
 
 class _ChatEntry {
-  const _ChatEntry({required this.isUser, required this.text, this.mode, this.illustrationTopicId});
+  const _ChatEntry({required this.isUser, required this.text, this.mode, this.illustrationTopicId, this.imagePath});
   final bool isUser;
   final String text;
   final TutorMode? mode;
   final String? illustrationTopicId;
+  final String? imagePath;
 }
 
 class _EmptyPlaceholder extends StatelessWidget {

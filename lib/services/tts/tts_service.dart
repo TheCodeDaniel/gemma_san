@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TtsService {
   final _tts = FlutterTts();
@@ -15,6 +16,7 @@ class TtsService {
   bool _processingQueue = false;
   Completer<void>? _utteranceCompleter;
   late String _deviceCountry;
+  String _preferredEnglish = 'en-US';
 
   Stream<bool> get speakingStream => _speakingController.stream;
 
@@ -26,6 +28,7 @@ class TtsService {
     _deviceCountry = ui.PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? 'NG';
     debugPrint('[TTS] device country: $_deviceCountry');
 
+    await _resolvePreferredEnglish();
     await _setTtsLanguage('en');
 
     await _tts.setSpeechRate(0.48);
@@ -72,13 +75,39 @@ class TtsService {
 
   // ── Private ────────────────────────────────────────────────────────────────
 
+  /// Queries installed TTS languages once and caches the best English variant
+  /// (en-NG > en-GB > en-US) in SharedPreferences.
+  Future<void> _resolvePreferredEnglish() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('tts_preferred_english');
+    if (cached != null) {
+      _preferredEnglish = cached;
+      debugPrint('[TTS] preferred English (cached): $_preferredEnglish');
+      return;
+    }
+
+    final dynamic langs = await _tts.getLanguages;
+    final available = (langs as List?)?.cast<String>() ?? <String>[];
+
+    for (final preferred in ['en-NG', 'en-GB', 'en-US']) {
+      if (available.any((l) => l.toLowerCase().startsWith(preferred.toLowerCase()))) {
+        _preferredEnglish = preferred;
+        await prefs.setString('tts_preferred_english', preferred);
+        debugPrint('[TTS] preferred English (detected): $_preferredEnglish (${available.length} voices available)');
+        return;
+      }
+    }
+    await prefs.setString('tts_preferred_english', _preferredEnglish);
+    debugPrint('[TTS] preferred English (fallback): $_preferredEnglish');
+  }
+
   /// Tries language variants in priority order; stops at the first that succeeds.
   Future<void> _setTtsLanguage(String langCode) async {
     final candidates = [
       '$langCode-$_deviceCountry', // e.g. en-NG, ha-NG
-      langCode, // e.g. en, ha
-      'en-$_deviceCountry', // en-NG fallback
-      'en-US', // last resort
+      langCode,                    // e.g. en, ha
+      'en-$_deviceCountry',        // en-NG fallback
+      _preferredEnglish,           // best available English (en-NG > en-GB > en-US)
     ];
     for (final lang in candidates) {
       if (await _tts.setLanguage(lang) == 1) {

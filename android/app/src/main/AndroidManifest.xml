@@ -21,7 +21,7 @@
     <uses-native-library android:name="libOpenCL-pixel.so" android:required="false" /> -->
 
     <application
-        android:label="gemma_san"
+        android:label="Gemma San"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

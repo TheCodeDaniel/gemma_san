@@ -29,7 +29,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
     _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
       CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
     );

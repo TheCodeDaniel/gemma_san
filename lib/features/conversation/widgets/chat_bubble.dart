@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../core/avatar_data.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/gemma/tutor_response.dart';
 import '../../../services/illustration/illustration_registry.dart';
@@ -12,6 +15,8 @@ class ChatBubble extends StatelessWidget {
     required this.text,
     this.mode,
     this.illustrationTopicId,
+    this.imagePath,
+    this.avatarId,
     super.key,
   });
 
@@ -19,6 +24,8 @@ class ChatBubble extends StatelessWidget {
   final String text;
   final TutorMode? mode;
   final String? illustrationTopicId;
+  final String? imagePath;
+  final String? avatarId;
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +44,37 @@ class ChatBubble extends StatelessWidget {
             child: Column(
               crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
+                if (imagePath != null) ...[_ImageView(imagePath: imagePath!), const SizedBox(height: 6)],
                 if (assetPath != null) ...[IllustrationView(assetPath: assetPath), const SizedBox(height: 6)],
-                _Bubble(isUser: isUser, text: text),
+                if (text.isNotEmpty) _Bubble(isUser: isUser, text: text),
                 if (!isUser && mode != null) ...[const SizedBox(height: 4), ModeTag(mode: mode!)],
               ],
             ),
           ),
-          if (isUser) const SizedBox(width: 8),
+          if (isUser) ...[const SizedBox(width: 8), _ChildAvatar(avatarId: avatarId)],
         ],
       ),
+    );
+  }
+}
+
+class _ChildAvatar extends StatelessWidget {
+  const _ChildAvatar({required this.avatarId});
+  final String? avatarId;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = avatarId ?? 'default';
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AvatarData.colorFor(id),
+        border: Border.all(color: AppColors.warmCreamDark, width: 1),
+      ),
+      alignment: Alignment.center,
+      child: Text(AvatarData.emojiFor(id), style: const TextStyle(fontSize: 14)),
     );
   }
 }
@@ -114,6 +143,31 @@ class _Bubble extends StatelessWidget {
         border: Border.all(color: AppColors.warmCreamDark, width: 1),
       ),
       child: Text(text, style: AppText.body()),
+    );
+  }
+}
+
+class _ImageView extends StatelessWidget {
+  const _ImageView({required this.imagePath});
+  final String imagePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.of(context).size.width * 0.65;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: Image.file(
+        File(imagePath),
+        width: w,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Container(
+          width: w,
+          height: w * 0.65,
+          color: AppColors.warmCreamDark,
+          alignment: Alignment.center,
+          child: const Icon(Icons.image_not_supported_rounded, color: AppColors.charcoal, size: 32),
+        ),
+      ),
     );
   }
 }
