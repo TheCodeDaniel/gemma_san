@@ -103,17 +103,11 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: _GhostButton(
-                    label: 'Try again',
-                    onTap: _picking ? null : _tryAgain,
-                  ),
+                  child: _GhostButton(label: 'Try again', onTap: _picking ? null : _tryAgain),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: _FilledButton(
-                    label: 'Send',
-                    onTap: _send,
-                  ),
+                  child: _FilledButton(label: 'Send', onTap: _send),
                 ),
               ],
             ),
