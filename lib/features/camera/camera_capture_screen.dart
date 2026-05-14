@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_theme.dart';
 
+typedef CameraResult = ({XFile file, String query});
+
 class CameraCaptureScreen extends StatefulWidget {
   const CameraCaptureScreen({super.key, required this.initialFile});
   final XFile initialFile;
@@ -16,11 +18,18 @@ class CameraCaptureScreen extends StatefulWidget {
 class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
   late XFile _file;
   bool _picking = false;
+  final _queryController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _file = widget.initialFile;
+  }
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
   }
 
   Future<void> _tryAgain() async {
@@ -33,6 +42,11 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     }
   }
 
+  void _send() {
+    final query = _queryController.text.trim();
+    Navigator.of(context).pop<CameraResult?>((file: _file, query: query));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,7 +57,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
         title: const Text('Preview'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop<XFile?>(null),
+          onPressed: () => Navigator.of(context).pop<CameraResult?>(null),
         ),
       ),
       body: Column(
@@ -55,6 +69,26 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                   child: Image.file(File(_file.path), fit: BoxFit.contain),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: TextField(
+              controller: _queryController,
+              style: const TextStyle(color: Colors.white),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _send(),
+              decoration: InputDecoration(
+                hintText: 'Ask something about this picture…',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: Colors.white12,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
@@ -77,8 +111,8 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: _FilledButton(
-                    label: 'Use this picture',
-                    onTap: () => Navigator.of(context).pop<XFile?>(_file),
+                    label: 'Send',
+                    onTap: _send,
                   ),
                 ),
               ],

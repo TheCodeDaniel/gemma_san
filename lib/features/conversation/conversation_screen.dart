@@ -9,7 +9,7 @@ import 'package:record/record.dart';
 
 import '../../core/route_transitions.dart';
 import '../../core/theme/app_theme.dart';
-import '../camera/camera_capture_screen.dart';
+import '../camera/camera_capture_screen.dart' show CameraCaptureScreen, CameraResult;
 import '../../data/app_database.dart';
 import '../../services/gemma/gemma_service.dart';
 import '../../services/gemma/tool_definitions.dart';
@@ -189,27 +189,27 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final file = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
     if (file == null || !mounted) return;
 
-    final confirmed = await Navigator.of(context).push<XFile?>(
+    final result = await Navigator.of(context).push<CameraResult?>(
       slideRoute(CameraCaptureScreen(initialFile: file)),
     );
-    if (confirmed == null || !mounted) return;
+    if (result == null || !mounted) return;
 
-    final bytes = await confirmed.readAsBytes();
-    await _sendWithImage(bytes, confirmed.path);
+    final bytes = await result.file.readAsBytes();
+    await _sendWithImage(bytes, result.file.path, result.query);
   }
 
-  Future<void> _sendWithImage(Uint8List bytes, String path) async {
+  Future<void> _sendWithImage(Uint8List bytes, String path, String query) async {
     await widget.ttsService.stop();
 
     setState(() {
-      _messages.add(_ChatEntry(isUser: true, text: '', imagePath: path));
+      _messages.add(_ChatEntry(isUser: true, text: query, imagePath: path));
       _generating = true;
       _currentMode = null;
     });
     _scrollToBottom();
 
     final completer = Completer<void>();
-    _generateSub = widget.gemmaService.generateWithImage(bytes).listen(
+    _generateSub = widget.gemmaService.generateWithImage(bytes, query: query).listen(
       (response) {
         if (!mounted) return;
         setState(() {

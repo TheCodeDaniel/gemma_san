@@ -311,7 +311,7 @@ class GemmaService {
   // the vision call block inside generateWithImage().
   static const bool _supportsVision = true;
 
-  Stream<TutorResponse> generateWithImage(Uint8List imageBytes) async* {
+  Stream<TutorResponse> generateWithImage(Uint8List imageBytes, {String query = ''}) async* {
     if (!_supportsVision) {
       debugPrint('[Gemma] Vision not supported — returning fallback');
       yield const TutorResponse(
@@ -333,7 +333,11 @@ class GemmaService {
 
     try {
       await session.addQueryChunk(
-        Message.withImage(text: 'What do you see in this picture?', imageBytes: imageBytes, isUser: true),
+        Message.withImage(
+          text: query.isNotEmpty ? query : 'What do you see in this picture?',
+          imageBytes: imageBytes,
+          isUser: true,
+        ),
       );
 
       final sw = Stopwatch()..start();
