@@ -6,6 +6,8 @@ class TutorResponse {
     required this.spokenText,
     this.languageCode,
     this.illustrationTopicId,
+    this.tryDrawingSvg,
+    this.tryDrawingTopic,
     this.metadata = const {},
   });
 
@@ -16,8 +18,15 @@ class TutorResponse {
   /// Null means unknown — TTS will keep its current language.
   final String? languageCode;
 
-  /// If set, the conversation UI should render the matching SVG inline.
-  /// Null means no illustration for this response.
+  /// If set, the conversation UI should render the matching pre-built SVG inline.
   final String? illustrationTopicId;
+
+  /// If set, the conversation UI should render an experimentally generated SVG.
+  /// Already validated by SvgValidator — safe to render directly.
+  final String? tryDrawingSvg;
+
+  /// Display name of the drawn topic (e.g. "traffic light").
+  final String? tryDrawingTopic;
+
   final Map<String, dynamic> metadata;
 }

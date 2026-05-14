@@ -150,6 +150,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
               text: response.spokenText,
               mode: response.mode,
               illustrationTopicId: response.illustrationTopicId,
+              tryDrawingSvg: response.tryDrawingSvg,
+              tryDrawingTopic: response.tryDrawingTopic,
             ),
           );
         });
@@ -384,6 +386,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           mode: m.mode,
                           illustrationTopicId: m.illustrationTopicId,
                           imagePath: m.imagePath,
+                          tryDrawingSvg: m.tryDrawingSvg,
+                          tryDrawingTopic: m.tryDrawingTopic,
                           avatarId: m.isUser ? widget.childId : null,
                         );
                       },
@@ -428,12 +432,22 @@ class _ConversationScreenState extends State<ConversationScreen> {
 }
 
 class _ChatEntry {
-  const _ChatEntry({required this.isUser, required this.text, this.mode, this.illustrationTopicId, this.imagePath});
+  const _ChatEntry({
+    required this.isUser,
+    required this.text,
+    this.mode,
+    this.illustrationTopicId,
+    this.imagePath,
+    this.tryDrawingSvg,
+    this.tryDrawingTopic,
+  });
   final bool isUser;
   final String text;
   final TutorMode? mode;
   final String? illustrationTopicId;
   final String? imagePath;
+  final String? tryDrawingSvg;
+  final String? tryDrawingTopic;
 }
 
 class _EmptyPlaceholder extends StatelessWidget {
