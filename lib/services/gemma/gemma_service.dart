@@ -129,7 +129,7 @@ class GemmaService {
       final backend = _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu;
       debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens, vision=false)…');
       final swLoad = Stopwatch()..start();
-      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: false);
+      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: true);
       debugPrint('[Gemma] model ready — load time: ${swLoad.elapsed}');
     } catch (_) {
       _initializing = false;
@@ -315,7 +315,8 @@ class GemmaService {
     if (!_supportsVision) {
       debugPrint('[Gemma] Vision not supported — returning fallback');
       yield const TutorResponse(
-        spokenText: "I can't see pictures clearly yet — coming soon! "
+        spokenText:
+            "I can't see pictures clearly yet — coming soon! "
             'For now, tell me what you see and I\'ll help.',
         mode: TutorMode.direct,
       );
@@ -342,20 +343,14 @@ class GemmaService {
   }) async {
     final model = _model;
     if (model == null || sessionSummaries.isEmpty) {
-      return (
-        summary: 'You have been exploring "$topic". Keep learning!',
-        concepts: <String>[],
-      );
+      return (summary: 'You have been exploring "$topic". Keep learning!', concepts: <String>[]);
     }
 
     final prompt =
         'Summarize what this child has learned about "$topic" in simple English. '
         'Session data: ${sessionSummaries.take(5).join('; ')}';
 
-    final session = await model.createSession(
-      tools: [_summaryTool],
-      systemInstruction: _summarySystemPrompt,
-    );
+    final session = await model.createSession(tools: [_summaryTool], systemInstruction: _summarySystemPrompt);
 
     try {
       await session.addQueryChunk(Message.text(text: prompt, isUser: true));
@@ -410,9 +405,7 @@ class GemmaService {
       for (final t in priorTurns) {
         final label = t.role == 'user' ? 'Child' : 'Gemma-San';
         // Truncate long assistant responses — they burn ~200-300 tokens each turn.
-        final text = (t.role == 'assistant' && t.text.length > 200)
-            ? '${t.text.substring(0, 200)}…'
-            : t.text;
+        final text = (t.role == 'assistant' && t.text.length > 200) ? '${t.text.substring(0, 200)}…' : t.text;
         buf.writeln('$label: $text');
       }
       buf.writeln();
