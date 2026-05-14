@@ -18,7 +18,7 @@ import 'tutor_response.dart';
 // encoders that flutter_gemma 0.14.x rejects. Text generation works fine.
 const _modelUrl =
     'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/'
-    'resolve/main/gemma-4-E2B-it.litertlm';
+    'resolve/7fa1d78473894f7e736a21d920c3aa80f950c0db/gemma-4-E2B-it.litertlm';
 
 const _modelFilename = 'gemma-4-E2B-it.litertlm';
 
@@ -309,7 +309,7 @@ class GemmaService {
 
   // When the upstream flutter_gemma fix lands, flip this to true and uncomment
   // the vision call block inside generateWithImage().
-  static const bool _supportsVision = false;
+  static const bool _supportsVision = true;
 
   Stream<TutorResponse> generateWithImage(Uint8List imageBytes) async* {
     if (!_supportsVision) {
@@ -322,16 +322,69 @@ class GemmaService {
       );
       return;
     }
-    // ignore: dead_code
-    // try {
-    //   final session = await _model!.createSession(tools: kGemmaTools, systemInstruction: kSystemPrompt);
-    //   await session.addQueryChunk(Message.withImage(image: imageBytes, isUser: true));
-    //   await session.getResponse();
-    //   // ... parse and yield TutorResponse as in generate()
-    //   await session.close();
-    // } catch (e) {
-    //   yield const TutorResponse(spokenText: "I had trouble seeing that. Try again?", mode: TutorMode.direct);
-    // }
+
+    final model = _model;
+    if (model == null) throw StateError('GemmaService.initialize() not called');
+
+    final tools = _sessionTools ?? kGemmaTools;
+    final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
+    debugPrint('[Gemma] createSession for vision…');
+    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
+
+    try {
+      await session.addQueryChunk(
+        Message.withImage(text: 'What do you see in this picture?', imageBytes: imageBytes, isUser: true),
+      );
+
+      final sw = Stopwatch()..start();
+      await session.getResponse();
+      debugPrint('[Gemma] vision response in ${sw.elapsed}');
+
+      final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
+      debugPrint('[Gemma] vision raw: $raw');
+
+      var calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
+      if (calls.isEmpty && raw != null) {
+        calls = _parseRawGemma4Calls(raw);
+        if (calls.isNotEmpty) debugPrint('[Gemma] vision used raw-format fallback parser');
+      }
+
+      if (calls.isNotEmpty) {
+        final call = calls.first;
+        final spokenText = call.name == 'quiz_question'
+            ? (call.args['spoken_question'] as String?) ?? ''
+            : (call.args['spoken_response'] as String?) ?? '';
+        final langCode = call.args['language_code'] as String?;
+        final mode = switch (call.name) {
+          'socratic_teach' => TutorMode.socratic,
+          'direct_teach' => TutorMode.direct,
+          'encourage' => TutorMode.encourage,
+          'quiz_question' => TutorMode.quiz,
+          _ => TutorMode.direct,
+        };
+        _addTurn(role: 'assistant', text: spokenText);
+        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+      } else {
+        final salvaged = raw != null ? _salvageSpokenText(raw) : null;
+        final spokenText = salvaged ?? "I had trouble seeing that picture. Try describing what you see!";
+        _addTurn(role: 'assistant', text: spokenText);
+        yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
+      }
+
+      final sid = _sessionId;
+      final dao = _memoryDao;
+      if (sid != null && dao != null) {
+        await dao.persistTurnProgress(sid, _turns.length, _compactSession());
+      }
+    } catch (e) {
+      debugPrint('[Gemma] Vision inference error: $e');
+      yield const TutorResponse(
+        spokenText: "I had trouble seeing that picture. Try describing what you see!",
+        mode: TutorMode.direct,
+      );
+    } finally {
+      await session.close();
+    }
   }
 
   /// Generates a child-friendly lesson summary from past session data for [topic].
