@@ -7,6 +7,7 @@ import '../../../core/avatar_data.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/gemma/tutor_response.dart';
 import '../../../services/illustration/illustration_registry.dart';
+import 'experimental_drawing_card.dart';
 import 'mode_pill.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -16,6 +17,8 @@ class ChatBubble extends StatelessWidget {
     this.mode,
     this.illustrationTopicId,
     this.imagePath,
+    this.tryDrawingSvg,
+    this.tryDrawingTopic,
     this.avatarId,
     super.key,
   });
@@ -25,6 +28,8 @@ class ChatBubble extends StatelessWidget {
   final TutorMode? mode;
   final String? illustrationTopicId;
   final String? imagePath;
+  final String? tryDrawingSvg;
+  final String? tryDrawingTopic;
   final String? avatarId;
 
   @override
@@ -46,6 +51,13 @@ class ChatBubble extends StatelessWidget {
               children: [
                 if (imagePath != null) ...[_ImageView(imagePath: imagePath!), const SizedBox(height: 6)],
                 if (assetPath != null) ...[IllustrationView(assetPath: assetPath), const SizedBox(height: 6)],
+                if (tryDrawingSvg != null) ...[
+                  ExperimentalDrawingCard(
+                    svgCode: tryDrawingSvg!,
+                    topic: tryDrawingTopic ?? '',
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 if (text.isNotEmpty) _Bubble(isUser: isUser, text: text),
                 if (!isUser && mode != null) ...[const SizedBox(height: 4), ModeTag(mode: mode!)],
               ],

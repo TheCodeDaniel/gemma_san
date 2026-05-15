@@ -10,6 +10,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../data/memory_dao.dart';
 import '../illustration/illustration_registry.dart';
+import '../svg/svg_validator.dart';
 import 'tool_definitions.dart';
 import 'tutor_response.dart';
 
@@ -236,6 +237,7 @@ class GemmaService {
             'socratic_teach' => (call.args['target_concept'] as String?)?.toLowerCase().trim(),
             'direct_teach' => (call.args['subject'] as String?)?.toLowerCase().trim(),
             'show_illustration' => call.args['topic_id'] as String?,
+            'try_drawing' => (call.args['topic'] as String?)?.toLowerCase().trim(),
             _ => null,
           };
           if (detected != null && detected.isNotEmpty) {
@@ -249,7 +251,20 @@ class GemmaService {
             : (call.args['spoken_response'] as String?) ?? '';
         final langCode = call.args['language_code'] as String?;
 
-        if (call.name == 'show_illustration') {
+        if (call.name == 'try_drawing') {
+          final topic = (call.args['topic'] as String?) ?? '';
+          final rawSvg = (call.args['svg_code'] as String?) ?? '';
+          final validation = SvgValidator.validate(topic, rawSvg);
+          _addTurn(role: 'assistant', text: spokenText);
+          yield TutorResponse(
+            mode: TutorMode.direct,
+            spokenText: spokenText,
+            languageCode: langCode,
+            tryDrawingSvg: validation.valid ? rawSvg : null,
+            tryDrawingTopic: topic,
+            metadata: call.args,
+          );
+        } else if (call.name == 'show_illustration') {
           final topicId = (call.args['topic_id'] as String?) ?? '';
           // Validate against registry — Gemma may hallucinate a value outside the enum.
           final resolvedId = IllustrationRegistry.hasIllustration(topicId) ? topicId : null;

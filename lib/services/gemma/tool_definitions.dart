@@ -16,6 +16,7 @@ Rules:
 - Call encourage when the child is tired, frustrated, or struggling emotionally.
 - Call remember when the child tells you their name, age, hobby, family members, or any personal fact worth keeping across sessions. Store the fact and give a friendly spoken reply.
 - Call show_illustration when the child asks about a topic that exactly matches one of the available illustration IDs. The illustration will appear on screen alongside your spoken response.
+- Call try_drawing when the child asks to draw or see something that can be built from rectangles, circles, and lines — even a simplified version is fine (e.g. a city skyline = 5 tall rectangles). Call it in preference to direct_teach whenever the topic is drawable, unless it is in the show_illustration library. DO NOT call try_drawing for human anatomy, animal faces, maps, or national flags with emblems.
 
 Keep spoken_response short: 4–6 sentences for teaching, 1–2 sentences for encourage and remember.
 
@@ -161,6 +162,66 @@ final kGemmaTools = [
         ..._languageCodeParam,
       },
       'required': ['fact', 'spoken_response', 'language_code'],
+    },
+  ),
+  Tool(
+    name: 'try_drawing',
+    description:
+        'Draw a topic as a simple SVG using only rectangles, circles, and lines. '
+        'ALWAYS call this (not direct_teach) when the child asks to draw or show any of these: '
+        'traffic light, clock face, flag with stripes, rainbow, the four seasons, '
+        'city skyline, simple house, basic shapes, bar chart, number line, compass rose, '
+        'thermometer, weighing scale, simple tree, ladder. '
+        'For a city skyline: draw 5 rect elements of different heights side by side. '
+        'For ANY topic not in show_illustration: attempt a simplified version with rect/circle/line — '
+        'set complexity_self_assessment to "simple" if the topic fits 3–8 shapes, '
+        '"medium" if it truly needs more than 8. '
+        'DO NOT use for: human anatomy, animal faces, maps, national flags with emblems. '
+        'SVG MUST follow these rules exactly — invalid SVG will be rejected: '
+        '(1) start with <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> '
+        '(2) end with </svg> '
+        '(3) ALL x/y/cx/cy/r/width/height values must be plain numbers between 0 and 200 '
+        '(4) use ONLY these tags: rect, circle, line, polygon, text — NO path, NO transform, NO use '
+        '(5) add 1–3 short <text> labels to name the key parts '
+        '(6) close every tag. '
+        'EXAMPLE (traffic light): '
+        '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">'
+        '<rect x="75" y="20" width="50" height="140" fill="#222" rx="8"/>'
+        '<circle cx="100" cy="55" r="18" fill="red"/>'
+        '<circle cx="100" cy="100" r="18" fill="orange"/>'
+        '<circle cx="100" cy="145" r="18" fill="limegreen"/>'
+        '<text x="100" y="185" text-anchor="middle" font-size="14" fill="#333">Traffic Light</text>'
+        '</svg>',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'topic': {
+          'type': 'string',
+          'description': 'Short name of what is being drawn (e.g. "traffic light", "city skyline").',
+        },
+        'complexity_self_assessment': {
+          'type': 'string',
+          'enum': ['simple', 'medium'],
+          'description':
+              '"simple" = topic fits in 3–8 shapes. '
+              '"medium" = needs 9–15 shapes but still only rects/circles/lines. '
+              'Always set this — it does NOT block the tool call.',
+        },
+        'svg_code': {
+          'type': 'string',
+          'description':
+              'Complete SVG. Must open with <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> '
+              'and close with </svg>. '
+              'Use only rect, circle, line, polygon, text. '
+              'All coordinates are numbers 0–200. No path. No transform. Close every tag.',
+        },
+        'spoken_response': {
+          'type': 'string',
+          'description': 'Explanation to say out loud alongside the drawing (3–5 sentences).',
+        },
+        ..._languageCodeParam,
+      },
+      'required': ['topic', 'complexity_self_assessment', 'svg_code', 'spoken_response', 'language_code'],
     },
   ),
   Tool(
