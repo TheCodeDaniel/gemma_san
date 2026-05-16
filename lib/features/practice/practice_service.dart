@@ -52,8 +52,8 @@ class SessionStats {
 }
 
 class PracticeService {
-  static const _correctFeedback = ['You get am!', 'Correct! Well done!', 'Na correct!'];
-  static const _incorrectFeedback = ['Try am again!', 'No worry, say am one more time.'];
+  static const _correctFeedback = ['Correct!', 'Well done!', 'That\'s right!'];
+  static const _incorrectFeedback = ['Try again!', 'Give it one more go.'];
 
   Scheduler? _scheduler;
   PracticeProgressDao? _dao;
