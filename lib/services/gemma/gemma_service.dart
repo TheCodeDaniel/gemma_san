@@ -19,7 +19,7 @@ import 'tutor_response.dart';
 // encoders that flutter_gemma 0.14.x rejects. Text generation works fine.
 const _modelUrl =
     'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/'
-    'resolve/7fa1d78473894f7e736a21d920c3aa80f950c0db/gemma-4-E2B-it.litertlm';
+    'resolve/main/gemma-4-E2B-it.litertlm';
 
 const _modelFilename = 'gemma-4-E2B-it.litertlm';
 
