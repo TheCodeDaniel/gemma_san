@@ -571,13 +571,15 @@ class GemmaService {
   }
 
   /// Returns true only when [s] looks like a real natural-language response —
-  /// not a serialisation fragment such as `,stage:` or `<|"|>`.
+  /// not a serialisation fragment such as `,stage:`, `<|"|>`, or a raw tool call.
   static bool _looksLikeResponse(String s) {
     if (s.length < 4) return false;
     // Reject obvious serialisation artifacts: comma-prefixed, raw delimiters, etc.
     if (s.startsWith(',') || s.startsWith(':') || s.startsWith('<') || s.startsWith('{')) return false;
     // Reject bare field references like ",stage:" or "stage:"
     if (RegExp(r'^,?\s*\w+:\s*$').hasMatch(s)) return false;
+    // Reject raw function call syntax like socratic_teach(stage=probe,...)
+    if (RegExp(r'^\w+\s*\(').hasMatch(s)) return false;
     // Must contain at least a few consecutive letters (real words)
     return RegExp(r'[a-zA-Z]{3,}').hasMatch(s);
   }
