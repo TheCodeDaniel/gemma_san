@@ -228,16 +228,17 @@ class GemmaService {
 
       if (calls.isNotEmpty) {
         final call = calls.first;
-        debugPrint('[Gemma] tool call: ${call.name} args=${call.args}');
+        final args = _sanitizeArgs(call.args);
+        debugPrint('[Gemma] tool call: ${call.name} args=$args');
 
         // Auto-detect topic. Only fires until topic is set (updateSessionTopic
         // ignores the call if a topic already exists for this session).
         if (_sessionId != null && _memoryDao != null) {
           final String? detected = switch (call.name) {
-            'socratic_teach' => (call.args['target_concept'] as String?)?.toLowerCase().trim(),
-            'direct_teach' => (call.args['subject'] as String?)?.toLowerCase().trim(),
-            'show_illustration' => call.args['topic_id'] as String?,
-            'try_drawing' => (call.args['topic'] as String?)?.toLowerCase().trim(),
+            'socratic_teach' => (args['target_concept'] as String?)?.toLowerCase().trim(),
+            'direct_teach' => (args['subject'] as String?)?.toLowerCase().trim(),
+            'show_illustration' => args['topic_id'] as String?,
+            'try_drawing' => (args['topic'] as String?)?.toLowerCase().trim(),
             _ => null,
           };
           if (detected != null && detected.isNotEmpty) {
@@ -245,15 +246,12 @@ class GemmaService {
           }
         }
 
-        // quiz_question uses 'spoken_question'; all other tools use 'spoken_response'.
-        final spokenText = call.name == 'quiz_question'
-            ? (call.args['spoken_question'] as String?) ?? ''
-            : (call.args['spoken_response'] as String?) ?? '';
-        final langCode = call.args['language_code'] as String?;
+        final spokenText = _resolveSpokenText(call.name, args);
+        final langCode = args['language_code'] as String?;
 
         if (call.name == 'try_drawing') {
-          final topic = (call.args['topic'] as String?) ?? '';
-          final rawSvg = (call.args['svg_code'] as String?) ?? '';
+          final topic = (args['topic'] as String?) ?? '';
+          final rawSvg = (args['svg_code'] as String?) ?? '';
           final validation = SvgValidator.validate(topic, rawSvg);
           _addTurn(role: 'assistant', text: spokenText);
           yield TutorResponse(
@@ -262,10 +260,10 @@ class GemmaService {
             languageCode: langCode,
             tryDrawingSvg: validation.valid ? rawSvg : null,
             tryDrawingTopic: topic,
-            metadata: call.args,
+            metadata: args,
           );
         } else if (call.name == 'show_illustration') {
-          final topicId = (call.args['topic_id'] as String?) ?? '';
+          final topicId = (args['topic_id'] as String?) ?? '';
           // Validate against registry — Gemma may hallucinate a value outside the enum.
           final resolvedId = IllustrationRegistry.hasIllustration(topicId) ? topicId : null;
           debugPrint('[Illustration] topic=$topicId resolved=$resolvedId');
@@ -275,22 +273,17 @@ class GemmaService {
             spokenText: spokenText,
             languageCode: langCode,
             illustrationTopicId: resolvedId,
-            metadata: call.args,
+            metadata: args,
           );
         } else if (call.name == 'remember') {
-          final fact = (call.args['fact'] as String?) ?? '';
+          final fact = (args['fact'] as String?) ?? '';
           if (fact.isNotEmpty) {
             final key = 'fact_${DateTime.now().millisecondsSinceEpoch}';
             await _memoryDao?.saveFact(_childId, key, fact);
             debugPrint('[Memory] saveFact key=$key value=$fact');
           }
           _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(
-            mode: TutorMode.direct,
-            spokenText: spokenText,
-            languageCode: langCode,
-            metadata: call.args,
-          );
+          yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText, languageCode: langCode, metadata: args);
         } else {
           final mode = switch (call.name) {
             'socratic_teach' => TutorMode.socratic,
@@ -300,7 +293,7 @@ class GemmaService {
             _ => TutorMode.direct,
           };
           _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+          yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
         }
       } else {
         // Last resort: salvage spoken_response from truncated/malformed output.
@@ -370,10 +363,9 @@ class GemmaService {
 
       if (calls.isNotEmpty) {
         final call = calls.first;
-        final spokenText = call.name == 'quiz_question'
-            ? (call.args['spoken_question'] as String?) ?? ''
-            : (call.args['spoken_response'] as String?) ?? '';
-        final langCode = call.args['language_code'] as String?;
+        final args = _sanitizeArgs(call.args);
+        final spokenText = _resolveSpokenText(call.name, args);
+        final langCode = args['language_code'] as String?;
         final mode = switch (call.name) {
           'socratic_teach' => TutorMode.socratic,
           'direct_teach' => TutorMode.direct,
@@ -382,7 +374,7 @@ class GemmaService {
           _ => TutorMode.direct,
         };
         _addTurn(role: 'assistant', text: spokenText);
-        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
       } else {
         final salvaged = raw != null ? _salvageSpokenText(raw) : null;
         final spokenText = salvaged ?? "I had trouble seeing that picture. Try describing what you see!";
@@ -516,6 +508,27 @@ class GemmaService {
   }
 
   // ── Private: model download & loading ─────────────────────────────────────
+
+  /// New flutter_gemma versions leave Gemma 4 special quote tokens inside JSON
+  /// string values (e.g. "<|\"|>en<|\"|>" instead of "en"). Strip them.
+  static Map<String, dynamic> _sanitizeArgs(Map<String, dynamic> args) =>
+      args.map((k, v) => MapEntry(k, v is String ? v.replaceAll('<|"|>', '').replaceAll('<"|>', '').trim() : v));
+
+  /// Resolve the spoken text from sanitized args, with per-tool fallbacks.
+  /// Newer SDK builds may omit spoken_response and place the text in a
+  /// sibling field (observed with socratic_teach → next_concept_step).
+  static String _resolveSpokenText(String toolName, Map<String, dynamic> args) {
+    if (toolName == 'quiz_question') {
+      return (args['spoken_question'] as String? ?? '');
+    }
+    final primary = args['spoken_response'] as String?;
+    if (primary != null && primary.isNotEmpty) return primary;
+    return switch (toolName) {
+      'socratic_teach' => (args['next_concept_step'] as String?) ?? '',
+      'direct_teach' => (args['follow_up_check'] as String?) ?? '',
+      _ => '',
+    };
+  }
 
   /// Parse the native Gemma 4 token format emitted when the C library does not
   /// convert to OpenAI JSON:
