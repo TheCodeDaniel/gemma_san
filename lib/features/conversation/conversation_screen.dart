@@ -127,8 +127,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final prompt = _promptController.text.trim();
     if (prompt.isEmpty || _generating) return;
 
-    await widget.ttsService.stop();
-
+    // Show user bubble immediately — stop TTS after so feedback is instant.
     setState(() {
       _messages.add(_ChatEntry(isUser: true, text: prompt));
       _generating = true;
@@ -136,6 +135,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
       _promptController.clear();
     });
     _scrollToBottom();
+    await widget.ttsService.stop();
 
     final completer = Completer<void>();
     _generateSub = widget.gemmaService.generate(prompt).listen(

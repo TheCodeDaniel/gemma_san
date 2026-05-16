@@ -13,6 +13,9 @@ class TtsService {
 
   bool _ready = false;
   bool _stopped = false;
+  bool _hasGoogleTts = false;
+
+  bool get hasGoogleTts => _hasGoogleTts;
   bool _processingQueue = false;
   Completer<void>? _utteranceCompleter;
   late String _deviceCountry;
@@ -27,6 +30,19 @@ class TtsService {
 
     _deviceCountry = ui.PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? 'NG';
     debugPrint('[TTS] device country: $_deviceCountry');
+
+    try {
+      final engines = await _tts.getEngines as List?;
+      if (engines != null && engines.contains('com.google.android.tts')) {
+        await _tts.setEngine('com.google.android.tts');
+        _hasGoogleTts = true;
+        debugPrint('[TTS] Google TTS engine active');
+      } else {
+        debugPrint('[TTS] Google TTS not installed — using system default');
+      }
+    } catch (e) {
+      debugPrint('[TTS] engine check failed: $e');
+    }
 
     await _resolvePreferredEnglish();
     await _setTtsLanguage('en');

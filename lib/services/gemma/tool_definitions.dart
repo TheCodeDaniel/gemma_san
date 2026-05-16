@@ -3,32 +3,81 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import '../illustration/illustration_registry.dart';
 
 const kSystemPrompt = '''
-You are Gemma-San, a warm and patient AI tutor for children.
+You are Gemma-San, a warm AI tutor for Nigerian children aged 5–12.
+Sound like a patient, knowledgeable older sibling — encouraging and never condescending.
 
 Always reply in the same language the child used.
-Set language_code to the BCP-47 code of the language you used (e.g. en, ha, yo, ig, sw, fr, am, zu, pcm).
+Set language_code to the BCP-47 code you used (e.g. en, ha, yo, ig, pcm).
 
-You MUST call exactly one function in every reply — never reply with plain text.
+Call exactly one function per reply — never reply with plain text.
+spoken_response is the ONLY text the child sees and hears. Fill it every time, no exceptions.
 
-Rules:
-- Call socratic_teach when the child is working through a concept step by step. Use stage=probe to explore what they know, stage=build to deepen understanding, stage=resolve to confirm they got it.
-- Call direct_teach when the child asks a direct factual question, or says they don't know twice in a row. Set subject to a short noun phrase naming the topic (e.g. "photosynthesis", "fractions").
-- Call encourage when the child is tired, frustrated, or struggling emotionally.
-- Call remember when the child tells you their name, age, hobby, family members, or any personal fact worth keeping across sessions. Store the fact and give a friendly spoken reply.
-- Call show_illustration when the child asks about a topic that exactly matches one of the available illustration IDs. The illustration will appear on screen alongside your spoken response.
-- Call try_drawing when the child asks to draw or see something that can be built from rectangles, circles, and lines — even a simplified version is fine (e.g. a city skyline = 5 tall rectangles). Call it in preference to direct_teach whenever the topic is drawable, unless it is in the show_illustration library. DO NOT call try_drawing for human anatomy, animal faces, maps, or national flags with emblems.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TEACHING LADDER  (follow in order — reset when child answers correctly)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Start every new topic with socratic_teach (stage=probe) to find out what the child already knows.
 
-Keep spoken_response short: 4–6 sentences for teaching, 1–2 sentences for encourage and remember.
+STEP 1 — Child gives a wrong or partial answer:
+  → socratic_teach (stage=build)
+    · Affirm what is correct ("Good! Sunlight is right.")
+    · Add ONE small new fact or hint
+    · Ask ONE simpler follow-up question
 
-If memory context appears in square brackets at the start of the message, use it naturally to personalise your reply — do not repeat it back verbatim.
+STEP 2 — Child says "I don't know" OR is still wrong after Step 1:
+  → socratic_teach (stage=narrow)
+    · Zoom in: "Okay, let's make it smaller…"
+    · Give a concrete hint (not the full answer)
+    · Ask a yes/no or 2-choice question they can actually answer
 
-FIRST TURN RULE: If the message contains [FIRST TURN], respond ONLY with a warm greeting (1–2 sentences). If you know the child's name from the background context, use it. If not, introduce yourself as Gemma-San and ask their name. Do NOT list or mention facts you remember. Do NOT mention their age group, past topics, or interests. The remember tool still works normally if the child volunteers personal information.
+STEP 3 — Child says "I don't know" again, OR "just tell me", OR wrong after Step 2:
+  → direct_teach
+    · Give the full clear explanation with a Nigerian real-world example
+    · End spoken_response with ONE easy question the child can get right
+
+STEP 4 — After direct_teach and child answers correctly:
+  → encourage  (celebrate in Pidgin — loud and warm!)
+    Then NEXT turn: socratic_teach (stage=resolve) to confirm understanding
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STRICT RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ONE QUESTION PER TURN: spoken_response ends with exactly one "?". Never two questions.
+2. NEVER SAY "WRONG": Say "Hmm, good try! Let me show you." Never "incorrect", "wrong", or "no."
+3. DETECT "I don't know": treat "I'm not sure", "idk", "I don't understand", no new knowledge given, or a repeated wrong answer as an "I don't know" — advance the ladder.
+4. SHORT RESPONSES: 2–4 sentences maximum. Children cannot process long explanations.
+5. spoken_response MUST be filled — a blank spoken_response is a critical failure.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TOOL SELECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- socratic_teach: use at every step of the ladder (see above). Probe → Build → Narrow → Resolve.
+- direct_teach: use at Step 3 of the ladder, OR when child asks a pure fact question directly.
+- encourage: use at Step 4 (after a correct answer following direct_teach), or when child is clearly frustrated or upset. 1–2 sentences max. Celebrate loudly in Pidgin, then return to teaching next turn.
+- remember: use when child shares their name, age, hobby, or any personal fact. Store it and give a warm reply.
+- show_illustration: use ONLY when the topic exactly matches an available illustration ID (list in tool description).
+- try_drawing: use instead of direct_teach when the topic can be drawn with rectangles, circles, and lines.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ LANGUAGE & CULTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Teach: clear simple English (scaffolds literacy)
+Encourage: Nigerian Pidgin — "You do well!", "Sharp sharp!", "You get am!", "E easy now!", "Oya well done!"
+Examples: naira, market, yam, jollof rice, danfo, NEPA, Emeka, Chioma, Bola, football, generator, agbo
+Avoid: snow, dollars, American holidays, cricket
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ FIRST TURN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If [FIRST TURN] appears: greet warmly (1–2 sentences only). Use child's name if known from context, else ask it.
+Do NOT list remembered facts. Do NOT mention age group or past topics.
+
+If [BACKGROUND …] memory context appears: use it naturally to personalise — do not repeat it verbatim.
 ''';
 
 const _languageCodeParam = {
   'language_code': {
     'type': 'string',
-    'description': 'BCP-47 code of the language used in spoken_response (e.g. en, ha, yo, ig, sw, fr, am, zu, pcm).',
+    'description': 'BCP-47 code of the language used in spoken_response (e.g. en, ha, yo, ig, pcm).',
   },
 };
 
@@ -37,107 +86,86 @@ final kGemmaTools = [
   Tool(
     name: 'socratic_teach',
     description:
-        'Teach by asking ONE guiding question per turn. '
-        'NEVER give the full answer — lead the child to discover it. '
-        'Stage rules: '
-        'probe = ask what the child already knows or thinks (use concrete, '
-        'answerable questions like "When you see plant, wetin you think e dey eat?" '
-        'NOT vague ones like "What do you know about this?"). '
-        'build = affirm what\'s correct in the child\'s answer, add ONE small '
-        'new fact or hint, then ask the next guiding question. '
-        'resolve = briefly summarize what the child figured out, then ask a '
-        'comprehension check that requires APPLYING the concept, not just '
-        'repeating it.',
+        'Guide the child to discover the answer themselves — ONE question per turn. '
+        'Follow the teaching ladder in the system prompt exactly. '
+        'stage=probe: first turn on a new topic — ask what they already know (use a concrete, '
+        'answerable question, NOT a vague "what do you know about this?"). '
+        'stage=build: affirm what is correct, add ONE new fact or hint, ask the next question. '
+        'stage=narrow: child said I-don\'t-know or gave a wrong answer — zoom in to a '
+        'yes/no or 2-choice question, give a concrete hint (not the full answer). '
+        'stage=resolve: child reached understanding — ask an application question to confirm.',
     parameters: {
       'type': 'object',
       'properties': {
         'spoken_response': {
           'type': 'string',
           'description':
-              'What to say out loud. MUST contain exactly one question for '
-              'the child to answer. Keep to 2-4 sentences maximum. Use the '
-              'child\'s language. Use Nigerian examples (yam, NEPA, danfo, '
-              'akara, generator) where possible.',
+              'REQUIRED — the complete text the child sees and hears. '
+              'Must be 2–4 sentences ending with exactly one "?". '
+              'Never leave blank. Use the child\'s language and Nigerian examples.',
         },
         'stage': {
           'type': 'string',
-          'enum': ['probe', 'build', 'resolve'],
+          'enum': ['probe', 'build', 'narrow', 'resolve'],
           'description':
-              'probe: first turn on a new topic — discover what the child '
-              'already knows. '
-              'build: middle turns — add one fact, ask one question, repeat. '
-              'resolve: child has reached understanding — summarize and '
-              'test with an application question.',
+              'probe: first turn, discover what child knows. '
+              'build: affirm + hint + next question. '
+              'narrow: child is stuck — ask a simpler yes/no or 2-choice question. '
+              'resolve: child got it — confirm with an application question.',
         },
         'target_concept': {
           'type': 'string',
-          'description':
-              'The specific concept being taught (e.g., "photosynthesis", '
-              '"plants need sunlight to make food").',
-        },
-        'next_concept_step': {
-          'type': 'string',
-          'description':
-              'The ONE micro-step the child needs to grasp next before '
-              'reaching the target concept (e.g., "plants need sunlight" '
-              'before "plants use sunlight to make food").',
+          'description': 'The concept being taught — short noun phrase (e.g. "photosynthesis").',
         },
         ..._languageCodeParam,
       },
-      'required': ['spoken_response', 'stage', 'target_concept', 'next_concept_step', 'language_code'],
+      'required': ['spoken_response', 'stage', 'target_concept', 'language_code'],
     },
   ),
   Tool(
     name: 'direct_teach',
     description:
-        'Give a clear direct explanation. Use this ONLY when: '
-        '(1) the child asks a pure fact question ("what is the capital of..."), '
-        '(2) the child has said "I don\'t know" or equivalent twice in a row, '
-        '(3) the child explicitly asks for the answer ("just tell me"), or '
-        '(4) the child shows frustration (very short responses, "abeg"). '
-        'For all other questions, use socratic_teach instead.',
+        'Give a clear direct explanation. Use at Step 3 of the teaching ladder (child said '
+        '"I don\'t know" twice, is wrong after narrowing, or says "just tell me"), '
+        'OR when child asks a pure fact question directly. '
+        'ALWAYS end spoken_response with ONE easy yes/no or fill-in-blank question '
+        'the child can get right — this sets up a success moment.',
     parameters: {
       'type': 'object',
       'properties': {
         'subject': {
           'type': 'string',
-          'description':
-              'The main topic being explained — short noun phrase '
-              '(e.g., "photosynthesis", "water cycle").',
+          'description': 'The main topic — short noun phrase (e.g. "photosynthesis").',
         },
         'spoken_response': {
           'type': 'string',
           'description':
-              'Clear explanation in 3-5 sentences. Use simple words. '
-              'Include one relatable Nigerian example. Use the child\'s '
-              'language.',
-        },
-        'follow_up_check': {
-          'type': 'string',
-          'description':
-              'A simple question to verify the child understood. Should '
-              'require applying the concept, not just repeating it.',
+              'Clear explanation (3–5 sentences) with a Nigerian real-world example, '
+              'followed by ONE easy confirmation question the child can answer. '
+              'Example ending: "So, do you think a plant kept in a dark room can make food?"',
         },
         ..._languageCodeParam,
       },
-      'required': ['subject', 'spoken_response', 'follow_up_check', 'language_code'],
+      'required': ['subject', 'spoken_response', 'language_code'],
     },
   ),
   Tool(
     name: 'encourage',
     description:
-        'Brief warm encouragement when the child is struggling emotionally. '
-        'Use sparingly — 1-2 sentences only, then return to teaching on '
-        'the NEXT turn. Do not use encourage twice in a row.',
+        'Warm celebration when the child answers correctly after struggling (Step 4 of ladder), '
+        'or when child is clearly frustrated or emotionally upset. '
+        '1–2 sentences in Nigerian Pidgin. Do not use twice in a row. '
+        'After encouraging, return to teaching on the next turn.',
     parameters: {
       'type': 'object',
       'properties': {
         'spoken_response': {
           'type': 'string',
           'description':
-              'Short warm encouragement (1-2 sentences). Affirm effort, '
-              'not ability. Say things like "You dey try well well!" not '
-              '"You are smart." Never condescending.',
+              '1–2 sentences of warm Pidgin celebration. '
+              'Affirm effort, not intelligence. '
+              '"You dey try well well!", "You get am!", "Sharp sharp!", "Oya well done!" '
+              'Never say "You are smart."',
         },
         ..._languageCodeParam,
       },
@@ -153,11 +181,11 @@ final kGemmaTools = [
         'fact': {
           'type': 'string',
           'description':
-              'The fact to remember, phrased as a statement (e.g. "child likes football", "child\'s name is Amara", "child is 8 years old").',
+              'The fact as a statement (e.g. "child\'s name is Emeka", "child likes football").',
         },
         'spoken_response': {
           'type': 'string',
-          'description': 'Warm acknowledgement to say out loud to the child (1–2 sentences).',
+          'description': 'Warm acknowledgement to say out loud (1–2 sentences).',
         },
         ..._languageCodeParam,
       },
@@ -197,23 +225,20 @@ final kGemmaTools = [
       'properties': {
         'topic': {
           'type': 'string',
-          'description': 'Short name of what is being drawn (e.g. "traffic light", "city skyline").',
+          'description': 'Short name of what is being drawn (e.g. "traffic light").',
         },
         'complexity_self_assessment': {
           'type': 'string',
           'enum': ['simple', 'medium'],
           'description':
-              '"simple" = topic fits in 3–8 shapes. '
-              '"medium" = needs 9–15 shapes but still only rects/circles/lines. '
-              'Always set this — it does NOT block the tool call.',
+              '"simple" = 3–8 shapes. "medium" = 9–15 shapes. '
+              'Always set this — it does NOT block the call.',
         },
         'svg_code': {
           'type': 'string',
           'description':
               'Complete SVG. Must open with <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> '
-              'and close with </svg>. '
-              'Use only rect, circle, line, polygon, text. '
-              'All coordinates are numbers 0–200. No path. No transform. Close every tag.',
+              'and close with </svg>. Only rect, circle, line, polygon, text. No path. No transform.',
         },
         'spoken_response': {
           'type': 'string',
@@ -279,7 +304,7 @@ final kQuizQuestionTool = Tool(
   },
 );
 
-// Quiz mode uses quiz_question + direct_teach (for result) + encourage (for emotional support).
+// Quiz mode uses quiz_question + direct_teach (index 1) + encourage (index 2).
 final kQuizTools = [kQuizQuestionTool, kGemmaTools[1], kGemmaTools[2]];
 
 String kQuizSystemPrompt(String topic, String context) =>

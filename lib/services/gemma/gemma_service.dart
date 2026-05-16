@@ -26,10 +26,6 @@ const _modelFilename = 'gemma-4-E2B-it.litertlm';
 // Set at build time via .env / --dart-define=HF_TOKEN=hf_xxx
 const _hfToken = String.fromEnvironment('HF_TOKEN');
 
-// USE_GPU=false  → CPU backend (works on emulator and all real devices, slower)
-// USE_GPU=true   → GPU backend (real device only — crashes on emulator's SwiftShader)
-const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
-
 // Dev shortcut: set DEV_MODEL_PATH to an absolute path on the device where you've
 // already pushed the model file (e.g. /sdcard/Download/gemma-4-E4B-it.litertlm).
 // When set and the file exists, initialize() skips HF download entirely.
@@ -93,7 +89,8 @@ class GemmaService {
 
     try {
       debugPrint('[Gemma] initializing SDK…');
-      await FlutterGemma.initialize(huggingFaceToken: _hfToken);
+      final usingLocalModel = _devModelPath.isNotEmpty;
+      await FlutterGemma.initialize(huggingFaceToken: usingLocalModel ? '' : _hfToken);
 
       String modelPath;
       if (_devModelPath.isNotEmpty && File(_devModelPath).existsSync()) {
@@ -127,11 +124,25 @@ class GemmaService {
         fileType: ModelFileType.litertlm,
       ).fromFile(modelPath).install();
 
-      final backend = _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu;
-      debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens, vision=false)…');
+      InferenceModel? loadedModel;
       final swLoad = Stopwatch()..start();
-      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: true);
-      debugPrint('[Gemma] model ready — load time: ${swLoad.elapsed}');
+      // NPU omitted: standard .litertlm files aren't NPU-compiled; attempting it
+      // blocks for ~20 s then fails, triggering ANR on real devices.
+      for (final backend in [PreferredBackend.gpu, PreferredBackend.cpu]) {
+        try {
+          loadedModel = await FlutterGemma.getActiveModel(
+            maxTokens: _maxTokens,
+            preferredBackend: backend,
+            supportImage: true,
+          );
+          debugPrint('[Gemma] ${backend.name.toUpperCase()} backend active — load: ${swLoad.elapsed}');
+          break;
+        } catch (e) {
+          debugPrint('[Gemma] ${backend.name} unavailable: $e');
+        }
+      }
+      if (loadedModel == null) throw StateError('No inference backend available (tried NPU/GPU/CPU)');
+      _model = loadedModel;
     } catch (_) {
       _initializing = false;
       rethrow;
@@ -207,6 +218,7 @@ class GemmaService {
     final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
 
     try {
+      try {
       await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
 
       final sw = Stopwatch()..start();
@@ -309,6 +321,11 @@ class GemmaService {
       final dao = _memoryDao;
       if (sid != null && dao != null) {
         await dao.persistTurnProgress(sid, _turns.length, _compactSession());
+      }
+      } catch (e) {
+        if (kDebugMode) debugPrint('[Gemma] generate error: $e');
+        _addTurn(role: 'assistant', text: '');
+        yield TutorResponse(mode: TutorMode.direct, spokenText: 'Something went wrong — please try again.');
       }
     } finally {
       await session.close();
@@ -515,19 +532,54 @@ class GemmaService {
       args.map((k, v) => MapEntry(k, v is String ? v.replaceAll('<|"|>', '').replaceAll('<"|>', '').trim() : v));
 
   /// Resolve the spoken text from sanitized args, with per-tool fallbacks.
-  /// Newer SDK builds may omit spoken_response and place the text in a
-  /// sibling field (observed with socratic_teach → next_concept_step).
+  /// Newer SDK builds may omit spoken_response; this handles all known cases.
   static String _resolveSpokenText(String toolName, Map<String, dynamic> args) {
     if (toolName == 'quiz_question') {
       return (args['spoken_question'] as String? ?? '');
     }
+
     final primary = args['spoken_response'] as String?;
-    if (primary != null && primary.isNotEmpty) return primary;
-    return switch (toolName) {
-      'socratic_teach' => (args['next_concept_step'] as String?) ?? '',
-      'direct_teach' => (args['follow_up_check'] as String?) ?? '',
-      _ => '',
-    };
+    if (primary != null && _looksLikeResponse(primary)) return primary;
+
+    if (kDebugMode) debugPrint('[Gemma] spoken_response empty for $toolName — scanning fields');
+
+    if (toolName == 'socratic_teach') {
+      // Scan all string fields for one that contains '?' — model sometimes puts
+      // the real question in a sibling field (e.g. target_concept on confusion).
+      for (final v in args.values) {
+        if (v is String && v.contains('?') && _looksLikeResponse(v)) {
+          if (kDebugMode) debugPrint('[Gemma] socratic fallback: found question in sibling field');
+          return v;
+        }
+      }
+      // Construct a stage-appropriate Socratic question from available metadata.
+      final stage = (args['stage'] as String? ?? '');
+      final concept = (args['target_concept'] as String? ?? '').trim();
+      if (concept.isNotEmpty) {
+        return switch (stage) {
+          'probe'   => 'What do you already know about $concept?',
+          'build'   => 'Good! What else do you think is important about $concept?',
+          'narrow'  => 'Let\'s make it simple — can you guess one thing about $concept?',
+          'resolve' => 'Can you explain how $concept works in your own words?',
+          _         => 'What do you know about $concept?',
+        };
+      }
+      return 'Let me think about that for a moment…';
+    }
+
+    return 'Let me think about that for a moment…';
+  }
+
+  /// Returns true only when [s] looks like a real natural-language response —
+  /// not a serialisation fragment such as `,stage:` or `<|"|>`.
+  static bool _looksLikeResponse(String s) {
+    if (s.length < 4) return false;
+    // Reject obvious serialisation artifacts: comma-prefixed, raw delimiters, etc.
+    if (s.startsWith(',') || s.startsWith(':') || s.startsWith('<') || s.startsWith('{')) return false;
+    // Reject bare field references like ",stage:" or "stage:"
+    if (RegExp(r'^,?\s*\w+:\s*$').hasMatch(s)) return false;
+    // Must contain at least a few consecutive letters (real words)
+    return RegExp(r'[a-zA-Z]{3,}').hasMatch(s);
   }
 
   /// Parse the native Gemma 4 token format emitted when the C library does not
@@ -570,7 +622,7 @@ class GemmaService {
       final text = end > start
           ? raw.substring(start, end).trim()
           : raw.substring(start).replaceAll(RegExp(r'[,}].*$', dotAll: true), '').trim();
-      if (text.length > 3) return text;
+      if (_looksLikeResponse(text)) return text;
     }
     return null;
   }

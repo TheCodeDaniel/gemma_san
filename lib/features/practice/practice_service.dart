@@ -22,11 +22,11 @@ class PhonicsItem {
   final int difficulty;
 
   factory PhonicsItem.fromJson(Map<String, dynamic> json) => PhonicsItem(
-        id: json['id'] as String,
-        promptText: json['prompt_text'] as String,
-        expectedPronunciation: json['expected_pronunciation'] as String,
-        difficulty: json['difficulty'] as int,
-      );
+    id: json['id'] as String,
+    promptText: json['prompt_text'] as String,
+    expectedPronunciation: json['expected_pronunciation'] as String,
+    difficulty: json['difficulty'] as int,
+  );
 }
 
 class EvalResult {
@@ -76,11 +76,11 @@ class PracticeService {
   int get tries => _tries;
 
   SessionStats get sessionStats => SessionStats(
-        itemsPracticed: _attempted,
-        correct: _score,
-        masteredToday: _masteredThisSession,
-        reviewTomorrow: _reviewTomorrow.length,
-      );
+    itemsPracticed: _attempted,
+    correct: _score,
+    masteredToday: _masteredThisSession,
+    reviewTomorrow: _reviewTomorrow.length,
+  );
 
   Future<void> initialize(String childId, AssetBundle bundle, Database db) async {
     _childId = childId;
@@ -114,8 +114,7 @@ class PracticeService {
     final scheduler = _scheduler!;
     final dao = _dao!;
 
-    final existing = scheduler.progress[item.id] ??
-        ItemProgress(itemId: item.id, childId: _childId);
+    final existing = scheduler.progress[item.id] ?? ItemProgress(itemId: item.id, childId: _childId);
 
     final updated = correct ? scheduler.applyCorrect(existing) : scheduler.applyWrong(existing);
     scheduler.updateProgress(item.id, updated);
@@ -190,8 +189,7 @@ class PracticeService {
     return best <= threshold;
   }
 
-  static String _normalize(String s) =>
-      s.toLowerCase().replaceAll(RegExp(r'[^a-z\s]'), '').trim();
+  static String _normalize(String s) => s.toLowerCase().replaceAll(RegExp(r'[^a-z\s]'), '').trim();
 
   static int _levenshtein(String a, String b) {
     if (a == b) return 0;
@@ -199,8 +197,12 @@ class PracticeService {
     if (b.isEmpty) return a.length;
 
     final dp = List.generate(a.length + 1, (i) => List.filled(b.length + 1, 0));
-    for (var i = 0; i <= a.length; i++) { dp[i][0] = i; }
-    for (var j = 0; j <= b.length; j++) { dp[0][j] = j; }
+    for (var i = 0; i <= a.length; i++) {
+      dp[i][0] = i;
+    }
+    for (var j = 0; j <= b.length; j++) {
+      dp[0][j] = j;
+    }
 
     for (var i = 1; i <= a.length; i++) {
       for (var j = 1; j <= b.length; j++) {

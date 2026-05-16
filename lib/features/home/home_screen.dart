@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/avatar_data.dart';
 import '../../core/route_transitions.dart';
@@ -101,6 +103,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _owlState = OwlState.idle;
       _statusText = '';
     });
+
+    if (!_ttsService.hasGoogleTts && !await _wasGttsDismissed()) {
+      if (mounted) _showGoogleTtsPrompt();
+    }
+  }
+
+  Future<bool> _wasGttsDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('tts_prompt_dismissed') ?? false;
+  }
+
+  void _showGoogleTtsPrompt() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Install Google TTS for better Nigerian voice quality.'),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'Install',
+          onPressed: () async {
+            await SharedPreferences.getInstance()
+                .then((p) => p.setBool('tts_prompt_dismissed', true));
+            await launchUrl(
+              Uri.parse('market://details?id=com.google.android.tts'),
+              mode: LaunchMode.externalApplication,
+            );
+          },
+        ),
+        onVisible: () async {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('tts_prompt_dismissed', true);
+        },
+      ),
+    );
   }
 
   bool get _ready => _gemmaReady && _sttReady;
