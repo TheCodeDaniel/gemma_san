@@ -215,120 +215,224 @@ class GemmaService {
     final tools = _sessionTools ?? kGemmaTools;
     final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
     debugPrint('[Gemma] creating session (tools=${tools.length})…');
-    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
+    final session = await model.createSession(
+      tools: tools,
+      systemInstruction: sysPrompt,
+      enableThinking: true,
+      temperature: 0.4,
+      topK: 40,
+      topP: 0.9,
+      randomSeed: 1,
+    );
 
     try {
       try {
-      await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
+        await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
 
-      final sw = Stopwatch()..start();
-      await session.getResponse();
-      debugPrint('[Gemma] response in ${sw.elapsed}');
+        final sw = Stopwatch()..start();
+        await session.getResponse();
+        debugPrint('[Gemma] response in ${sw.elapsed}');
 
-      final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
-      debugPrint('[Gemma] raw response: $raw');
+        final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
+        debugPrint('[Gemma] raw response: $raw');
 
-      // Primary path: SDK converts <|tool_call>...<tool_call|> to OpenAI JSON.
-      var calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
+        // Primary path: SDK converts <|tool_call>...<tool_call|> to OpenAI JSON.
+        var calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
 
-      // Fallback: C library streamed raw Gemma 4 tokens instead of JSON.
-      // Parses <|tool_call>call:name{key:<"|>val<"|>,...} directly.
-      if (calls.isEmpty && raw != null) {
-        calls = _parseRawGemma4Calls(raw);
-        if (calls.isNotEmpty) debugPrint('[Gemma] used raw-format fallback parser');
-      }
-
-      if (calls.isNotEmpty) {
-        final call = calls.first;
-        final args = _sanitizeArgs(call.args);
-        debugPrint('[Gemma] tool call: ${call.name} args=$args');
-
-        // Auto-detect topic. Only fires until topic is set (updateSessionTopic
-        // ignores the call if a topic already exists for this session).
-        if (_sessionId != null && _memoryDao != null) {
-          final String? detected = switch (call.name) {
-            'socratic_teach' => (args['target_concept'] as String?)?.toLowerCase().trim(),
-            'direct_teach' => (args['subject'] as String?)?.toLowerCase().trim(),
-            'show_illustration' => args['topic_id'] as String?,
-            'try_drawing' => (args['topic'] as String?)?.toLowerCase().trim(),
-            _ => null,
-          };
-          if (detected != null && detected.isNotEmpty) {
-            await _memoryDao!.updateSessionTopic(_sessionId!, detected);
-          }
+        // Fallback: C library streamed raw Gemma 4 tokens instead of JSON.
+        // Parses <|tool_call>call:name{key:<"|>val<"|>,...} directly.
+        if (calls.isEmpty && raw != null) {
+          calls = _parseRawGemma4Calls(raw);
+          if (calls.isNotEmpty) debugPrint('[Gemma] used raw-format fallback parser');
         }
 
-        final spokenText = _resolveSpokenText(call.name, args);
-        final langCode = args['language_code'] as String?;
+        if (calls.isNotEmpty) {
+          final call = calls.first;
+          final args = _sanitizeArgs(call.args);
+          debugPrint('[Gemma] tool call: ${call.name} args=$args');
 
-        if (call.name == 'try_drawing') {
-          final topic = (args['topic'] as String?) ?? '';
-          final rawSvg = (args['svg_code'] as String?) ?? '';
-          final validation = SvgValidator.validate(topic, rawSvg);
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(
-            mode: TutorMode.direct,
-            spokenText: spokenText,
-            languageCode: langCode,
-            tryDrawingSvg: validation.valid ? rawSvg : null,
-            tryDrawingTopic: topic,
-            metadata: args,
-          );
-        } else if (call.name == 'show_illustration') {
-          final topicId = (args['topic_id'] as String?) ?? '';
-          // Validate against registry — Gemma may hallucinate a value outside the enum.
-          final resolvedId = IllustrationRegistry.hasIllustration(topicId) ? topicId : null;
-          debugPrint('[Illustration] topic=$topicId resolved=$resolvedId');
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(
-            mode: TutorMode.direct,
-            spokenText: spokenText,
-            languageCode: langCode,
-            illustrationTopicId: resolvedId,
-            metadata: args,
-          );
-        } else if (call.name == 'remember') {
-          final fact = (args['fact'] as String?) ?? '';
-          if (fact.isNotEmpty) {
-            final key = 'fact_${DateTime.now().millisecondsSinceEpoch}';
-            await _memoryDao?.saveFact(_childId, key, fact);
-            debugPrint('[Memory] saveFact key=$key value=$fact');
+          // Auto-detect topic. Only fires until topic is set (updateSessionTopic
+          // ignores the call if a topic already exists for this session).
+          if (_sessionId != null && _memoryDao != null) {
+            final String? detected = switch (call.name) {
+              'socratic_teach' => (args['target_concept'] as String?)?.toLowerCase().trim(),
+              'direct_teach' => (args['subject'] as String?)?.toLowerCase().trim(),
+              'show_illustration' => args['topic_id'] as String?,
+              'try_drawing' => (args['topic'] as String?)?.toLowerCase().trim(),
+              _ => null,
+            };
+            if (detected != null && detected.isNotEmpty) {
+              await _memoryDao!.updateSessionTopic(_sessionId!, detected);
+            }
           }
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText, languageCode: langCode, metadata: args);
+
+          final spokenText = _resolveSpokenText(call.name, args);
+          final langCode = args['language_code'] as String?;
+
+          if (call.name == 'try_drawing') {
+            final topic = (args['topic'] as String?) ?? '';
+            final rawSvg = (args['svg_code'] as String?) ?? '';
+            final validation = SvgValidator.validate(topic, rawSvg);
+            _addTurn(role: 'assistant', text: spokenText);
+            if (validation.valid) {
+              // Prefer the sanitized SVG if the validator auto-corrected it.
+              final finalSvg = validation.sanitizedSvg ?? rawSvg;
+              yield TutorResponse(
+                mode: TutorMode.direct,
+                spokenText: spokenText,
+                languageCode: langCode,
+                tryDrawingSvg: finalSvg,
+                tryDrawingTopic: topic,
+                metadata: args,
+              );
+            } else {
+              // SVG too complex or malformed — fall back to spoken explanation only.
+              debugPrint('[Drawing] SVG invalid for "$topic" — text fallback');
+              yield TutorResponse(
+                mode: TutorMode.direct,
+                spokenText: spokenText,
+                languageCode: langCode,
+                metadata: args,
+              );
+            }
+          } else if (call.name == 'show_illustration') {
+            final topicId = (args['topic_id'] as String?) ?? '';
+            // Guard 1: topic_id must exist in registry.
+            // Guard 2: topic_id must be semantically related to the child's actual query —
+            // Gemma sometimes picks a valid registry ID that is completely unrelated
+            // to what was asked (e.g. "simple_machines" for "traffic light").
+            final inRegistry = IllustrationRegistry.hasIllustration(topicId);
+            final resolvedId = (inRegistry && _topicMatchesQuery(topicId, prompt)) ? topicId : null;
+            debugPrint('[Illustration] topic=$topicId inRegistry=$inRegistry resolved=$resolvedId');
+            _addTurn(role: 'assistant', text: spokenText);
+            yield TutorResponse(
+              mode: TutorMode.direct,
+              spokenText: spokenText,
+              languageCode: langCode,
+              illustrationTopicId: resolvedId,
+              metadata: args,
+            );
+          } else if (call.name == 'remember') {
+            final fact = (args['fact'] as String?) ?? '';
+            if (fact.isNotEmpty) {
+              final key = 'fact_${DateTime.now().millisecondsSinceEpoch}';
+              await _memoryDao?.saveFact(_childId, key, fact);
+              debugPrint('[Memory] saveFact key=$key value=$fact');
+            }
+            _addTurn(role: 'assistant', text: spokenText);
+            yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText, languageCode: langCode, metadata: args);
+          } else {
+            final mode = switch (call.name) {
+              'socratic_teach' => TutorMode.socratic,
+              'direct_teach' => TutorMode.direct,
+              'encourage' => TutorMode.encourage,
+              'quiz_question' => TutorMode.quiz,
+              _ => TutorMode.direct,
+            };
+            _addTurn(role: 'assistant', text: spokenText);
+            yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
+          }
         } else {
-          final mode = switch (call.name) {
-            'socratic_teach' => TutorMode.socratic,
-            'direct_teach' => TutorMode.direct,
-            'encourage' => TutorMode.encourage,
-            'quiz_question' => TutorMode.quiz,
-            _ => TutorMode.direct,
-          };
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
+          // No tool call parsed. Try in order: salvage → one retry with nudge →
+          // graceful direct_teach. The child must never see an error message.
+          final salvaged = raw != null ? _salvageSpokenText(raw) : null;
+          if (salvaged != null) {
+            debugPrint('[Gemma] no tool call — salvaged spoken_response');
+            _addTurn(role: 'assistant', text: salvaged);
+            yield TutorResponse(mode: TutorMode.direct, spokenText: salvaged);
+          } else {
+            debugPrint('[Gemma] no tool call, no salvage — retrying once with nudge');
+            final retry = await _retryWithNudge(model, fullPrompt, tools, sysPrompt);
+            if (retry != null) {
+              _addTurn(role: 'assistant', text: retry.spokenText);
+              yield retry;
+            } else {
+              const fallback =
+                  "Let me explain that differently. Which part would you like me to start with?";
+              _addTurn(role: 'assistant', text: fallback);
+              yield const TutorResponse(mode: TutorMode.direct, spokenText: fallback);
+            }
+          }
         }
-      } else {
-        // Last resort: salvage spoken_response from truncated/malformed output.
-        final salvaged = raw != null ? _salvageSpokenText(raw) : null;
-        debugPrint('[Gemma] no tool call — salvaged=${salvaged != null}');
-        final spokenText = salvaged ?? 'Something went wrong — please try again.';
-        _addTurn(role: 'assistant', text: spokenText);
-        yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
-      }
 
-      // Persist turn data after every response so force-killed sessions survive.
-      final sid = _sessionId;
-      final dao = _memoryDao;
-      if (sid != null && dao != null) {
-        await dao.persistTurnProgress(sid, _turns.length, _compactSession());
-      }
+        // Persist turn data after every response so force-killed sessions survive.
+        final sid = _sessionId;
+        final dao = _memoryDao;
+        if (sid != null && dao != null) {
+          await dao.persistTurnProgress(sid, _turns.length, _compactSession());
+        }
       } catch (e) {
         if (kDebugMode) debugPrint('[Gemma] generate error: $e');
-        _addTurn(role: 'assistant', text: '');
-        yield TutorResponse(mode: TutorMode.direct, spokenText: 'Something went wrong — please try again.');
+        const fallback =
+            "Let me think about that again. Can you tell me what you'd like to explore?";
+        _addTurn(role: 'assistant', text: fallback);
+        yield const TutorResponse(mode: TutorMode.direct, spokenText: fallback);
       }
     } finally {
       await session.close();
+    }
+  }
+
+  /// One-shot retry on parse failure. Opens a fresh session (the original is
+  /// already finalised), appends a forceful nudge to the prompt, runs once,
+  /// and parses with the same fallback chain as the primary path.
+  /// Returns null on any exception so the caller can fire the graceful fallback.
+  Future<TutorResponse?> _retryWithNudge(
+    InferenceModel model,
+    String fullPrompt,
+    List<Tool> tools,
+    String sysPrompt,
+  ) async {
+    InferenceModelSession? retrySession;
+    try {
+      retrySession = await model.createSession(
+        tools: tools,
+        systemInstruction: sysPrompt,
+        enableThinking: true,
+        temperature: 0.4,
+        topK: 40,
+        topP: 0.9,
+        randomSeed: 1,
+      );
+      const nudge = '\n\nIMPORTANT: Respond by calling exactly ONE function. No plain text.';
+      await retrySession.addQueryChunk(Message.text(text: fullPrompt + nudge, isUser: true));
+      await retrySession.getResponse();
+      final raw = retrySession is RawSdkResponseSession ? retrySession.lastRawResponse : null;
+      if (raw == null) return null;
+
+      var calls = SdkResponseParser.extractToolCalls(raw);
+      if (calls.isEmpty) calls = _parseRawGemma4Calls(raw);
+      if (calls.isEmpty) {
+        final salvaged = _salvageSpokenText(raw);
+        if (salvaged != null) {
+          return TutorResponse(mode: TutorMode.direct, spokenText: salvaged);
+        }
+        return null;
+      }
+
+      final call = calls.first;
+      final args = _sanitizeArgs(call.args);
+      final spokenText = _resolveSpokenText(call.name, args);
+      final langCode = args['language_code'] as String?;
+      final mode = switch (call.name) {
+        'socratic_teach' => TutorMode.socratic,
+        'direct_teach' => TutorMode.direct,
+        'encourage' => TutorMode.encourage,
+        'quiz_question' => TutorMode.quiz,
+        _ => TutorMode.direct,
+      };
+      debugPrint('[Gemma] retry succeeded with ${call.name}');
+      return TutorResponse(
+        mode: mode,
+        spokenText: spokenText,
+        languageCode: langCode,
+        metadata: args,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Gemma] retry failed: $e');
+      return null;
+    } finally {
+      await retrySession?.close();
     }
   }
 
@@ -354,7 +458,15 @@ class GemmaService {
     final tools = _sessionTools ?? kGemmaTools;
     final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
     debugPrint('[Gemma] createSession for vision…');
-    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
+    final session = await model.createSession(
+      tools: tools,
+      systemInstruction: sysPrompt,
+      enableThinking: true,
+      temperature: 0.4,
+      topK: 40,
+      topP: 0.9,
+      randomSeed: 1,
+    );
 
     try {
       await session.addQueryChunk(
@@ -431,7 +543,15 @@ class GemmaService {
         'Summarize what this child has learned about "$topic" in simple English. '
         'Session data: ${sessionSummaries.take(5).join('; ')}';
 
-    final session = await model.createSession(tools: [_summaryTool], systemInstruction: _summarySystemPrompt);
+    final session = await model.createSession(
+      tools: [_summaryTool],
+      systemInstruction: _summarySystemPrompt,
+      enableThinking: true,
+      temperature: 0.4,
+      topK: 40,
+      topP: 0.9,
+      randomSeed: 1,
+    );
 
     try {
       await session.addQueryChunk(Message.text(text: prompt, isUser: true));
@@ -501,7 +621,7 @@ class GemmaService {
 
   /// Pure-Dart compaction — serialises user turns for cross-session injection.
   String _compactSession() {
-    final userTurns = _turns.where((t) => t.role == 'user').map((t) => t.text).take(5).toList();
+    final userTurns = _turns.where((t) => t.role == 'user').map((t) => t.text).take(3).toList();
     return jsonEncode({'user_turns': userTurns, 'turn_count': _turns.length});
   }
 
@@ -557,17 +677,27 @@ class GemmaService {
       final concept = (args['target_concept'] as String? ?? '').trim();
       if (concept.isNotEmpty) {
         return switch (stage) {
-          'probe'   => 'What do you already know about $concept?',
-          'build'   => 'Good! What else do you think is important about $concept?',
-          'narrow'  => 'Let\'s make it simple — can you guess one thing about $concept?',
+          'probe' => 'What do you already know about $concept?',
+          'build' => 'Good! What else do you think is important about $concept?',
+          'narrow' => 'Let\'s make it simple — can you guess one thing about $concept?',
           'resolve' => 'Can you explain how $concept works in your own words?',
-          _         => 'What do you know about $concept?',
+          _ => 'What do you know about $concept?',
         };
       }
       return 'Let me think about that for a moment…';
     }
 
     return 'Let me think about that for a moment…';
+  }
+
+  /// Returns true when [topicId] is semantically related to the user's [query].
+  /// Splits the topic_id on underscores and checks that at least one meaningful
+  /// word (≥4 chars) appears in the query — prevents Gemma from showing an
+  /// illustration that exists in the registry but is unrelated to what was asked
+  /// (e.g. returning "simple_machines" for a "traffic light" request).
+  static bool _topicMatchesQuery(String topicId, String query) {
+    final queryLower = query.toLowerCase();
+    return topicId.toLowerCase().split('_').any((word) => word.length >= 4 && queryLower.contains(word));
   }
 
   /// Returns true only when [s] looks like a real natural-language response —

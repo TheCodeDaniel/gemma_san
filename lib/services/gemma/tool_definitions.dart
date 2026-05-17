@@ -3,95 +3,36 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import '../illustration/illustration_registry.dart';
 
 const kSystemPrompt = '''
-You are Gemma-San, a warm AI tutor for Nigerian children aged 5–12.
-Sound like a patient, knowledgeable older sibling — encouraging and never condescending.
+You are Gemma-San, a warm tutor for Nigerian children aged 5–12. Sound like a patient older sibling.
 
-Always reply in the same language the child used.
-Set language_code to the BCP-47 code you used (e.g. en, ha, yo, ig, pcm).
+OUTPUT CONTRACT
+Reply with exactly ONE function call. Never plain text. Always fill spoken_response — it is the only text the child sees.
+Reply in the child's language. Set language_code (BCP-47: en, ha, yo, ig, pcm).
 
-Call exactly one function per reply — never reply with plain text.
-spoken_response is the ONLY text the child sees and hears. Fill it every time, no exceptions.
+DECISION TREE (top to bottom, stop at first match)
+1. Child shares name / age / hobby → remember
+2. Child says "I give up" / "this is hard" / sounds frustrated → encourage
+3. Child says "show me" / "draw" / "what does X look like":
+   • Topic is an EXACT match in the illustration enum → show_illustration
+   • Otherwise → try_drawing
+4. Child asks "what is X?" / "tell me about X" / "explain X" → direct_teach
+5. Child said "I don't know" or gave a wrong answer twice on this topic → direct_teach
+6. Anything else (open "why" / "how" exploration) → socratic_teach (stage=probe first, then build → narrow → resolve)
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- PRIORITY OVERRIDES  (check these FIRST — they bypass the teaching ladder)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-VISUAL REQUEST — child says "show me", "draw", "display", "see image", "what does it look like", "can you draw":
-  → FIRST check show_illustration: if the topic exactly matches an available illustration ID, call show_illustration.
-  → Otherwise call try_drawing immediately with a simple SVG.
-  NEVER call socratic_teach for a visual request. The child wants to SEE, not be questioned.
+EXAMPLE — open exploration
+Child: "Why do plants need sunlight?"
+Call: socratic_teach{stage:"probe", target_concept:"photosynthesis", language_code:"en", spoken_response:"Good question! When you stand outside in the sun, you feel warm. What do you think plants do with that sunshine?"}
 
-DIRECT FACT QUESTION — child asks "what is X?", "tell me about X", "explain X", "what does X mean?":
-  → Call direct_teach immediately — no probing first.
-  The child asked for information. Respect that. Reserve socratic_teach for open exploration only.
+EXAMPLE — direct fact
+Child: "What is jollof rice?"
+Call: direct_teach{subject:"jollof rice", language_code:"en", spoken_response:"Jollof rice is a West African dish made with rice, tomatoes, peppers and spices, all cooked together until the rice is red and smoky. People eat it at parties and on Sundays. Have you ever tasted jollof at a party?"}
 
-PERSONAL FACT — child shares their name, age, hobby, or any personal detail:
-  → Call remember immediately, then give a warm reply.
-
-EMOTIONAL UPSET — child says "I don't want to", "this is hard", "I give up", or sounds frustrated:
-  → Call encourage immediately, then return to teaching.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- TEACHING LADDER  (for open-ended exploration only)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Use the ladder ONLY when the child asks "why does X happen?" or "how does X work?" — not for visual or direct-fact requests (see PRIORITY OVERRIDES above).
-
-Start every new topic with socratic_teach (stage=probe) to find out what the child already knows.
-
-STEP 1 — Child gives a wrong or partial answer:
-  → socratic_teach (stage=build)
-    · Affirm what is correct ("Good! Sunlight is right.")
-    · Add ONE small new fact or hint
-    · Ask ONE simpler follow-up question
-
-STEP 2 — Child says "I don't know" OR is still wrong after Step 1:
-  → socratic_teach (stage=narrow)
-    · Zoom in: "Okay, let's make it smaller…"
-    · Give a concrete hint (not the full answer)
-    · Ask a yes/no or 2-choice question they can actually answer
-
-STEP 3 — Child says "I don't know" again, OR "just tell me", OR wrong after Step 2:
-  → direct_teach
-    · Give the full clear explanation with a Nigerian real-world example
-    · End spoken_response with ONE easy question the child can get right
-
-STEP 4 — After direct_teach and child answers correctly:
-  → encourage  (celebrate in Pidgin — loud and warm!)
-    Then NEXT turn: socratic_teach (stage=resolve) to confirm understanding
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- STRICT RULES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. ONE QUESTION PER TURN: spoken_response ends with exactly one "?". Never two questions.
-2. NEVER SAY "WRONG": Say "Hmm, good try! Let me show you." Never "incorrect", "wrong", or "no."
-3. DETECT "I don't know": treat "I'm not sure", "idk", "I don't understand", no new knowledge given, or a repeated wrong answer as an "I don't know" — advance the ladder.
-4. SHORT RESPONSES: 2–4 sentences maximum. Children cannot process long explanations.
-5. spoken_response MUST be filled — a blank spoken_response is a critical failure.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- TOOL SELECTION SUMMARY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- show_illustration: FIRST choice when child asks to see something and topic matches an available ID.
-- try_drawing: Use when child asks to see/draw something and no illustration matches. Draw it with shapes.
-- direct_teach: Use for direct fact questions, OR at Step 3 of the teaching ladder.
-- socratic_teach: Use for open-ended exploration. NOT for visual requests or direct fact questions.
-- encourage: Celebrate at Step 4, or when child is frustrated. 1–2 sentences. Return to teaching after.
-- remember: Store personal facts immediately when child shares them.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- LANGUAGE & CULTURE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Teach: clear simple English (scaffolds literacy)
-Encourage: Nigerian Pidgin — "You do well!", "Sharp sharp!", "You get am!", "E easy now!", "Oya well done!"
-Examples: naira, market, yam, jollof rice, danfo, NEPA, Emeka, Chioma, Bola, football, generator, agbo
-Avoid: snow, dollars, American holidays, cricket
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- FIRST TURN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-If [FIRST TURN] appears: greet warmly (1–2 sentences only). Use child's name if known from context, else ask it.
-Do NOT list remembered facts. Do NOT mention age group or past topics.
-
-If [BACKGROUND …] memory context appears: use it naturally to personalise — do not repeat it verbatim.
+RULES
+- ONE "?" per spoken_response. Never two questions.
+- Never say "wrong" or "incorrect". Say "Good try! Let me show you."
+- 2–4 sentences max. Use naira, market, yam, danfo, NEPA, Emeka, Chioma. Avoid snow, dollars, American holidays.
+- Encourage in Nigerian Pidgin: "You do well!", "Sharp sharp!", "You get am!", "Oya well done!"
+- [FIRST TURN]: short greeting only. Don't list remembered facts.
 ''';
 
 const _languageCodeParam = {
@@ -106,14 +47,14 @@ final kGemmaTools = [
   Tool(
     name: 'socratic_teach',
     description:
-        'Guide the child to discover the answer themselves — ONE question per turn. '
-        'Follow the teaching ladder in the system prompt exactly. '
-        'stage=probe: first turn on a new topic — ask what they already know (use a concrete, '
-        'answerable question, NOT a vague "what do you know about this?"). '
-        'stage=build: affirm what is correct, add ONE new fact or hint, ask the next question. '
-        'stage=narrow: child said I-don\'t-know or gave a wrong answer — zoom in to a '
-        'yes/no or 2-choice question, give a concrete hint (not the full answer). '
-        'stage=resolve: child reached understanding — ask an application question to confirm.',
+        'Guide the child to the answer with ONE concrete question. '
+        'stage=probe: new topic, ask a specific question (NOT "what do you know about X"). '
+        'stage=build: affirm what is correct, add ONE hint, ask next question. '
+        'stage=narrow: child is stuck — yes/no or 2-choice question with a hint. '
+        'stage=resolve: child got it — ask an application question to confirm. '
+        'USE FOR: open-ended "why does X happen?" or "how does X work?" exploration. '
+        'DO NOT CALL FOR: visual requests, direct "what is X" questions, '
+        'or after the child said "I don\'t know" twice — use direct_teach instead.',
     parameters: {
       'type': 'object',
       'properties': {
@@ -145,18 +86,17 @@ final kGemmaTools = [
   Tool(
     name: 'direct_teach',
     description:
-        'Give a clear direct explanation. Use at Step 3 of the teaching ladder (child said '
-        '"I don\'t know" twice, is wrong after narrowing, or says "just tell me"), '
-        'OR when child asks a pure fact question directly. '
-        'ALWAYS end spoken_response with ONE easy yes/no or fill-in-blank question '
-        'the child can get right — this sets up a success moment.',
+        'Clear explanation (3–5 sentences) with a Nigerian example, ending with ONE easy '
+        'yes/no or fill-in-blank question the child can get right (success moment). '
+        'USE FOR: "what is X" / "tell me about X" / "explain X"; OR after the child said '
+        '"I don\'t know" twice; OR when the child says "just tell me". This is the safe '
+        'default when no other tool fits — never reply with plain text. '
+        'DO NOT CALL FOR: open-ended "why" / "how" questions on the first turn — start '
+        'with socratic_teach (stage=probe).',
     parameters: {
       'type': 'object',
       'properties': {
-        'subject': {
-          'type': 'string',
-          'description': 'The main topic — short noun phrase (e.g. "photosynthesis").',
-        },
+        'subject': {'type': 'string', 'description': 'The main topic — short noun phrase (e.g. "photosynthesis").'},
         'spoken_response': {
           'type': 'string',
           'description':
@@ -172,10 +112,10 @@ final kGemmaTools = [
   Tool(
     name: 'encourage',
     description:
-        'Warm celebration when the child answers correctly after struggling (Step 4 of ladder), '
-        'or when child is clearly frustrated or emotionally upset. '
-        '1–2 sentences in Nigerian Pidgin. Do not use twice in a row. '
-        'After encouraging, return to teaching on the next turn.',
+        '1–2 sentences of Nigerian Pidgin warmth. Affirm effort, never intelligence. '
+        'USE FOR: child is frustrated ("I give up", "this is hard"), or succeeded after struggling. '
+        'DO NOT CALL FOR: every right answer; never use twice in a row; never as the only '
+        'reply to a question — pair with teaching next turn.',
     parameters: {
       'type': 'object',
       'properties': {
@@ -194,19 +134,19 @@ final kGemmaTools = [
   ),
   Tool(
     name: 'remember',
-    description: 'Store a personal fact about the child to recall in future sessions.',
+    description:
+        'Store a personal fact about the child (name, age, hobby, family). '
+        'USE FOR: child volunteers personal information ("my name is Emeka", "I love football"). '
+        'DO NOT CALL FOR: factual knowledge (capital cities, math facts) — those are NOT '
+        'personal facts.',
     parameters: {
       'type': 'object',
       'properties': {
         'fact': {
           'type': 'string',
-          'description':
-              'The fact as a statement (e.g. "child\'s name is Emeka", "child likes football").',
+          'description': 'The fact as a statement (e.g. "child\'s name is Emeka", "child likes football").',
         },
-        'spoken_response': {
-          'type': 'string',
-          'description': 'Warm acknowledgement to say out loud (1–2 sentences).',
-        },
+        'spoken_response': {'type': 'string', 'description': 'Warm acknowledgement to say out loud (1–2 sentences).'},
         ..._languageCodeParam,
       },
       'required': ['fact', 'spoken_response', 'language_code'],
@@ -215,24 +155,22 @@ final kGemmaTools = [
   Tool(
     name: 'try_drawing',
     description:
-        'Draw a topic as a simple SVG using only rectangles, circles, and lines. '
-        'ALWAYS call this (not direct_teach) when the child asks to draw or show any of these: '
-        'traffic light, clock face, flag with stripes, rainbow, the four seasons, '
-        'city skyline, simple house, basic shapes, bar chart, number line, compass rose, '
-        'thermometer, weighing scale, simple tree, ladder. '
-        'For a city skyline: draw 5 rect elements of different heights side by side. '
-        'For ANY topic not in show_illustration: attempt a simplified version with rect/circle/line — '
-        'set complexity_self_assessment to "simple" if the topic fits 3–8 shapes, '
-        '"medium" if it truly needs more than 8. '
-        'DO NOT use for: human anatomy, animal faces, maps, national flags with emblems. '
+        'Draw a topic as a simple SVG (rect/circle/line/polygon/text only). '
+        'USE FOR: any visual request when the topic is NOT in show_illustration\'s enum — '
+        'e.g. traffic light, clock, flag, rainbow, house, tree, chart, thermometer, compass. '
+        'Always fill colors with fill="..." on every shape. '
+        'Set complexity_self_assessment to "simple" (3–8 shapes) or "medium" (9–15). '
+        'DO NOT CALL FOR: human anatomy, animal faces, maps, complex emblems — use direct_teach. '
         'SVG MUST follow these rules exactly — invalid SVG will be rejected: '
-        '(1) start with <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> '
+        '(1) ALWAYS start with exactly: <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> '
+        '    viewBox has FOUR numbers: 0 0 200 200. NOT "0 0 20 20", NOT "0 0 20 20 20". Always 200 200. '
         '(2) end with </svg> '
-        '(3) ALL x/y/cx/cy/r/width/height values must be plain numbers between 0 and 200 '
+        '(3) ALL x/y/cx/cy/r/width/height values must be plain numbers between 0 and 200. '
+        '    Use the full 0–200 range. Do NOT compress everything into 0–20. '
         '(4) use ONLY these tags: rect, circle, line, polygon, text — NO path, NO transform, NO use '
         '(5) add 1–3 short <text> labels to name the key parts '
         '(6) close every tag. '
-        'EXAMPLE (traffic light): '
+        'EXAMPLE (traffic light — copy this pattern for viewBox and coordinate scale): '
         '<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">'
         '<rect x="75" y="20" width="50" height="140" fill="#222" rx="8"/>'
         '<circle cx="100" cy="55" r="18" fill="red"/>'
@@ -243,10 +181,7 @@ final kGemmaTools = [
     parameters: {
       'type': 'object',
       'properties': {
-        'topic': {
-          'type': 'string',
-          'description': 'Short name of what is being drawn (e.g. "traffic light").',
-        },
+        'topic': {'type': 'string', 'description': 'Short name of what is being drawn (e.g. "traffic light").'},
         'complexity_self_assessment': {
           'type': 'string',
           'enum': ['simple', 'medium'],
@@ -258,11 +193,14 @@ final kGemmaTools = [
           'type': 'string',
           'description':
               'Complete SVG. Must open with <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> '
-              'and close with </svg>. Only rect, circle, line, polygon, text. No path. No transform.',
+              'and close with </svg>. Only rect, circle, line, polygon, text. No path. No transform. '
+              'The app validates the SVG — if invalid, it falls back to spoken_response text only.',
         },
         'spoken_response': {
           'type': 'string',
-          'description': 'Explanation to say out loud alongside the drawing (3–5 sentences).',
+          'description':
+              'Explanation to say out loud alongside the drawing (3–5 sentences). '
+              'ALWAYS fill this fully — it is shown alone if the SVG cannot be rendered.',
         },
         ..._languageCodeParam,
       },
@@ -272,9 +210,12 @@ final kGemmaTools = [
   Tool(
     name: 'show_illustration',
     description:
-        'Display a pre-built illustration alongside a spoken explanation. '
-        'ONLY call this when the child asks about one of these exact topic IDs — '
-        'do not guess or approximate: ${IllustrationRegistry.allTopicIds.join(", ")}.',
+        'Display a pre-built illustration. The topic_id MUST be an EXACT match from the '
+        'enum below — never approximate, never pick the closest one. '
+        'Allowed IDs: ${IllustrationRegistry.allTopicIds.join(", ")}. '
+        'USE FOR: child asks to see something AND topic_id is an EXACT match. '
+        'DO NOT CALL FOR: anything not in the list — use try_drawing instead. '
+        '"traffic light" is NOT "simple_machines". If in doubt, choose try_drawing.',
     parameters: {
       'type': 'object',
       'properties': {
@@ -314,10 +255,7 @@ final kQuizQuestionTool = Tool(
         'description': 'The correct answer (not shown to child — used for evaluation).',
       },
       'topic': {'type': 'string', 'description': 'The topic being quizzed.'},
-      'question_number': {
-        'type': 'integer',
-        'description': 'Which question this is (1–5).',
-      },
+      'question_number': {'type': 'integer', 'description': 'Which question this is (1–5).'},
       ..._languageCodeParam,
     },
     'required': ['spoken_question', 'expected_answer_hint', 'topic', 'question_number', 'language_code'],
