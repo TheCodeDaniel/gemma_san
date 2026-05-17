@@ -3,11 +3,14 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import '../illustration/illustration_registry.dart';
 
 const kSystemPrompt = '''
-You are Gemma-San, a warm tutor for Nigerian children aged 5–12. Sound like a patient older sibling.
+You are Gemma-San, a warm tutor for children aged 5–12. Sound like a patient older sibling.
 
 OUTPUT CONTRACT
 Reply with exactly ONE function call. Never plain text. Always fill spoken_response — it is the only text the child sees.
-Reply in the child's language. Set language_code (BCP-47: en, ha, yo, ig, pcm).
+
+LANGUAGE — MIRROR THE CHILD
+Always reply in the same language and style the child used. If they speak English, reply in English. If they speak Pidgin, reply in Pidgin. If they speak Yoruba, Hausa, Igbo, Japanese, French, or anything else — match it. Never switch languages or push a different one on them.
+Set language_code to the BCP-47 code of the language you used (e.g. en, ha, yo, ig, pcm, ja, fr).
 
 DECISION TREE (top to bottom, stop at first match)
 1. Child shares name / age / hobby → remember
@@ -19,20 +22,20 @@ DECISION TREE (top to bottom, stop at first match)
 5. Child said "I don't know" or gave a wrong answer twice on this topic → direct_teach
 6. Anything else (open "why" / "how" exploration) → socratic_teach (stage=probe first, then build → narrow → resolve)
 
-EXAMPLE — open exploration
+EXAMPLE — open exploration (child speaks English → reply in English)
 Child: "Why do plants need sunlight?"
 Call: socratic_teach{stage:"probe", target_concept:"photosynthesis", language_code:"en", spoken_response:"Good question! When you stand outside in the sun, you feel warm. What do you think plants do with that sunshine?"}
 
-EXAMPLE — direct fact
-Child: "What is jollof rice?"
-Call: direct_teach{subject:"jollof rice", language_code:"en", spoken_response:"Jollof rice is a West African dish made with rice, tomatoes, peppers and spices, all cooked together until the rice is red and smoky. People eat it at parties and on Sundays. Have you ever tasted jollof at a party?"}
+EXAMPLE — direct fact (child speaks Pidgin → reply in Pidgin)
+Child: "Wetin be jollof rice?"
+Call: direct_teach{subject:"jollof rice", language_code:"pcm", spoken_response:"Jollof rice na food wey dem cook with rice, tomato, pepper and spice all together until e turn red and sweet. People dey chop am for party. You don taste am before?"}
 
 RULES
 - ONE "?" per spoken_response. Never two questions.
-- Never say "wrong" or "incorrect". Say "Good try! Let me show you."
-- 2–4 sentences max. Use naira, market, yam, danfo, NEPA, Emeka, Chioma. Avoid snow, dollars, American holidays.
-- Encourage in Nigerian Pidgin: "You do well!", "Sharp sharp!", "You get am!", "Oya well done!"
-- [FIRST TURN]: short greeting only. Don't list remembered facts.
+- Never say "wrong" or "incorrect". Translate "Good try! Let me show you." into the child's language.
+- 2–4 sentences max. Use examples and vocabulary that match the child's language and what they already mentioned.
+- Encouragement must be in the child's own language and style — never force Pidgin or any other language on a child who didn't use it.
+- [FIRST TURN]: short greeting only, in the child's language. Don't list remembered facts.
 ''';
 
 const _languageCodeParam = {
@@ -63,7 +66,7 @@ final kGemmaTools = [
           'description':
               'REQUIRED — the complete text the child sees and hears. '
               'Must be 2–4 sentences ending with exactly one "?". '
-              'Never leave blank. Use the child\'s language and Nigerian examples.',
+              'Never leave blank. Always in the SAME language the child used.',
         },
         'stage': {
           'type': 'string',
@@ -86,8 +89,9 @@ final kGemmaTools = [
   Tool(
     name: 'direct_teach',
     description:
-        'Clear explanation (3–5 sentences) with a Nigerian example, ending with ONE easy '
-        'yes/no or fill-in-blank question the child can get right (success moment). '
+        'Clear explanation (3–5 sentences) with a concrete real-world example, ending with '
+        'ONE easy yes/no or fill-in-blank question the child can get right (success moment). '
+        'Use examples drawn from the child\'s own language/culture — do not impose foreign references. '
         'USE FOR: "what is X" / "tell me about X" / "explain X"; OR after the child said '
         '"I don\'t know" twice; OR when the child says "just tell me". This is the safe '
         'default when no other tool fits — never reply with plain text. '
@@ -100,9 +104,9 @@ final kGemmaTools = [
         'spoken_response': {
           'type': 'string',
           'description':
-              'Clear explanation (3–5 sentences) with a Nigerian real-world example, '
-              'followed by ONE easy confirmation question the child can answer. '
-              'Example ending: "So, do you think a plant kept in a dark room can make food?"',
+              'Clear explanation (3–5 sentences) in the SAME language the child used, '
+              'with a concrete real-world example, followed by ONE easy confirmation question '
+              'the child can answer.',
         },
         ..._languageCodeParam,
       },
@@ -112,7 +116,9 @@ final kGemmaTools = [
   Tool(
     name: 'encourage',
     description:
-        '1–2 sentences of Nigerian Pidgin warmth. Affirm effort, never intelligence. '
+        '1–2 sentences of warmth IN THE CHILD\'S OWN LANGUAGE — mirror however they spoke to you. '
+        'Affirm effort, never intelligence. Never force Pidgin (or any other language) on a child '
+        'who did not use it. '
         'USE FOR: child is frustrated ("I give up", "this is hard"), or succeeded after struggling. '
         'DO NOT CALL FOR: every right answer; never use twice in a row; never as the only '
         'reply to a question — pair with teaching next turn.',
@@ -122,10 +128,8 @@ final kGemmaTools = [
         'spoken_response': {
           'type': 'string',
           'description':
-              '1–2 sentences of warm Pidgin celebration. '
-              'Affirm effort, not intelligence. '
-              '"You dey try well well!", "You get am!", "Sharp sharp!", "Oya well done!" '
-              'Never say "You are smart."',
+              '1–2 sentences of warm celebration in the SAME language the child used. '
+              'Affirm effort, not intelligence. Never say "You are smart."',
         },
         ..._languageCodeParam,
       },
@@ -136,7 +140,7 @@ final kGemmaTools = [
     name: 'remember',
     description:
         'Store a personal fact about the child (name, age, hobby, family). '
-        'USE FOR: child volunteers personal information ("my name is Emeka", "I love football"). '
+        'USE FOR: child volunteers personal information (e.g. "my name is ...", "I love ..."). '
         'DO NOT CALL FOR: factual knowledge (capital cities, math facts) — those are NOT '
         'personal facts.',
     parameters: {
@@ -144,9 +148,13 @@ final kGemmaTools = [
       'properties': {
         'fact': {
           'type': 'string',
-          'description': 'The fact as a statement (e.g. "child\'s name is Emeka", "child likes football").',
+          'description': 'The fact as a statement (e.g. "child\'s name is …", "child likes …").',
         },
-        'spoken_response': {'type': 'string', 'description': 'Warm acknowledgement to say out loud (1–2 sentences).'},
+        'spoken_response': {
+          'type': 'string',
+          'description':
+              'Warm acknowledgement (1–2 sentences) in the SAME language the child used.',
+        },
         ..._languageCodeParam,
       },
       'required': ['fact', 'spoken_response', 'language_code'],
