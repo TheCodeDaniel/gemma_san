@@ -103,8 +103,92 @@ class SvgValidator {
       return SvgValidationResult.fail('all shapes too small to see');
     }
 
+    // ── Fix 5: compressed-coord check ─────────────────────────────────────────
+    // Under thinking mode the model sometimes uses a 0–20 coord space even
+    // though viewBox is 0–200 — shapes cluster in the top-left corner and the
+    // drawing renders as a tiny speck. Reject if the bounding span of all
+    // shapes is < 30% of the viewBox dimension (60 of 200).
+    if (_coordsAreCompressed(s)) {
+      debugPrint('[SvgValidator] "$topic": shapes compressed to a corner — not visually useful');
+      return SvgValidationResult.fail('shapes compressed to a corner');
+    }
+
     debugPrint('[SvgValidator] "$topic": valid ($count shapes${changed ? ", auto-fixed" : ""})');
     return SvgValidationResult.ok(sanitized: changed ? s : null);
+  }
+
+  /// True when every shape's coordinates fit in <30% of the (assumed 200×200)
+  /// viewBox, meaning the drawing renders as a clump in one corner instead of
+  /// using the full canvas.
+  static bool _coordsAreCompressed(String s) {
+    final xs = <double>[];
+    final ys = <double>[];
+
+    void addRect(String attrs) {
+      final x = _numAttr(attrs, 'x');
+      final y = _numAttr(attrs, 'y');
+      final w = _numAttr(attrs, 'width');
+      final h = _numAttr(attrs, 'height');
+      if (x != null) xs.add(x);
+      if (y != null) ys.add(y);
+      if (x != null && w != null) xs.add(x + w);
+      if (y != null && h != null) ys.add(y + h);
+    }
+
+    void addCircle(String attrs) {
+      final cx = _numAttr(attrs, 'cx');
+      final cy = _numAttr(attrs, 'cy');
+      final r = _numAttr(attrs, 'r') ?? _numAttr(attrs, 'rx') ?? 0;
+      if (cx != null) {
+        xs.add(cx - r);
+        xs.add(cx + r);
+      }
+      if (cy != null) {
+        ys.add(cy - r);
+        ys.add(cy + r);
+      }
+    }
+
+    void addLine(String attrs) {
+      for (final k in const ['x1', 'x2']) {
+        final v = _numAttr(attrs, k);
+        if (v != null) xs.add(v);
+      }
+      for (final k in const ['y1', 'y2']) {
+        final v = _numAttr(attrs, k);
+        if (v != null) ys.add(v);
+      }
+    }
+
+    void addPolygon(String attrs) {
+      final pts = RegExp(r'[\d.]+').allMatches(attrs).map((m) => double.tryParse(m.group(0)!) ?? -1).where((n) => n >= 0).toList();
+      for (var i = 0; i + 1 < pts.length; i += 2) {
+        xs.add(pts[i]);
+        ys.add(pts[i + 1]);
+      }
+    }
+
+    for (final m in RegExp(r'<rect\b([^>]*)>?').allMatches(s)) {
+      addRect(m.group(1)!);
+    }
+    for (final m in RegExp(r'<(?:circle|ellipse)\b([^>]*)>?').allMatches(s)) {
+      addCircle(m.group(1)!);
+    }
+    for (final m in RegExp(r'<line\b([^>]*)>?').allMatches(s)) {
+      addLine(m.group(1)!);
+    }
+    for (final m in RegExp(r'<polygon\b([^>]*)>?').allMatches(s)) {
+      addPolygon(m.group(1)!);
+    }
+
+    if (xs.isEmpty || ys.isEmpty) return false;
+
+    final spanX = xs.reduce((a, b) => a > b ? a : b) - xs.reduce((a, b) => a < b ? a : b);
+    final spanY = ys.reduce((a, b) => a > b ? a : b) - ys.reduce((a, b) => a < b ? a : b);
+
+    // viewBox is normalised to 0–200 by Fix 2 above. 60 = 30% of 200.
+    const minSpan = 60.0;
+    return spanX < minSpan && spanY < minSpan;
   }
 
   /// Inject `fill="#444"` (or `stroke="#444"` for lines) on shapes that have

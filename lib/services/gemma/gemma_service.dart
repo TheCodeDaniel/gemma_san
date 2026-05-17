@@ -543,10 +543,14 @@ class GemmaService {
         'Summarize what this child has learned about "$topic" in simple English. '
         'Session data: ${sessionSummaries.take(5).join('; ')}';
 
+    // Thinking OFF: single-tool composition task, no routing benefit. Thinking
+    // here eats the token budget and occasionally causes the model to never
+    // emit the lesson_summary tool call — its thinking-channel JSON then leaks
+    // into the lesson summary text (see issue: "Jollof rice" garbage card).
     final session = await model.createSession(
       tools: [_summaryTool],
       systemInstruction: _summarySystemPrompt,
-      enableThinking: true,
+      enableThinking: false,
       temperature: 0.4,
       topK: 40,
       topP: 0.9,
@@ -564,7 +568,11 @@ class GemmaService {
 
       final calls = SdkResponseParser.extractToolCalls(raw);
       if (calls.isEmpty) {
-        return (summary: _extractPlainText(raw), concepts: <String>[]);
+        final plain = _extractPlainText(raw);
+        if (plain.trim().isEmpty) {
+          return (summary: 'You have been exploring "$topic". Keep learning!', concepts: <String>[]);
+        }
+        return (summary: plain, concepts: <String>[]);
       }
 
       final args = calls.first.args;
@@ -759,18 +767,96 @@ class GemmaService {
     return null;
   }
 
+  /// Extract natural-language text from a raw SDK response.
+  /// Handles three shapes the SDK can emit:
+  ///   - single top-level JSON with `content[].type=="text"`
+  ///   - concatenated multi-object JSON: `{...}{...}{...}`
+  ///   - thinking-channel chunks: `{"role":"assistant","channels":{"thought":"…"}}`
+  /// Thinking chunks are explicitly dropped. Returns an empty string if nothing
+  /// usable is found — the caller is responsible for substituting a safe message.
   static String _extractPlainText(String raw) {
-    try {
-      final json = jsonDecode(raw) as Map<String, dynamic>;
-      final content = json['content'] as List?;
-      if (content == null) return raw;
-      final buf = StringBuffer();
-      for (final item in content) {
-        if (item is Map && item['type'] == 'text') buf.write(item['text'] ?? '');
+    final buf = StringBuffer();
+    for (final fragment in _splitConcatenatedJson(raw)) {
+      try {
+        final parsed = jsonDecode(fragment);
+        if (parsed is! Map<String, dynamic>) continue;
+
+        // Skip thinking-only chunks.
+        final channels = parsed['channels'];
+        if (channels is Map) {
+          final content = channels['content'];
+          if (content is String && content.isNotEmpty) {
+            buf.write(content);
+          }
+          // thought-only fragments contribute nothing.
+          continue;
+        }
+
+        // OpenAI-style content array.
+        final content = parsed['content'];
+        if (content is List) {
+          for (final item in content) {
+            if (item is Map && item['type'] == 'text' && item['text'] is String) {
+              buf.write(item['text']);
+            }
+          }
+          continue;
+        }
+
+        // Plain `text` field.
+        final text = parsed['text'];
+        if (text is String) buf.write(text);
+      } on FormatException {
+        // Ignore unparseable fragments.
       }
-      return buf.toString();
-    } catch (_) {
-      return raw;
+    }
+
+    // Final scrub: drop any leftover Gemma 4 channel sentinel tokens.
+    var out = buf
+        .toString()
+        .replaceAll(RegExp(r'<\|channel\|>thought.*?<channel\|>', dotAll: true), '')
+        .trim();
+
+    // Reject results that still look like raw JSON garbage.
+    if (out.startsWith('{') && (out.contains('"channels"') || out.contains('"thought"'))) {
+      return '';
+    }
+    return out;
+  }
+
+  /// Split a string that may be one JSON object or a concatenation of multiple
+  /// top-level objects (e.g. `{...}{...}`). Tracks brace depth while ignoring
+  /// braces inside string literals. Mirrors the helper inside SdkResponseParser.
+  static Iterable<String> _splitConcatenatedJson(String input) sync* {
+    int depth = 0;
+    int start = -1;
+    bool inString = false;
+    bool escape = false;
+    for (var i = 0; i < input.length; i++) {
+      final c = input[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (c == r'\') {
+        escape = true;
+        continue;
+      }
+      if (c == '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+      if (c == '{') {
+        if (depth == 0) start = i;
+        depth++;
+      } else if (c == '}') {
+        depth--;
+        if (depth == 0 && start >= 0) {
+          yield input.substring(start, i + 1);
+          start = -1;
+        }
+      }
     }
   }
 
