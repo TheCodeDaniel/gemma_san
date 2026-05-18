@@ -1,669 +1,1267 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gemma-San — The offline AI tutor for African children</title>
-  <meta name="description" content="A patient, warm AI tutor that runs fully offline on a basic Android phone. Speaks English, Hausa, Yoruba, Igbo, and Pidgin. Built for Nigerian kids ages 5–12." />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gemma-San — The offline AI tutor for African children</title>
+    <meta
+      name="description"
+      content="A patient, warm AI tutor that runs fully offline on a basic Android phone. Speaks English, Hausa, Yoruba, Igbo, and Pidgin. Built for Nigerian kids ages 5–12."
+    />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
 
-  <style>
-    :root {
-      --terracotta: #C9572C;
-      --terracotta-light: #F4CBB8;
-      --deep-green: #2C5F4A;
-      --deep-green-light: #B8D8CC;
-      --sun-yellow: #F5C842;
-      --warm-cream: #FBF6EC;
-      --warm-cream-dark: #EDE6D6;
-      --charcoal: #2A2522;
-      --forest: #1A3C2E;
-      --body-brown: #9B6A3E;
-      --dark-brown: #3D2008;
-    }
+    <style>
+      :root {
+        --terracotta: #c9572c;
+        --terracotta-light: #f4cbb8;
+        --deep-green: #2c5f4a;
+        --deep-green-light: #b8d8cc;
+        --sun-yellow: #f5c842;
+        --warm-cream: #fbf6ec;
+        --warm-cream-dark: #ede6d6;
+        --charcoal: #2a2522;
+        --forest: #1a3c2e;
+        --body-brown: #9b6a3e;
+        --dark-brown: #3d2008;
+      }
 
-    * { -webkit-font-smoothing: antialiased; }
+      * {
+        -webkit-font-smoothing: antialiased;
+      }
 
-    html, body {
-      background: var(--warm-cream);
-      color: var(--charcoal);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 17px;
-      line-height: 1.6;
-      scroll-behavior: smooth;
-    }
+      html,
+      body {
+        background: var(--warm-cream);
+        color: var(--charcoal);
+        font-family: "Inter", system-ui, sans-serif;
+        font-size: 17px;
+        line-height: 1.6;
+        scroll-behavior: smooth;
+      }
 
-    h1, h2, h3, h4, .display-1, .display-2, .display-3, .display-4 {
-      font-family: 'Quicksand', system-ui, sans-serif;
-      font-weight: 700;
-      color: var(--charcoal);
-      letter-spacing: -0.01em;
-    }
+      h1,
+      h2,
+      h3,
+      h4,
+      .display-1,
+      .display-2,
+      .display-3,
+      .display-4 {
+        font-family: "Quicksand", system-ui, sans-serif;
+        font-weight: 700;
+        color: var(--charcoal);
+        letter-spacing: -0.01em;
+      }
 
-    .display-1 { font-size: clamp(2.4rem, 5.5vw, 4.2rem); line-height: 1.05; }
-    .lead { font-size: 1.18rem; color: rgba(42, 37, 34, 0.78); }
-    .text-muted-warm { color: rgba(42, 37, 34, 0.65); }
+      .display-1 {
+        font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+        line-height: 1.05;
+      }
+      .lead {
+        font-size: 1.18rem;
+        color: rgba(42, 37, 34, 0.78);
+      }
+      .text-muted-warm {
+        color: rgba(42, 37, 34, 0.65);
+      }
 
-    /* ── Navbar ─────────────────────────────────────────── */
-    .nav-wrap {
-      position: sticky; top: 0; z-index: 50;
-      backdrop-filter: blur(12px);
-      background: rgba(251, 246, 236, 0.82);
-      border-bottom: 1px solid transparent;
-      transition: border-color .2s ease, background .2s ease;
-    }
-    .nav-wrap.scrolled {
-      border-bottom-color: var(--warm-cream-dark);
-    }
-    .navbar-brand {
-      font-family: 'Quicksand', sans-serif;
-      font-weight: 700;
-      font-size: 1.35rem;
-      color: var(--charcoal);
-      display: inline-flex;
-      align-items: center;
-      gap: .55rem;
-    }
-    .navbar-brand:hover { color: var(--terracotta); }
-    .nav-logo { width: 38px; height: 38px; }
-    .nav-link-custom {
-      color: var(--charcoal);
-      font-weight: 500;
-      padding: .5rem .9rem;
-      border-radius: 999px;
-      transition: background .15s ease;
-    }
-    .nav-link-custom:hover { background: var(--warm-cream-dark); }
+      /* ── Navbar ─────────────────────────────────────────── */
+      .nav-wrap {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(12px);
+        background: rgba(251, 246, 236, 0.82);
+        border-bottom: 1px solid transparent;
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease;
+      }
+      .nav-wrap.scrolled {
+        border-bottom-color: var(--warm-cream-dark);
+      }
+      .navbar-brand {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 1.35rem;
+        color: var(--charcoal);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+      }
+      .navbar-brand:hover {
+        color: var(--terracotta);
+      }
+      .nav-logo {
+        width: 38px;
+        height: 38px;
+      }
+      .nav-link-custom {
+        color: var(--charcoal);
+        font-weight: 500;
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        transition: background 0.15s ease;
+      }
+      .nav-link-custom:hover {
+        background: var(--warm-cream-dark);
+      }
 
-    /* ── Buttons (pill, terracotta primary) ─────────────── */
-    .btn-pill {
-      border-radius: 999px;
-      padding: .85rem 1.7rem;
-      font-weight: 700;
-      font-family: 'Quicksand', sans-serif;
-      font-size: 1.05rem;
-      letter-spacing: 0;
-      transition: transform .12s ease, box-shadow .18s ease, background .18s ease;
-    }
-    .btn-terracotta {
-      background: var(--terracotta); color: #fff;
-      box-shadow: 0 8px 22px rgba(201, 87, 44, 0.28);
-    }
-    .btn-terracotta:hover {
-      background: #B14A24; color: #fff;
-      transform: translateY(-1px);
-      box-shadow: 0 12px 28px rgba(201, 87, 44, 0.34);
-    }
-    .btn-ghost {
-      background: transparent; color: var(--charcoal);
-      border: 2px solid var(--charcoal);
-    }
-    .btn-ghost:hover { background: var(--charcoal); color: var(--warm-cream); }
+      /* ── Buttons (pill, terracotta primary) ─────────────── */
+      .btn-pill {
+        border-radius: 999px;
+        padding: 0.85rem 1.7rem;
+        font-weight: 700;
+        font-family: "Quicksand", sans-serif;
+        font-size: 1.05rem;
+        letter-spacing: 0;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.18s ease,
+          background 0.18s ease;
+      }
+      .btn-terracotta {
+        background: var(--terracotta);
+        color: #fff;
+        box-shadow: 0 8px 22px rgba(201, 87, 44, 0.28);
+      }
+      .btn-terracotta:hover {
+        background: #b14a24;
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(201, 87, 44, 0.34);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--charcoal);
+        border: 2px solid var(--charcoal);
+      }
+      .btn-ghost:hover {
+        background: var(--charcoal);
+        color: var(--warm-cream);
+      }
 
-    /* ── Hero ───────────────────────────────────────────── */
-    .hero {
-      position: relative;
-      padding: 5rem 0 6rem;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: ""; position: absolute; inset: 0;
-      background:
-        radial-gradient(circle at 88% 18%, rgba(245, 200, 66, 0.18) 0%, transparent 38%),
-        radial-gradient(circle at 8% 80%, rgba(44, 95, 74, 0.10) 0%, transparent 42%);
-      pointer-events: none;
-    }
-    .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: .5rem;
-      background: var(--deep-green-light);
-      color: var(--forest);
-      padding: .4rem .9rem;
-      border-radius: 999px;
-      font-weight: 600; font-size: .92rem;
-    }
-    .hero-eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--deep-green); }
+      /* ── Hero ───────────────────────────────────────────── */
+      .hero {
+        position: relative;
+        padding: 5rem 0 6rem;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            circle at 88% 18%,
+            rgba(245, 200, 66, 0.18) 0%,
+            transparent 38%
+          ),
+          radial-gradient(
+            circle at 8% 80%,
+            rgba(44, 95, 74, 0.1) 0%,
+            transparent 42%
+          );
+        pointer-events: none;
+      }
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--deep-green-light);
+        color: var(--forest);
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+      .hero-eyebrow .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--deep-green);
+      }
 
-    .owl-stage {
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-      max-width: 460px; margin-left: auto;
-    }
-    .owl-stage::before {
-      content: ""; position: absolute;
-      width: 88%; aspect-ratio: 1; border-radius: 50%;
-      background: radial-gradient(circle, var(--terracotta-light) 0%, transparent 65%);
-      opacity: .7; z-index: 0; animation: pulse 6s ease-in-out infinite;
-    }
-    .owl-svg {
-      position: relative; z-index: 1;
-      width: 100%; max-width: 380px;
-      animation: float 5s ease-in-out infinite;
-      filter: drop-shadow(0 18px 28px rgba(42, 37, 34, 0.18));
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-12px); }
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: .7; }
-      50% { transform: scale(1.04); opacity: .55; }
-    }
-
-    /* ── Trust strip ────────────────────────────────────── */
-    .trust-strip {
-      background: var(--warm-cream-dark);
-      border-top: 1px solid rgba(42, 37, 34, 0.06);
-      border-bottom: 1px solid rgba(42, 37, 34, 0.06);
-      padding: 1.25rem 0;
-    }
-    .trust-item {
-      display: inline-flex; align-items: center; gap: .55rem;
-      font-weight: 600; color: var(--charcoal);
-      font-size: .95rem;
-    }
-    .trust-item i { color: var(--terracotta); font-size: 1.15rem; }
-
-    /* ── Section base ───────────────────────────────────── */
-    section.section-pad { padding: 5.5rem 0; }
-    .section-eyebrow {
-      text-transform: uppercase; letter-spacing: .14em;
-      font-weight: 700; font-size: .82rem; color: var(--terracotta);
-      margin-bottom: .9rem;
-    }
-    .section-title { font-size: clamp(1.9rem, 3.6vw, 2.75rem); margin-bottom: 1rem; }
-    .section-sub { font-size: 1.12rem; color: rgba(42, 37, 34, 0.7); max-width: 620px; }
-
-    /* ── Feature cards ──────────────────────────────────── */
-    .feature-card {
-      background: #fff;
-      border-radius: 22px;
-      padding: 1.75rem;
-      height: 100%;
-      border: 1px solid rgba(42, 37, 34, 0.06);
-      transition: transform .2s ease, box-shadow .25s ease, border-color .2s ease;
-    }
-    .feature-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 32px rgba(42, 37, 34, 0.10);
-      border-color: var(--terracotta-light);
-    }
-    .feature-icon {
-      width: 56px; height: 56px;
-      border-radius: 16px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 1.5rem;
-      margin-bottom: 1.1rem;
-    }
-    .feat-terracotta { background: var(--terracotta-light); color: var(--terracotta); }
-    .feat-green { background: var(--deep-green-light); color: var(--deep-green); }
-    .feat-yellow { background: rgba(245, 200, 66, 0.28); color: #B8902A; }
-    .feature-card h3 {
-      font-size: 1.18rem; margin-bottom: .55rem;
-    }
-    .feature-card p { color: rgba(42, 37, 34, 0.72); margin-bottom: 0; font-size: .97rem; }
-
-    /* ── How it works ───────────────────────────────────── */
-    .how-section { background: var(--deep-green); color: var(--warm-cream); }
-    .how-section h2, .how-section .section-eyebrow { color: var(--warm-cream); }
-    .how-section .section-eyebrow { color: var(--sun-yellow); }
-    .how-section .section-sub { color: rgba(251, 246, 236, 0.78); }
-    .how-step {
-      background: rgba(251, 246, 236, 0.08);
-      border-radius: 22px;
-      padding: 2rem 1.75rem;
-      height: 100%;
-      border: 1px solid rgba(251, 246, 236, 0.1);
-      backdrop-filter: blur(2px);
-    }
-    .how-step-num {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: var(--sun-yellow);
-      color: var(--forest);
-      font-family: 'Quicksand', sans-serif;
-      font-weight: 700; font-size: 1.2rem;
-      display: inline-flex; align-items: center; justify-content: center;
-      margin-bottom: 1.2rem;
-    }
-    .how-step h3 { color: var(--warm-cream); font-size: 1.25rem; margin-bottom: .55rem; }
-    .how-step p { color: rgba(251, 246, 236, 0.78); margin-bottom: 0; font-size: .98rem; }
-
-    /* ── Built for ──────────────────────────────────────── */
-    .for-card {
-      background: #fff;
-      border-radius: 26px;
-      padding: 2.5rem;
-      border: 1px solid rgba(42, 37, 34, 0.06);
-    }
-    .stat-block { padding: 1rem 0; }
-    .stat-num {
-      font-family: 'Quicksand', sans-serif;
-      font-weight: 700; font-size: 2.4rem; line-height: 1;
-      color: var(--terracotta);
-      margin-bottom: .35rem;
-    }
-    .stat-label { font-size: .9rem; color: rgba(42, 37, 34, 0.65); font-weight: 500; }
-
-    /* ── Languages strip ────────────────────────────────── */
-    .lang-pill {
-      display: inline-block;
-      background: #fff;
-      border: 1.5px solid var(--warm-cream-dark);
-      padding: .55rem 1.2rem;
-      border-radius: 999px;
-      font-weight: 600;
-      margin: .3rem;
-      transition: transform .15s ease, border-color .15s ease;
-    }
-    .lang-pill:hover {
-      transform: translateY(-2px);
-      border-color: var(--terracotta);
-      color: var(--terracotta);
-    }
-
-    /* ── CTA ────────────────────────────────────────────── */
-    .cta-section {
-      background: var(--charcoal);
-      color: var(--warm-cream);
-      border-radius: 32px;
-      padding: 3.5rem 2rem;
-      position: relative;
-      overflow: hidden;
-    }
-    .cta-section::before {
-      content: ""; position: absolute; inset: 0;
-      background:
-        radial-gradient(circle at 12% 80%, rgba(201, 87, 44, 0.28) 0%, transparent 45%),
-        radial-gradient(circle at 88% 20%, rgba(245, 200, 66, 0.16) 0%, transparent 45%);
-      pointer-events: none;
-    }
-    .cta-section h2 { color: var(--warm-cream); position: relative; }
-    .cta-section p { color: rgba(251, 246, 236, 0.78); position: relative; }
-    .cta-section .btn-wrap { position: relative; }
-
-    /* ── Footer ─────────────────────────────────────────── */
-    footer {
-      padding: 2.5rem 0 2rem;
-      color: rgba(42, 37, 34, 0.55);
-      font-size: .92rem;
-    }
-    footer a { color: var(--charcoal); text-decoration: none; }
-    footer a:hover { color: var(--terracotta); }
-
-    /* ── Reveal on scroll ───────────────────────────────── */
-    .reveal {
-      opacity: 0; transform: translateY(18px);
-      transition: opacity .6s ease, transform .6s ease;
-    }
-    .reveal.is-visible { opacity: 1; transform: translateY(0); }
-
-    @media (max-width: 768px) {
-      .hero { padding: 3rem 0 4rem; }
-      .owl-stage { margin: 2.5rem auto 0; }
-      .cta-section { padding: 2.5rem 1.5rem; border-radius: 24px; }
-      section.section-pad { padding: 4rem 0; }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- ════════ NAVBAR ════════ -->
-  <div class="nav-wrap" id="navWrap">
-    <nav class="navbar container py-3">
-      <a class="navbar-brand" href="#">
-        <!-- Owl mark -->
-        <svg class="nav-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <use href="#owl-mark" />
-        </svg>
-        Gemma-San
-      </a>
-      <div class="d-none d-md-flex align-items-center gap-1">
-        <a class="nav-link-custom" href="#features">Features</a>
-        <a class="nav-link-custom" href="#how">How it works</a>
-        <a class="nav-link-custom" href="#built-for">Built for</a>
-        <a class="btn btn-terracotta btn-pill ms-2" href="#download">
-          <i class="bi bi-download me-1"></i> Get the app
-        </a>
-      </div>
-      <a class="btn btn-terracotta btn-pill d-md-none px-3 py-2" href="#download" style="font-size: .9rem;">
-        Get app
-      </a>
-    </nav>
-  </div>
-
-  <!-- ════════ OWL SVG (defined once, referenced via <use>) ════════ -->
-  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-    <defs>
-      <radialGradient id="owlBody" cx="35%" cy="32%" r="78%">
-        <stop offset="0%" stop-color="#9B6A3E" />
-        <stop offset="100%" stop-color="#3D2008" />
-      </radialGradient>
-      <symbol id="owl-mark" viewBox="0 0 200 200">
-        <!-- Ear tufts (drawn behind head) -->
-        <polygon points="73.6,8.4 55.2,56 81.6,46.4" fill="#3D2008" />
-        <polygon points="73.6,17.6 64,51.6 76.8,42.8" fill="#9B6A3E" />
-        <polygon points="126.4,8.4 144.8,56 118.4,46.4" fill="#3D2008" />
-        <polygon points="126.4,17.6 136,51.6 123.2,42.8" fill="#9B6A3E" />
-
-        <!-- Wings (dark ovals at body sides) -->
-        <ellipse cx="31" cy="137" rx="24" ry="46" fill="#3D2008" />
-        <ellipse cx="169" cy="137" rx="24" ry="46" fill="#3D2008" />
-
-        <!-- Body -->
-        <ellipse cx="100" cy="137" rx="66" ry="53" fill="url(#owlBody)" />
-
-        <!-- Head -->
-        <circle cx="100" cy="76.6" r="49" fill="url(#owlBody)" />
-
-        <!-- Facial disc -->
-        <ellipse cx="100" cy="78.6" rx="41.5" ry="39" fill="#FBF6EC" stroke="#6B3D15" stroke-width="4.4" />
-
-        <!-- Belly -->
-        <ellipse cx="100" cy="154" rx="36.5" ry="28.5" fill="#EDE6D6" />
-
-        <!-- Left eye -->
-        <circle cx="78" cy="73.6" r="14.6" fill="#fff" />
-        <circle cx="78" cy="73.6" r="10.6" fill="#F5C842" />
-        <circle cx="80" cy="75" r="5.6" fill="#2A2522" />
-        <circle cx="83.2" cy="70.4" r="2.6" fill="#fff" />
-
-        <!-- Right eye -->
-        <circle cx="122" cy="73.6" r="14.6" fill="#fff" />
-        <circle cx="122" cy="73.6" r="10.6" fill="#F5C842" />
-        <circle cx="124" cy="75" r="5.6" fill="#2A2522" />
-        <circle cx="127.2" cy="70.4" r="2.6" fill="#fff" />
-
-        <!-- Beak -->
-        <polygon points="89.6,93.6 110.4,93.6 100,108" fill="#C9572C" />
-      </symbol>
-    </defs>
-  </svg>
-
-  <!-- ════════ HERO ════════ -->
-  <section class="hero">
-    <div class="container">
-      <div class="row align-items-center g-5">
-        <div class="col-lg-6 reveal">
-          <span class="hero-eyebrow mb-3">
-            <span class="dot"></span>
-            100% offline · runs on your phone
-          </span>
-          <h1 class="display-1 mb-3">
-            A patient AI tutor<br />
-            for every <span style="color: var(--terracotta);">Nigerian</span> child.
-          </h1>
-          <p class="lead mb-4" style="max-width: 540px;">
-            Gemma-San is a warm, voice-first tutor that lives inside a basic Android phone — no Wi-Fi, no data, no monthly bill. Built for kids aged 5–12, it speaks English, Hausa, Yoruba, Igbo, and Pidgin.
-          </p>
-          <div class="d-flex flex-wrap gap-3">
-            <a href="#download" class="btn btn-terracotta btn-pill">
-              <i class="bi bi-google-play me-2"></i> Download for Android
-            </a>
-            <a href="#how" class="btn btn-ghost btn-pill">
-              See how it works
-            </a>
-          </div>
-          <div class="d-flex align-items-center gap-3 mt-4 text-muted-warm" style="font-size: .92rem;">
-            <i class="bi bi-shield-check" style="color: var(--deep-green); font-size: 1.2rem;"></i>
-            Private by design — every conversation stays on the child's phone.
-          </div>
-        </div>
-
-        <div class="col-lg-6 reveal">
-          <div class="owl-stage">
-            <svg class="owl-svg" viewBox="0 0 200 200" aria-label="Gemma-San owl mascot">
-              <use href="#owl-mark" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════════ TRUST STRIP ════════ -->
-  <div class="trust-strip">
-    <div class="container">
-      <div class="row justify-content-center text-center g-3">
-        <div class="col-6 col-md-3">
-          <span class="trust-item"><i class="bi bi-wifi-off"></i> Works fully offline</span>
-        </div>
-        <div class="col-6 col-md-3">
-          <span class="trust-item"><i class="bi bi-translate"></i> 5 languages</span>
-        </div>
-        <div class="col-6 col-md-3">
-          <span class="trust-item"><i class="bi bi-mic-fill"></i> Voice in &amp; out</span>
-        </div>
-        <div class="col-6 col-md-3">
-          <span class="trust-item"><i class="bi bi-phone"></i> Made for low-end phones</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════ FEATURES ════════ -->
-  <section id="features" class="section-pad">
-    <div class="container">
-      <div class="text-center mb-5 reveal">
-        <div class="section-eyebrow">What Gemma-San does</div>
-        <h2 class="section-title">A real tutor — not a chatbot.</h2>
-        <p class="section-sub mx-auto">
-          Gemma-San is grounded in proven teaching pedagogy: probe, build, narrow, resolve. It guides, never lectures, and adapts to each child's pace.
-        </p>
-      </div>
-
-      <div class="row g-4">
-        <div class="col-md-6 col-lg-4 reveal">
-          <div class="feature-card">
-            <div class="feature-icon feat-green"><i class="bi bi-chat-quote-fill"></i></div>
-            <h3>Socratic teaching</h3>
-            <p>Asks the right question instead of giving the answer. Children learn to think, not memorise.</p>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4 reveal">
-          <div class="feature-card">
-            <div class="feature-icon feat-terracotta"><i class="bi bi-mic-fill"></i></div>
-            <h3>Talk like a human</h3>
-            <p>Whisper-powered speech recognition understands children's voices and Nigerian accents naturally.</p>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4 reveal">
-          <div class="feature-card">
-            <div class="feature-icon feat-yellow"><i class="bi bi-brush-fill"></i></div>
-            <h3>Draws &amp; shows</h3>
-            <p>22 illustrated topics plus live SVG drawing — from traffic lights to photosynthesis. Visual learning, on demand.</p>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4 reveal">
-          <div class="feature-card">
-            <div class="feature-icon feat-green"><i class="bi bi-bookmark-heart-fill"></i></div>
-            <h3>Remembers your child</h3>
-            <p>Three-tier memory means Gemma-San remembers names, hobbies, and what was learned — across days, not just sessions.</p>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4 reveal">
-          <div class="feature-card">
-            <div class="feature-icon feat-terracotta"><i class="bi bi-puzzle-fill"></i></div>
-            <h3>Phonics practice</h3>
-            <p>Spaced-repetition drilling adapted to each child. Five levels, mastery tracked, never overwhelming.</p>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-4 reveal">
-          <div class="feature-card">
-            <div class="feature-icon feat-yellow"><i class="bi bi-trophy-fill"></i></div>
-            <h3>Quiz &amp; celebrate</h3>
-            <p>Five-question quizzes after each lesson, warm Pidgin encouragement, lesson summaries to revisit later.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════════ HOW IT WORKS ════════ -->
-  <section id="how" class="how-section section-pad">
-    <div class="container">
-      <div class="text-center mb-5 reveal">
-        <div class="section-eyebrow">How it works</div>
-        <h2 class="section-title">Three steps. No setup pain.</h2>
-        <p class="section-sub mx-auto">
-          Download once on Wi-Fi. After that, Gemma-San works in the village, in the danfo, on the farm — anywhere.
-        </p>
-      </div>
-
-      <div class="row g-4">
-        <div class="col-md-4 reveal">
-          <div class="how-step">
-            <div class="how-step-num">1</div>
-            <h3>Install &amp; download</h3>
-            <p>The first launch downloads Google's Gemma 4 model (~1 GB) once. After that, no internet is ever needed again.</p>
-          </div>
-        </div>
-        <div class="col-md-4 reveal">
-          <div class="how-step">
-            <div class="how-step-num">2</div>
-            <h3>Pick an avatar, say hello</h3>
-            <p>The child chooses an animal companion, picks their age, and presses the big talk button. Gemma-San greets them by name.</p>
-          </div>
-        </div>
-        <div class="col-md-4 reveal">
-          <div class="how-step">
-            <div class="how-step-num">3</div>
-            <h3>Learn through conversation</h3>
-            <p>Ask a question, draw something, take a quiz, practice phonics. Gemma-San adapts to whatever the child needs.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════════ BUILT FOR ════════ -->
-  <section id="built-for" class="section-pad">
-    <div class="container">
-      <div class="row align-items-center g-5">
-        <div class="col-lg-6 reveal">
-          <div class="section-eyebrow">Built for Nigeria</div>
-          <h2 class="section-title">Made for the phones kids actually use.</h2>
-          <p class="lead" style="color: rgba(42, 37, 34, 0.75);">
-            Gemma-San runs comfortably on 4 GB Tecno Sparks and Infinix Hots — the phones in every market, every school, every danfo. We obsess over performance so children in rural areas get the same tutor as those in Lekki.
-          </p>
-
-          <div class="row mt-4 g-4">
-            <div class="col-6 stat-block">
-              <div class="stat-num">4 GB</div>
-              <div class="stat-label">Minimum RAM. Runs on basic Android.</div>
-            </div>
-            <div class="col-6 stat-block">
-              <div class="stat-num">1.5s</div>
-              <div class="stat-label">First-audio response, end-to-end.</div>
-            </div>
-            <div class="col-6 stat-block">
-              <div class="stat-num">0 ₦</div>
-              <div class="stat-label">Data cost per conversation.</div>
-            </div>
-            <div class="col-6 stat-block">
-              <div class="stat-num">5–12</div>
-              <div class="stat-label">Age range, designed for primary.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 reveal">
-          <div class="for-card">
-            <div class="section-eyebrow">Languages</div>
-            <h3 class="mb-3" style="font-size: 1.6rem;">Speak however feels natural.</h3>
-            <p class="text-muted-warm mb-4">
-              Children switch languages mid-sentence and Gemma-San keeps up — the way kids actually talk at home.
-            </p>
-            <div>
-              <span class="lang-pill">English</span>
-              <span class="lang-pill">Hausa</span>
-              <span class="lang-pill">Yorùbá</span>
-              <span class="lang-pill">Igbo</span>
-              <span class="lang-pill">Pidgin</span>
-            </div>
-
-            <hr class="my-4" style="opacity: .1;" />
-
-            <div class="section-eyebrow">Cultural touchstones</div>
-            <h3 class="mb-3" style="font-size: 1.4rem;">Examples kids actually know.</h3>
-            <p class="text-muted-warm mb-0">
-              Naira, not dollars. Jollof, not cricket. Danfo, NEPA, agbo, market stories. Every lesson lands because every example is real.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════════ CTA ════════ -->
-  <section id="download" class="section-pad pt-0">
-    <div class="container">
-      <div class="cta-section text-center reveal">
-        <div class="row justify-content-center">
-          <div class="col-lg-8">
-            <div class="section-eyebrow" style="color: var(--sun-yellow);">Get started</div>
-            <h2 class="section-title mb-3">
-              Give every child a tutor that travels.
-            </h2>
-            <p class="lead mb-4" style="color: rgba(251, 246, 236, 0.82);">
-              Gemma-San is free, open, and offline-first. Drop it on a phone and walk away — it works wherever the child goes.
-            </p>
-            <div class="btn-wrap d-flex flex-wrap gap-3 justify-content-center">
-              <a href="#" class="btn btn-pill" style="background: var(--sun-yellow); color: var(--charcoal);">
-                <i class="bi bi-google-play me-2"></i> Download APK
-              </a>
-              <a href="https://github.com" class="btn btn-pill" style="background: rgba(251, 246, 236, 0.15); color: var(--warm-cream); border: 1.5px solid rgba(251, 246, 236, 0.3);">
-                <i class="bi bi-github me-2"></i> View source
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════════ FOOTER ════════ -->
-  <footer>
-    <div class="container">
-      <div class="row align-items-center g-3">
-        <div class="col-md-6 d-flex align-items-center gap-2">
-          <svg width="28" height="28" viewBox="0 0 200 200" aria-hidden="true">
-            <use href="#owl-mark" />
-          </svg>
-          <span style="font-family: 'Quicksand', sans-serif; font-weight: 700; color: var(--charcoal);">Gemma-San</span>
-          <span class="ms-2" style="opacity: .5;">— Built with care for African children.</span>
-        </div>
-        <div class="col-md-6 text-md-end">
-          <a href="#features" class="me-3">Features</a>
-          <a href="#how" class="me-3">How it works</a>
-          <a href="#download">Download</a>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <script>
-    // Sticky nav: toggle a "scrolled" class once user moves past the hero edge.
-    const nav = document.getElementById('navWrap');
-    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-
-    // Reveal-on-scroll: lightweight IntersectionObserver fade-up.
-    const io = new IntersectionObserver(entries => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          e.target.classList.add('is-visible');
-          io.unobserve(e.target);
+      .owl-stage {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 460px;
+        margin-left: auto;
+      }
+      .owl-stage::before {
+        content: "";
+        position: absolute;
+        width: 88%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          var(--terracotta-light) 0%,
+          transparent 65%
+        );
+        opacity: 0.7;
+        z-index: 0;
+        animation: pulse 6s ease-in-out infinite;
+      }
+      .owl-svg {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 380px;
+        animation: float 5s ease-in-out infinite;
+        filter: drop-shadow(0 18px 28px rgba(42, 37, 34, 0.18));
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-12px);
         }
       }
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
-    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-  </script>
-</body>
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.7;
+        }
+        50% {
+          transform: scale(1.04);
+          opacity: 0.55;
+        }
+      }
+
+      /* ── Trust strip ────────────────────────────────────── */
+      .trust-strip {
+        background: var(--warm-cream-dark);
+        border-top: 1px solid rgba(42, 37, 34, 0.06);
+        border-bottom: 1px solid rgba(42, 37, 34, 0.06);
+        padding: 1.25rem 0;
+      }
+      .trust-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-weight: 600;
+        color: var(--charcoal);
+        font-size: 0.95rem;
+      }
+      .trust-item i {
+        color: var(--terracotta);
+        font-size: 1.15rem;
+      }
+
+      /* ── Section base ───────────────────────────────────── */
+      section.section-pad {
+        padding: 5.5rem 0;
+      }
+      .section-eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: var(--terracotta);
+        margin-bottom: 0.9rem;
+      }
+      .section-title {
+        font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+        margin-bottom: 1rem;
+      }
+      .section-sub {
+        font-size: 1.12rem;
+        color: rgba(42, 37, 34, 0.7);
+        max-width: 620px;
+      }
+
+      /* ── Feature cards ──────────────────────────────────── */
+      .feature-card {
+        background: #fff;
+        border-radius: 22px;
+        padding: 1.75rem;
+        height: 100%;
+        border: 1px solid rgba(42, 37, 34, 0.06);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.25s ease,
+          border-color 0.2s ease;
+      }
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 32px rgba(42, 37, 34, 0.1);
+        border-color: var(--terracotta-light);
+      }
+      .feature-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1.1rem;
+      }
+      .feat-terracotta {
+        background: var(--terracotta-light);
+        color: var(--terracotta);
+      }
+      .feat-green {
+        background: var(--deep-green-light);
+        color: var(--deep-green);
+      }
+      .feat-yellow {
+        background: rgba(245, 200, 66, 0.28);
+        color: #b8902a;
+      }
+      .feature-card h3 {
+        font-size: 1.18rem;
+        margin-bottom: 0.55rem;
+      }
+      .feature-card p {
+        color: rgba(42, 37, 34, 0.72);
+        margin-bottom: 0;
+        font-size: 0.97rem;
+      }
+
+      /* ── Screenshots showcase (app-store style) ─────────── */
+      .shots-section {
+        background: linear-gradient(
+          180deg,
+          var(--warm-cream) 0%,
+          var(--warm-cream-dark) 100%
+        );
+        position: relative;
+        overflow: hidden;
+      }
+      .shots-section::before {
+        content: "";
+        position: absolute;
+        top: -120px;
+        right: -120px;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(245, 200, 66, 0.16) 0%,
+          transparent 60%
+        );
+      }
+      .shots-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2.5rem 2rem;
+        margin-top: 3rem;
+        max-width: 1000px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .shot-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .phone-frame {
+        width: 100%;
+        max-width: 260px;
+        aspect-ratio: 9 / 19.5;
+        background: #1a1a1a;
+        border-radius: 36px;
+        padding: 10px;
+        box-shadow: 0 18px 38px rgba(42, 37, 34, 0.22);
+        position: relative;
+        transition: transform 0.25s ease;
+      }
+      .phone-frame:hover {
+        transform: translateY(-6px);
+      }
+      .phone-frame::before {
+        /* Notch */
+        content: "";
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 86px;
+        height: 18px;
+        background: #1a1a1a;
+        border-radius: 0 0 12px 12px;
+        z-index: 3;
+      }
+      .phone-screen {
+        width: 100%;
+        height: 100%;
+        border-radius: 26px;
+        overflow: hidden;
+        background: var(--warm-cream);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .phone-screen img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .phone-screen .placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: rgba(42, 37, 34, 0.45);
+        padding: 1rem;
+        text-align: center;
+        font-size: 0.82rem;
+      }
+      .phone-screen .placeholder i {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--terracotta-light);
+      }
+      .shot-caption {
+        margin-top: 1.4rem;
+        text-align: center;
+      }
+      .shot-caption h3 {
+        font-size: 1.1rem;
+        margin: 0 0 0.3rem;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+      }
+      .shot-caption p {
+        font-size: 0.9rem;
+        color: rgba(42, 37, 34, 0.65);
+        margin: 0;
+        max-width: 230px;
+        line-height: 1.45;
+      }
+      @media (max-width: 992px) {
+        .shots-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 2.5rem 1.5rem;
+        }
+      }
+      @media (max-width: 576px) {
+        .shots-grid {
+          grid-template-columns: 1fr;
+          gap: 2.5rem;
+          max-width: 320px;
+        }
+      }
+
+      /* ── How it works ───────────────────────────────────── */
+      .how-section {
+        background: var(--deep-green);
+        color: var(--warm-cream);
+      }
+      .how-section h2,
+      .how-section .section-eyebrow {
+        color: var(--warm-cream);
+      }
+      .how-section .section-eyebrow {
+        color: var(--sun-yellow);
+      }
+      .how-section .section-sub {
+        color: rgba(251, 246, 236, 0.78);
+      }
+      .how-step {
+        background: rgba(251, 246, 236, 0.08);
+        border-radius: 22px;
+        padding: 2rem 1.75rem;
+        height: 100%;
+        border: 1px solid rgba(251, 246, 236, 0.1);
+        backdrop-filter: blur(2px);
+      }
+      .how-step-num {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--sun-yellow);
+        color: var(--forest);
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 1.2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.2rem;
+      }
+      .how-step h3 {
+        color: var(--warm-cream);
+        font-size: 1.25rem;
+        margin-bottom: 0.55rem;
+      }
+      .how-step p {
+        color: rgba(251, 246, 236, 0.78);
+        margin-bottom: 0;
+        font-size: 0.98rem;
+      }
+
+      /* ── Built for ──────────────────────────────────────── */
+      .for-card {
+        background: #fff;
+        border-radius: 26px;
+        padding: 2.5rem;
+        border: 1px solid rgba(42, 37, 34, 0.06);
+      }
+      .stat-block {
+        padding: 1rem 0;
+      }
+      .stat-num {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 2.4rem;
+        line-height: 1;
+        color: var(--terracotta);
+        margin-bottom: 0.35rem;
+      }
+      .stat-label {
+        font-size: 0.9rem;
+        color: rgba(42, 37, 34, 0.65);
+        font-weight: 500;
+      }
+
+      /* ── Languages strip ────────────────────────────────── */
+      .lang-pill {
+        display: inline-block;
+        background: #fff;
+        border: 1.5px solid var(--warm-cream-dark);
+        padding: 0.55rem 1.2rem;
+        border-radius: 999px;
+        font-weight: 600;
+        margin: 0.3rem;
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .lang-pill:hover {
+        transform: translateY(-2px);
+        border-color: var(--terracotta);
+        color: var(--terracotta);
+      }
+
+      /* ── CTA ────────────────────────────────────────────── */
+      .cta-section {
+        background: var(--charcoal);
+        color: var(--warm-cream);
+        border-radius: 32px;
+        padding: 3.5rem 2rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .cta-section::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            circle at 12% 80%,
+            rgba(201, 87, 44, 0.28) 0%,
+            transparent 45%
+          ),
+          radial-gradient(
+            circle at 88% 20%,
+            rgba(245, 200, 66, 0.16) 0%,
+            transparent 45%
+          );
+        pointer-events: none;
+      }
+      .cta-section h2 {
+        color: var(--warm-cream);
+        position: relative;
+      }
+      .cta-section p {
+        color: rgba(251, 246, 236, 0.78);
+        position: relative;
+      }
+      .cta-section .btn-wrap {
+        position: relative;
+      }
+
+      /* ── Footer ─────────────────────────────────────────── */
+      footer {
+        padding: 2.5rem 0 2rem;
+        color: rgba(42, 37, 34, 0.55);
+        font-size: 0.92rem;
+      }
+      footer a {
+        color: var(--charcoal);
+        text-decoration: none;
+      }
+      footer a:hover {
+        color: var(--terracotta);
+      }
+
+      /* ── Reveal on scroll ───────────────────────────────── */
+      .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+          opacity 0.6s ease,
+          transform 0.6s ease;
+      }
+      .reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        .hero {
+          padding: 3rem 0 4rem;
+        }
+        .owl-stage {
+          margin: 2.5rem auto 0;
+        }
+        .cta-section {
+          padding: 2.5rem 1.5rem;
+          border-radius: 24px;
+        }
+        section.section-pad {
+          padding: 4rem 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ════════ NAVBAR ════════ -->
+    <div class="nav-wrap" id="navWrap">
+      <nav class="navbar container py-3">
+        <a class="navbar-brand" href="#">
+          <!-- Owl mark -->
+          <svg
+            class="nav-logo"
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <use href="#owl-mark" />
+          </svg>
+          Gemma-San
+        </a>
+        <div class="d-none d-md-flex align-items-center gap-1">
+          <a class="nav-link-custom" href="#features">Features</a>
+          <a class="nav-link-custom" href="#screens">Screens</a>
+          <a class="nav-link-custom" href="#how">How it works</a>
+          <a class="nav-link-custom" href="#built-for">Built for</a>
+          <a class="btn btn-terracotta btn-pill ms-2" href="#download">
+            <i class="bi bi-download me-1"></i> Get the app
+          </a>
+        </div>
+        <a
+          class="btn btn-terracotta btn-pill d-md-none px-3 py-2"
+          href="#download"
+          style="font-size: 0.9rem"
+        >
+          Get app
+        </a>
+      </nav>
+    </div>
+
+    <!-- ════════ OWL SVG (defined once, referenced via <use>) ════════ -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <radialGradient id="owlBody" cx="35%" cy="32%" r="78%">
+          <stop offset="0%" stop-color="#9B6A3E" />
+          <stop offset="100%" stop-color="#3D2008" />
+        </radialGradient>
+        <symbol id="owl-mark" viewBox="0 0 200 200">
+          <!-- Ear tufts (drawn behind head) -->
+          <polygon points="73.6,8.4 55.2,56 81.6,46.4" fill="#3D2008" />
+          <polygon points="73.6,17.6 64,51.6 76.8,42.8" fill="#9B6A3E" />
+          <polygon points="126.4,8.4 144.8,56 118.4,46.4" fill="#3D2008" />
+          <polygon points="126.4,17.6 136,51.6 123.2,42.8" fill="#9B6A3E" />
+
+          <!-- Wings (dark ovals at body sides) -->
+          <ellipse cx="31" cy="137" rx="24" ry="46" fill="#3D2008" />
+          <ellipse cx="169" cy="137" rx="24" ry="46" fill="#3D2008" />
+
+          <!-- Body -->
+          <ellipse cx="100" cy="137" rx="66" ry="53" fill="url(#owlBody)" />
+
+          <!-- Head -->
+          <circle cx="100" cy="76.6" r="49" fill="url(#owlBody)" />
+
+          <!-- Facial disc -->
+          <ellipse
+            cx="100"
+            cy="78.6"
+            rx="41.5"
+            ry="39"
+            fill="#FBF6EC"
+            stroke="#6B3D15"
+            stroke-width="4.4"
+          />
+
+          <!-- Belly -->
+          <ellipse cx="100" cy="154" rx="36.5" ry="28.5" fill="#EDE6D6" />
+
+          <!-- Left eye -->
+          <circle cx="78" cy="73.6" r="14.6" fill="#fff" />
+          <circle cx="78" cy="73.6" r="10.6" fill="#F5C842" />
+          <circle cx="80" cy="75" r="5.6" fill="#2A2522" />
+          <circle cx="83.2" cy="70.4" r="2.6" fill="#fff" />
+
+          <!-- Right eye -->
+          <circle cx="122" cy="73.6" r="14.6" fill="#fff" />
+          <circle cx="122" cy="73.6" r="10.6" fill="#F5C842" />
+          <circle cx="124" cy="75" r="5.6" fill="#2A2522" />
+          <circle cx="127.2" cy="70.4" r="2.6" fill="#fff" />
+
+          <!-- Beak -->
+          <polygon points="89.6,93.6 110.4,93.6 100,108" fill="#C9572C" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <!-- ════════ HERO ════════ -->
+    <section class="hero">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-6 reveal">
+            <span class="hero-eyebrow mb-3">
+              <span class="dot"></span>
+              100% offline · runs on your phone
+            </span>
+            <h1 class="display-1 mb-3">
+              A patient AI tutor<br />
+              for every
+              <span style="color: var(--terracotta)">Nigerian</span> child.
+            </h1>
+            <p class="lead mb-4" style="max-width: 540px">
+              Gemma-San is a warm, voice-first tutor that lives inside a basic
+              Android phone — no Wi-Fi, no data, no monthly bill. Built for kids
+              aged 5–12, it speaks English, Hausa, Yoruba, Igbo, and Pidgin.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+              <a
+                href="https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk"
+                class="btn btn-terracotta btn-pill"
+              >
+                <i class="bi bi-download me-2"></i> Download for Android
+              </a>
+              <a href="#how" class="btn btn-ghost btn-pill">
+                See how it works
+              </a>
+            </div>
+            <div
+              class="d-flex align-items-center gap-3 mt-4 text-muted-warm"
+              style="font-size: 0.92rem"
+            >
+              <i
+                class="bi bi-shield-check"
+                style="color: var(--deep-green); font-size: 1.2rem"
+              ></i>
+              Private by design — every conversation stays on the child's phone.
+            </div>
+          </div>
+
+          <div class="col-lg-6 reveal">
+            <div class="owl-stage">
+              <svg
+                class="owl-svg"
+                viewBox="0 0 200 200"
+                aria-label="Gemma-San owl mascot"
+              >
+                <use href="#owl-mark" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ TRUST STRIP ════════ -->
+    <div class="trust-strip">
+      <div class="container">
+        <div class="row justify-content-center text-center g-3">
+          <div class="col-6 col-md-3">
+            <span class="trust-item"
+              ><i class="bi bi-wifi-off"></i> Works fully offline</span
+            >
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="trust-item"
+              ><i class="bi bi-translate"></i> 5 languages</span
+            >
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="trust-item"
+              ><i class="bi bi-mic-fill"></i> Voice in &amp; out</span
+            >
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="trust-item"
+              ><i class="bi bi-phone"></i> Made for low-end phones</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ FEATURES ════════ -->
+    <section id="features" class="section-pad">
+      <div class="container">
+        <div class="text-center mb-5 reveal">
+          <div class="section-eyebrow">What Gemma-San does</div>
+          <h2 class="section-title">A real tutor — not a chatbot.</h2>
+          <p class="section-sub mx-auto">
+            Gemma-San is grounded in proven teaching pedagogy: probe, build,
+            narrow, resolve. It guides, never lectures, and adapts to each
+            child's pace.
+          </p>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feature-card">
+              <div class="feature-icon feat-green">
+                <i class="bi bi-chat-quote-fill"></i>
+              </div>
+              <h3>Socratic teaching</h3>
+              <p>
+                Asks the right question instead of giving the answer. Children
+                learn to think, not memorise.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feature-card">
+              <div class="feature-icon feat-terracotta">
+                <i class="bi bi-mic-fill"></i>
+              </div>
+              <h3>Talk like a human</h3>
+              <p>
+                Whisper-powered speech recognition understands children's voices
+                and Nigerian accents naturally.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feature-card">
+              <div class="feature-icon feat-yellow">
+                <i class="bi bi-brush-fill"></i>
+              </div>
+              <h3>Draws &amp; shows</h3>
+              <p>
+                22 illustrated topics plus live SVG drawing — from traffic
+                lights to photosynthesis. Visual learning, on demand.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feature-card">
+              <div class="feature-icon feat-green">
+                <i class="bi bi-bookmark-heart-fill"></i>
+              </div>
+              <h3>Remembers your child</h3>
+              <p>
+                Three-tier memory means Gemma-San remembers names, hobbies, and
+                what was learned — across days, not just sessions.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feature-card">
+              <div class="feature-icon feat-terracotta">
+                <i class="bi bi-puzzle-fill"></i>
+              </div>
+              <h3>Phonics practice</h3>
+              <p>
+                Spaced-repetition drilling adapted to each child. Five levels,
+                mastery tracked, never overwhelming.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feature-card">
+              <div class="feature-icon feat-yellow">
+                <i class="bi bi-trophy-fill"></i>
+              </div>
+              <h3>Quiz &amp; celebrate</h3>
+              <p>
+                Five-question quizzes after each lesson, warm Pidgin
+                encouragement, lesson summaries to revisit later.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ SCREENSHOTS SHOWCASE ════════ -->
+    <section id="screens" class="shots-section section-pad">
+      <div class="container position-relative">
+        <div class="text-center mb-3 reveal">
+          <div class="section-eyebrow">Inside the app</div>
+          <h2 class="section-title">See Gemma-San in action.</h2>
+          <p class="section-sub mx-auto">
+            Real screens from a real APK running on a real Android phone.
+          </p>
+        </div>
+
+        <div class="shots-grid">
+          <div class="shot-card reveal">
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screens/screen-welcome.png"
+                  alt="Welcome screen — Hi! I'm Gemma-San"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <div class="shot-caption">
+              <h3>Say hello</h3>
+              <p>A warm welcome from the owl. No setup pain, no jargon.</p>
+            </div>
+          </div>
+
+          <div class="shot-card reveal">
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screens/screen-avatar.png"
+                  alt="Avatar picker — ten animal options"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <div class="shot-caption">
+              <h3>Pick your buddy</h3>
+              <p>Ten animal avatars. Each child gets their own companion.</p>
+            </div>
+          </div>
+
+          <div class="shot-card reveal">
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screens/screen-home.png"
+                  alt="Home screen — Welcome back"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <div class="shot-caption">
+              <h3>Welcome back</h3>
+              <p>Three doors: learn, practice, revisit. Always one tap away.</p>
+            </div>
+          </div>
+
+          <div class="shot-card reveal">
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screens/screen-practice.png"
+                  alt="Practice mode — letter A phonics drill"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <div class="shot-caption">
+              <h3>Phonics, instantly</h3>
+              <p>
+                Tap, say the letter, get feedback. Spaced-repetition under the
+                hood.
+              </p>
+            </div>
+          </div>
+
+          <div class="shot-card reveal">
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screens/screen-lessons.png"
+                  alt="My Lessons — past lessons remembered"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <div class="shot-caption">
+              <h3>It remembers</h3>
+              <p>
+                Every lesson saved. Open the app tomorrow — pick up where you
+                left off.
+              </p>
+            </div>
+          </div>
+
+          <div class="shot-card reveal">
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <img
+                  src="assets/screens/screen-summary.png"
+                  alt="Lesson summary — Photosynthesis, what you learned"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <div class="shot-caption">
+              <h3>Lesson summaries</h3>
+              <p>
+                Key concepts in plain English. One tap to a 5-question quiz.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ HOW IT WORKS ════════ -->
+    <section id="how" class="how-section section-pad">
+      <div class="container">
+        <div class="text-center mb-5 reveal">
+          <div class="section-eyebrow">How it works</div>
+          <h2 class="section-title">Three steps. No setup pain.</h2>
+          <p class="section-sub mx-auto">
+            Download once on Wi-Fi. After that, Gemma-San works in the village,
+            in the danfo, on the farm — anywhere.
+          </p>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-4 reveal">
+            <div class="how-step">
+              <div class="how-step-num">1</div>
+              <h3>Install &amp; download</h3>
+              <p>
+                The first launch downloads Google's Gemma 4 model (~1 GB) once.
+                After that, no internet is ever needed again.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4 reveal">
+            <div class="how-step">
+              <div class="how-step-num">2</div>
+              <h3>Pick an avatar, say hello</h3>
+              <p>
+                The child chooses an animal companion, picks their age, and
+                presses the big talk button. Gemma-San greets them by name.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4 reveal">
+            <div class="how-step">
+              <div class="how-step-num">3</div>
+              <h3>Learn through conversation</h3>
+              <p>
+                Ask a question, draw something, take a quiz, practice phonics.
+                Gemma-San adapts to whatever the child needs.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ BUILT FOR ════════ -->
+    <section id="built-for" class="section-pad">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-6 reveal">
+            <div class="section-eyebrow">Built for Nigeria</div>
+            <h2 class="section-title">
+              Made for the phones kids actually use.
+            </h2>
+            <p class="lead" style="color: rgba(42, 37, 34, 0.75)">
+              Gemma-San runs comfortably on 4 GB Tecno Sparks and Infinix Hots —
+              the phones in every market, every school, every danfo. We obsess
+              over performance so children in rural areas get the same tutor as
+              those in Lekki.
+            </p>
+
+            <div class="row mt-4 g-4">
+              <div class="col-6 stat-block">
+                <div class="stat-num">4 GB</div>
+                <div class="stat-label">
+                  Minimum RAM. Runs on basic Android.
+                </div>
+              </div>
+              <div class="col-6 stat-block">
+                <div class="stat-num">1.5s</div>
+                <div class="stat-label">First-audio response, end-to-end.</div>
+              </div>
+              <div class="col-6 stat-block">
+                <div class="stat-num">0 ₦</div>
+                <div class="stat-label">Data cost per conversation.</div>
+              </div>
+              <div class="col-6 stat-block">
+                <div class="stat-num">5–12</div>
+                <div class="stat-label">Age range, designed for primary.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 reveal">
+            <div class="for-card">
+              <div class="section-eyebrow">Languages</div>
+              <h3 class="mb-3" style="font-size: 1.6rem">
+                Speak however feels natural.
+              </h3>
+              <p class="text-muted-warm mb-4">
+                Children switch languages mid-sentence and Gemma-San keeps up —
+                the way kids actually talk at home.
+              </p>
+              <div>
+                <span class="lang-pill">English</span>
+                <span class="lang-pill">Hausa</span>
+                <span class="lang-pill">Yorùbá</span>
+                <span class="lang-pill">Igbo</span>
+                <span class="lang-pill">Pidgin</span>
+              </div>
+
+              <hr class="my-4" style="opacity: 0.1" />
+
+              <div class="section-eyebrow">Cultural touchstones</div>
+              <h3 class="mb-3" style="font-size: 1.4rem">
+                Examples kids actually know.
+              </h3>
+              <p class="text-muted-warm mb-0">
+                Naira, not dollars. Jollof, not cricket. Danfo, NEPA, agbo,
+                market stories. Every lesson lands because every example is
+                real.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ CTA ════════ -->
+    <section id="download" class="section-pad pt-0">
+      <div class="container">
+        <div class="cta-section text-center reveal">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+              <div class="section-eyebrow" style="color: var(--sun-yellow)">
+                Get started
+              </div>
+              <h2 class="section-title mb-3">
+                Give every child a tutor that travels.
+              </h2>
+              <p class="lead mb-4" style="color: rgba(251, 246, 236, 0.82)">
+                Gemma-San is free, open, and offline-first. Drop it on a phone
+                and walk away — it works wherever the child goes.
+              </p>
+              <div
+                class="btn-wrap d-flex flex-wrap gap-3 justify-content-center"
+              >
+                <a
+                  href="https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk"
+                  class="btn btn-pill"
+                  style="background: var(--sun-yellow); color: var(--charcoal)"
+                >
+                  <i class="bi bi-download me-2"></i> Download APK
+                </a>
+                <a
+                  href="https://www.youtube.com/watch?v=FD7dJ33XGXc"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn btn-pill"
+                  style="
+                    background: rgba(251, 246, 236, 0.15);
+                    color: var(--warm-cream);
+                    border: 1.5px solid rgba(251, 246, 236, 0.3);
+                  "
+                >
+                  <i class="bi bi-play-circle me-2"></i> Watch demo
+                </a>
+                <a
+                  href="https://github.com/TheCodeDaniel/gemma_san"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn btn-pill"
+                  style="
+                    background: rgba(251, 246, 236, 0.15);
+                    color: var(--warm-cream);
+                    border: 1.5px solid rgba(251, 246, 236, 0.3);
+                  "
+                >
+                  <i class="bi bi-github me-2"></i> View source
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ FOOTER ════════ -->
+    <footer>
+      <div class="container">
+        <div class="row align-items-center g-3">
+          <div class="col-md-6 d-flex align-items-center gap-2">
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 200 200"
+              aria-hidden="true"
+            >
+              <use href="#owl-mark" />
+            </svg>
+            <span
+              style="
+                font-family: &quot;Quicksand&quot;, sans-serif;
+                font-weight: 700;
+                color: var(--charcoal);
+              "
+              >Gemma-San</span
+            >
+            <span class="ms-2" style="opacity: 0.5"
+              >— Built with care for African children.</span
+            >
+          </div>
+          <div class="col-md-6 text-md-end">
+            <a href="#features" class="me-3">Features</a>
+            <a href="#how" class="me-3">How it works</a>
+            <a href="#download">Download</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Sticky nav: toggle a "scrolled" class once user moves past the hero edge.
+      const nav = document.getElementById("navWrap");
+      const onScroll = () =>
+        nav.classList.toggle("scrolled", window.scrollY > 20);
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+
+      // Reveal-on-scroll: lightweight IntersectionObserver fade-up.
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add("is-visible");
+              io.unobserve(e.target);
+            }
+          }
+        },
+        { rootMargin: "0px 0px -10% 0px", threshold: 0.05 },
+      );
+      document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+    </script>
+  </body>
 </html>

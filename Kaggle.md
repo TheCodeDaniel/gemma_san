@@ -6,7 +6,7 @@
 
 **A patient, voice-first AI tutor that runs Gemma 4 entirely offline on a 4 GB Android phone — built for the 250 million African children the cloud forgot.**
 
-[▶ Watch the demo](https://www.youtube.com/watch?v=FD7dJ33XGXc) · [⬇ Download APK](https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk) · [Source](https://github.com/TheCodeDaniel/gemma_san)
+[▶ Watch the demo](https://www.youtube.com/watch?v=FD7dJ33XGXc) · [⬇ Download APK](https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk) · [🌐 Live site](https://thecodedaniel.github.io/gemma_san/) · [Source](https://github.com/TheCodeDaniel/gemma_san)
 
 </div>
 
@@ -74,6 +74,19 @@ A walkthrough showing:
 4. A live illustration of photosynthesis appearing
 5. A 5-question quiz, with Pidgin encouragement after a correct answer
 6. The child re-opening the app the next day — Gemma-San remembers their name and last lesson
+
+---
+
+## Media Gallery
+
+Real screens from the shipping APK — no mockups, no marketing renders.
+
+| | | | |
+|---|---|---|---|
+| ![Avatar picker](docs/assets/screens/screen-avatar.png) | ![Home screen](docs/assets/screens/screen-home.png) | ![Practice mode](docs/assets/screens/screen-practice.png) | ![Lesson summary](docs/assets/screens/screen-summary.png) |
+| **Onboarding** — ten avatars, age-aware curriculum | **Home** — three doors: learn, practice, revisit | **Practice** — phonics drilling, voice-evaluated | **Lesson summary** — child-friendly recap + 5-question quiz |
+
+A full-resolution gallery and additional screens are on the [live site](https://thecodedaniel.github.io/gemma_san/#screens).
 
 ---
 
