@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gemma-San — Thumbnails</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <style>
+      :root {
+        --terracotta: #c9572c;
+        --terracotta-deep: #8e3d1f;
+        --terracotta-light: #f4cbb8;
+        --deep-green: #2c5f4a;
+        --deep-green-deep: #1a3c2e;
+        --deep-green-light: #b8d8cc;
+        --sun-yellow: #f5c842;
+        --warm-cream: #fbf6ec;
+        --warm-cream-dark: #ede6d6;
+        --charcoal: #2a2522;
+        --body-brown: #9b6a3e;
+        --dark-brown: #3d2008;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        margin: 0;
+        padding: 3rem 2rem;
+        background: #e8e4da;
+        font-family: "Inter", system-ui, sans-serif;
+        color: var(--charcoal);
+      }
+
+      .page-head {
+        max-width: 1100px;
+        margin: 0 auto 2.5rem;
+      }
+      .page-head h1 {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 2rem;
+        margin: 0 0 0.5rem;
+      }
+      .page-head p {
+        color: rgba(42, 37, 34, 0.65);
+        margin: 0;
+      }
+
+      .gallery {
+        max-width: 1300px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+      }
+
+      .thumb-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 28px rgba(42, 37, 34, 0.08);
+      }
+      .thumb-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .thumb-card-head .meta {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 1.05rem;
+      }
+      .thumb-card-head .meta .dim {
+        color: rgba(42, 37, 34, 0.55);
+        font-weight: 500;
+        font-size: 0.85rem;
+        margin-left: 0.5rem;
+        font-family: "Inter", sans-serif;
+      }
+      .download-btn {
+        background: var(--terracotta);
+        color: #fff;
+        border: 0;
+        padding: 0.55rem 1.1rem;
+        border-radius: 999px;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition:
+          background 0.15s ease,
+          transform 0.12s ease;
+      }
+      .download-btn:hover {
+        background: var(--terracotta-deep);
+        transform: translateY(-1px);
+      }
+      .download-btn:disabled {
+        background: #999;
+        cursor: wait;
+      }
+
+      /* ── Scaled preview wrapper ─────────────────────────── */
+      .preview {
+        position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        background: #ccc;
+      }
+      .preview > .thumb {
+        transform-origin: top left;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      /* Native sizes — children of .preview are scaled via JS to fit */
+      .thumb {
+        font-family: "Inter", sans-serif;
+        color: var(--charcoal);
+      }
+      .yt {
+        width: 1280px;
+        height: 720px;
+      }
+      .sq {
+        width: 1080px;
+        height: 1080px;
+      }
+      .tw {
+        width: 1200px;
+        height: 675px;
+      }
+      .story {
+        width: 1080px;
+        height: 1920px;
+      }
+
+      /* ────── Thumbnail 1 — YouTube hero ─────────────────── */
+      .t1 {
+        background: var(--warm-cream);
+        padding: 80px;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .t1::before {
+        content: "";
+        position: absolute;
+        right: -150px;
+        top: -150px;
+        width: 900px;
+        height: 900px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          var(--terracotta-light) 0%,
+          transparent 60%
+        );
+      }
+      .t1-left {
+        flex: 1;
+        position: relative;
+        z-index: 2;
+      }
+      .t1-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--deep-green-light);
+        color: var(--deep-green-deep);
+        padding: 10px 22px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 22px;
+        margin-bottom: 28px;
+      }
+      .t1-eyebrow .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--deep-green);
+      }
+      .t1 h1 {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 92px;
+        line-height: 1.02;
+        margin: 0 0 24px;
+        color: var(--charcoal);
+        letter-spacing: -0.02em;
+      }
+      .t1 h1 .accent {
+        color: var(--terracotta);
+      }
+      .t1 p {
+        font-size: 28px;
+        color: rgba(42, 37, 34, 0.72);
+        margin: 0;
+        max-width: 580px;
+        line-height: 1.4;
+      }
+      .t1-right {
+        width: 480px;
+        height: 480px;
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .t1-right svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 24px 32px rgba(42, 37, 34, 0.2));
+      }
+      .t1-mark {
+        position: absolute;
+        bottom: 50px;
+        left: 80px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 26px;
+        z-index: 2;
+      }
+      .t1-mark svg {
+        width: 44px;
+        height: 44px;
+      }
+
+      /* ────── Thumbnail 2 — Instagram square ─────────────── */
+      .t2 {
+        background: var(--deep-green);
+        padding: 90px 70px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+      }
+      .t2::before {
+        content: "";
+        position: absolute;
+        width: 700px;
+        height: 700px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(245, 200, 66, 0.18) 0%,
+          transparent 60%
+        );
+        top: -100px;
+        right: -150px;
+      }
+      .t2-owl {
+        width: 420px;
+        height: 420px;
+        position: relative;
+        z-index: 2;
+      }
+      .t2-owl svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.25));
+      }
+      .t2 h1 {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 88px;
+        line-height: 1.05;
+        color: var(--warm-cream);
+        margin: 40px 0 24px;
+        position: relative;
+        z-index: 2;
+        letter-spacing: -0.02em;
+      }
+      .t2 p {
+        font-size: 30px;
+        color: rgba(251, 246, 236, 0.75);
+        margin: 0;
+        position: relative;
+        z-index: 2;
+      }
+      .t2-mark {
+        position: absolute;
+        bottom: 50px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 24px;
+        color: var(--sun-yellow);
+        z-index: 2;
+      }
+      .t2-mark svg {
+        width: 38px;
+        height: 38px;
+      }
+
+      /* ────── Thumbnail 3 — Twitter / LinkedIn ───────────── */
+      .t3 {
+        background: var(--terracotta);
+        padding: 70px 80px;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .t3::before {
+        content: "";
+        position: absolute;
+        top: -200px;
+        left: -200px;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(245, 200, 66, 0.22) 0%,
+          transparent 60%
+        );
+      }
+      .t3-left {
+        flex: 1;
+        position: relative;
+        z-index: 2;
+        color: var(--warm-cream);
+      }
+      .t3 .label {
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--sun-yellow);
+        margin-bottom: 24px;
+      }
+      .t3 h1 {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 76px;
+        line-height: 1.05;
+        color: var(--warm-cream);
+        margin: 0 0 36px;
+        letter-spacing: -0.02em;
+      }
+      .t3-stats {
+        display: flex;
+        gap: 40px;
+      }
+      .t3-stat {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        color: var(--warm-cream);
+      }
+      .t3-stat .num {
+        display: block;
+        font-size: 44px;
+        line-height: 1;
+      }
+      .t3-stat .lbl {
+        font-size: 17px;
+        font-weight: 500;
+        opacity: 0.8;
+        font-family: "Inter", sans-serif;
+        margin-top: 6px;
+      }
+      .t3-right {
+        width: 360px;
+        height: 360px;
+        position: relative;
+        z-index: 2;
+      }
+      .t3-right svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.25));
+      }
+
+      /* ────── Thumbnail 4 — Vertical story ───────────────── */
+      .t4 {
+        background: var(--warm-cream);
+        padding: 120px 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .t4::before {
+        content: "";
+        position: absolute;
+        top: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 800px;
+        height: 800px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          var(--terracotta-light) 0%,
+          transparent 60%
+        );
+        opacity: 0.6;
+      }
+      .t4-badge {
+        background: var(--deep-green);
+        color: var(--warm-cream);
+        padding: 14px 32px;
+        border-radius: 999px;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        margin-bottom: 40px;
+        position: relative;
+        z-index: 2;
+      }
+      .t4-owl {
+        width: 520px;
+        height: 520px;
+        position: relative;
+        z-index: 2;
+      }
+      .t4-owl svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 22px 32px rgba(42, 37, 34, 0.22));
+      }
+      .t4 h1 {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 96px;
+        line-height: 1.02;
+        color: var(--charcoal);
+        margin: 50px 0 28px;
+        position: relative;
+        z-index: 2;
+        letter-spacing: -0.02em;
+      }
+      .t4 h1 .accent {
+        color: var(--terracotta);
+      }
+      .t4 p {
+        font-size: 36px;
+        color: rgba(42, 37, 34, 0.7);
+        margin: 0 0 60px;
+        position: relative;
+        z-index: 2;
+      }
+      .t4-langs {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px;
+        max-width: 800px;
+        position: relative;
+        z-index: 2;
+        margin-bottom: 80px;
+      }
+      .t4-lang {
+        background: #fff;
+        border: 2px solid var(--warm-cream-dark);
+        padding: 14px 28px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 28px;
+      }
+      .t4-cta {
+        background: var(--terracotta);
+        color: #fff;
+        padding: 26px 56px;
+        border-radius: 999px;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 36px;
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 16px 32px rgba(201, 87, 44, 0.4);
+      }
+
+      /* ────── Thumbnail 5 — Yellow feature square ────────── */
+      .t5 {
+        background: var(--sun-yellow);
+        padding: 90px 80px;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .t5-left {
+        flex: 1;
+        position: relative;
+        z-index: 2;
+      }
+      .t5 h1 {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 124px;
+        line-height: 0.95;
+        color: var(--charcoal);
+        margin: 0 0 36px;
+        letter-spacing: -0.03em;
+      }
+      .t5 h1 .small {
+        display: block;
+        font-size: 72px;
+        color: var(--terracotta);
+      }
+      .t5 p {
+        font-size: 32px;
+        color: var(--charcoal);
+        opacity: 0.78;
+        margin: 0;
+        max-width: 460px;
+        line-height: 1.35;
+      }
+      .t5-owl {
+        width: 380px;
+        height: 380px;
+        position: absolute;
+        right: -40px;
+        bottom: -60px;
+        z-index: 1;
+      }
+      .t5-owl svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 14px 22px rgba(42, 37, 34, 0.2));
+      }
+      .t5-mark {
+        position: absolute;
+        top: 50px;
+        left: 80px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 26px;
+        color: var(--charcoal);
+        z-index: 3;
+      }
+      .t5-mark svg {
+        width: 42px;
+        height: 42px;
+      }
+
+      /* ────── Thumbnail 6 — Dark feature ────────────────── */
+      .t6 {
+        background: var(--charcoal);
+        padding: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        color: var(--warm-cream);
+      }
+      .t6::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 800px;
+        height: 800px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(201, 87, 44, 0.3) 0%,
+          transparent 65%
+        );
+      }
+      .t6::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(245, 200, 66, 0.18) 0%,
+          transparent 60%
+        );
+      }
+      .t6-content {
+        position: relative;
+        z-index: 2;
+        max-width: 800px;
+      }
+      .t6 .label {
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-weight: 700;
+        font-size: 20px;
+        color: var(--sun-yellow);
+        margin-bottom: 28px;
+      }
+      .t6 h1 {
+        font-family: "Quicksand", sans-serif;
+        font-weight: 700;
+        font-size: 130px;
+        line-height: 0.95;
+        color: var(--warm-cream);
+        margin: 0 0 36px;
+        letter-spacing: -0.03em;
+      }
+      .t6 h1 .a1 {
+        color: var(--terracotta);
+      }
+      .t6 h1 .a2 {
+        color: var(--sun-yellow);
+      }
+      .t6 h1 .a3 {
+        color: var(--deep-green-light);
+      }
+      .t6-feats {
+        display: flex;
+        gap: 50px;
+        margin-top: 24px;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 600;
+        font-size: 24px;
+      }
+      .t6-feat {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .t6-feat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: rgba(251, 246, 236, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+      }
+      .t6-owl-corner {
+        position: absolute;
+        bottom: 60px;
+        right: 80px;
+        width: 140px;
+        height: 140px;
+        z-index: 3;
+      }
+      .t6-owl-corner svg {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-head">
+      <h1>Gemma-San — Thumbnails</h1>
+      <p>
+        Click <strong>Download</strong> on any thumbnail to export it at native
+        resolution as a PNG.
+      </p>
+    </div>
+
+    <!-- ════════ OWL SYMBOL (defined once, referenced via <use>) ════════ -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <radialGradient id="owlBody" cx="35%" cy="32%" r="78%">
+          <stop offset="0%" stop-color="#9B6A3E" />
+          <stop offset="100%" stop-color="#3D2008" />
+        </radialGradient>
+        <symbol id="owl-mark" viewBox="0 0 200 200">
+          <polygon points="73.6,8.4 55.2,56 81.6,46.4" fill="#3D2008" />
+          <polygon points="73.6,17.6 64,51.6 76.8,42.8" fill="#9B6A3E" />
+          <polygon points="126.4,8.4 144.8,56 118.4,46.4" fill="#3D2008" />
+          <polygon points="126.4,17.6 136,51.6 123.2,42.8" fill="#9B6A3E" />
+          <ellipse cx="31" cy="137" rx="24" ry="46" fill="#3D2008" />
+          <ellipse cx="169" cy="137" rx="24" ry="46" fill="#3D2008" />
+          <ellipse cx="100" cy="137" rx="66" ry="53" fill="url(#owlBody)" />
+          <circle cx="100" cy="76.6" r="49" fill="url(#owlBody)" />
+          <ellipse
+            cx="100"
+            cy="78.6"
+            rx="41.5"
+            ry="39"
+            fill="#FBF6EC"
+            stroke="#6B3D15"
+            stroke-width="4.4"
+          />
+          <ellipse cx="100" cy="154" rx="36.5" ry="28.5" fill="#EDE6D6" />
+          <circle cx="78" cy="73.6" r="14.6" fill="#fff" />
+          <circle cx="78" cy="73.6" r="10.6" fill="#F5C842" />
+          <circle cx="80" cy="75" r="5.6" fill="#2A2522" />
+          <circle cx="83.2" cy="70.4" r="2.6" fill="#fff" />
+          <circle cx="122" cy="73.6" r="14.6" fill="#fff" />
+          <circle cx="122" cy="73.6" r="10.6" fill="#F5C842" />
+          <circle cx="124" cy="75" r="5.6" fill="#2A2522" />
+          <circle cx="127.2" cy="70.4" r="2.6" fill="#fff" />
+          <polygon points="89.6,93.6 110.4,93.6 100,108" fill="#C9572C" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="gallery">
+      <!-- ═══════ T1 — YouTube hero 1280×720 ═══════ -->
+      <div class="thumb-card">
+        <div class="thumb-card-head">
+          <div class="meta">
+            YouTube / Blog hero <span class="dim">1280 × 720</span>
+          </div>
+          <button
+            class="download-btn"
+            data-target="thumb-1"
+            data-name="gemma-san-youtube-hero"
+          >
+            Download PNG
+          </button>
+        </div>
+        <div class="preview" data-w="1280" data-h="720">
+          <div id="thumb-1" class="thumb yt t1">
+            <div class="t1-mark">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+              Gemma-San
+            </div>
+            <div class="t1-left">
+              <div class="t1-eyebrow">
+                <span class="dot"></span> 100% offline · ages 5–12
+              </div>
+              <h1>
+                Meet your child's<br /><span class="accent">offline</span> AI
+                tutor.
+              </h1>
+              <p>
+                Patient. Multilingual. Made for the phones kids actually use in
+                Nigeria.
+              </p>
+            </div>
+            <div class="t1-right">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ T2 — Instagram square 1080×1080 ═══════ -->
+      <div class="thumb-card">
+        <div class="thumb-card-head">
+          <div class="meta">
+            Instagram square <span class="dim">1080 × 1080</span>
+          </div>
+          <button
+            class="download-btn"
+            data-target="thumb-2"
+            data-name="gemma-san-instagram"
+          >
+            Download PNG
+          </button>
+        </div>
+        <div class="preview" data-w="1080" data-h="1080">
+          <div id="thumb-2" class="thumb sq t2">
+            <div class="t2-owl">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+            </div>
+            <h1>She remembers<br />your child.</h1>
+            <p>Memory that lasts beyond every conversation.</p>
+            <div class="t2-mark">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+              GEMMA-SAN
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ T3 — Twitter / LinkedIn 1200×675 ═══════ -->
+      <div class="thumb-card">
+        <div class="thumb-card-head">
+          <div class="meta">
+            Twitter / LinkedIn / Facebook <span class="dim">1200 × 675</span>
+          </div>
+          <button
+            class="download-btn"
+            data-target="thumb-3"
+            data-name="gemma-san-twitter"
+          >
+            Download PNG
+          </button>
+        </div>
+        <div class="preview" data-w="1200" data-h="675">
+          <div id="thumb-3" class="thumb tw t3">
+            <div class="t3-left">
+              <div class="label">Built for Nigeria</div>
+              <h1>Made for the phones kids actually use.</h1>
+              <div class="t3-stats">
+                <div class="t3-stat">
+                  <span class="num">4 GB</span>
+                  <span class="lbl">Min RAM</span>
+                </div>
+                <div class="t3-stat">
+                  <span class="num">1.5s</span>
+                  <span class="lbl">First response</span>
+                </div>
+                <div class="t3-stat">
+                  <span class="num">0 ₦</span>
+                  <span class="lbl">Data cost</span>
+                </div>
+              </div>
+            </div>
+            <div class="t3-right">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ T4 — Vertical story 1080×1920 ═══════ -->
+      <div class="thumb-card">
+        <div class="thumb-card-head">
+          <div class="meta">
+            Story / Reel / TikTok <span class="dim">1080 × 1920</span>
+          </div>
+          <button
+            class="download-btn"
+            data-target="thumb-4"
+            data-name="gemma-san-story"
+          >
+            Download PNG
+          </button>
+        </div>
+        <div class="preview" data-w="1080" data-h="1920">
+          <div id="thumb-4" class="thumb story t4">
+            <div class="t4-badge">100% OFFLINE</div>
+            <div class="t4-owl">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+            </div>
+            <h1>
+              A patient tutor<br />for every
+              <span class="accent">Nigerian</span> child.
+            </h1>
+            <p>English · Hausa · Yorùbá · Igbo · Pidgin</p>
+            <div class="t4-langs">
+              <div class="t4-lang">English</div>
+              <div class="t4-lang">Hausa</div>
+              <div class="t4-lang">Yorùbá</div>
+              <div class="t4-lang">Igbo</div>
+              <div class="t4-lang">Pidgin</div>
+            </div>
+            <div class="t4-cta">Download free →</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ T5 — Yellow feature square 1080×1080 ═══════ -->
+      <div class="thumb-card">
+        <div class="thumb-card-head">
+          <div class="meta">
+            Instagram feature <span class="dim">1080 × 1080</span>
+          </div>
+          <button
+            class="download-btn"
+            data-target="thumb-5"
+            data-name="gemma-san-languages"
+          >
+            Download PNG
+          </button>
+        </div>
+        <div class="preview" data-w="1080" data-h="1080">
+          <div id="thumb-5" class="thumb sq t5">
+            <div class="t5-mark">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+              Gemma-San
+            </div>
+            <div class="t5-left">
+              <h1>5 languages.<br /><span class="small">1 owl.</span></h1>
+              <p>Switch mid-sentence. Code-switch like a kid actually does.</p>
+            </div>
+            <div class="t5-owl">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ T6 — Dark feature 1280×720 ═══════ -->
+      <div class="thumb-card">
+        <div class="thumb-card-head">
+          <div class="meta">
+            YouTube feature / dark mode <span class="dim">1280 × 720</span>
+          </div>
+          <button
+            class="download-btn"
+            data-target="thumb-6"
+            data-name="gemma-san-features"
+          >
+            Download PNG
+          </button>
+        </div>
+        <div class="preview" data-w="1280" data-h="720">
+          <div id="thumb-6" class="thumb yt t6">
+            <div class="t6-content">
+              <div class="label">Gemma-San</div>
+              <h1>
+                <span class="a1">Talk.</span> <span class="a2">Draw.</span>
+                <span class="a3">Learn.</span>
+              </h1>
+              <div class="t6-feats">
+                <div class="t6-feat">
+                  <div class="t6-feat-icon">🎙️</div>
+                  Voice in &amp; out
+                </div>
+                <div class="t6-feat">
+                  <div class="t6-feat-icon">✏️</div>
+                  Drawings on demand
+                </div>
+                <div class="t6-feat">
+                  <div class="t6-feat-icon">🧠</div>
+                  Remembers you
+                </div>
+              </div>
+            </div>
+            <div class="t6-owl-corner">
+              <svg viewBox="0 0 200 200"><use href="#owl-mark" /></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ── Inline each owl <use> with its full SVG markup ──────────────────────
+      // html2canvas can't follow <use href="#owl-mark"> references to a <symbol>
+      // defined in a separate <svg> block. Replace each <use> with the actual
+      // shapes, giving every instance its own gradient ID to avoid clashes.
+      const owlTemplate = (uid) => `
+      <defs>
+        <radialGradient id="owlBody-${uid}" cx="35%" cy="32%" r="78%">
+          <stop offset="0%" stop-color="#9B6A3E" />
+          <stop offset="100%" stop-color="#3D2008" />
+        </radialGradient>
+      </defs>
+      <polygon points="73.6,8.4 55.2,56 81.6,46.4" fill="#3D2008" />
+      <polygon points="73.6,17.6 64,51.6 76.8,42.8" fill="#9B6A3E" />
+      <polygon points="126.4,8.4 144.8,56 118.4,46.4" fill="#3D2008" />
+      <polygon points="126.4,17.6 136,51.6 123.2,42.8" fill="#9B6A3E" />
+      <ellipse cx="31" cy="137" rx="24" ry="46" fill="#3D2008" />
+      <ellipse cx="169" cy="137" rx="24" ry="46" fill="#3D2008" />
+      <ellipse cx="100" cy="137" rx="66" ry="53" fill="url(#owlBody-${uid})" />
+      <circle cx="100" cy="76.6" r="49" fill="url(#owlBody-${uid})" />
+      <ellipse cx="100" cy="78.6" rx="41.5" ry="39" fill="#FBF6EC" stroke="#6B3D15" stroke-width="4.4" />
+      <ellipse cx="100" cy="154" rx="36.5" ry="28.5" fill="#EDE6D6" />
+      <circle cx="78" cy="73.6" r="14.6" fill="#fff" />
+      <circle cx="78" cy="73.6" r="10.6" fill="#F5C842" />
+      <circle cx="80" cy="75" r="5.6" fill="#2A2522" />
+      <circle cx="83.2" cy="70.4" r="2.6" fill="#fff" />
+      <circle cx="122" cy="73.6" r="14.6" fill="#fff" />
+      <circle cx="122" cy="73.6" r="10.6" fill="#F5C842" />
+      <circle cx="124" cy="75" r="5.6" fill="#2A2522" />
+      <circle cx="127.2" cy="70.4" r="2.6" fill="#fff" />
+      <polygon points="89.6,93.6 110.4,93.6 100,108" fill="#C9572C" />
+    `;
+
+      let owlUid = 0;
+      function inlineOwls(root = document) {
+        root.querySelectorAll("svg").forEach((svg) => {
+          const useEl = svg.querySelector("use");
+          if (!useEl) return;
+          const href =
+            useEl.getAttribute("href") || useEl.getAttribute("xlink:href");
+          if (href !== "#owl-mark") return;
+          svg.innerHTML = owlTemplate(++owlUid);
+        });
+      }
+      inlineOwls();
+
+      // ── Scale each thumbnail to fit its container width ─────────────────────
+      function scaleThumbs() {
+        document.querySelectorAll(".preview").forEach((p) => {
+          const nw = parseInt(p.dataset.w, 10);
+          const nh = parseInt(p.dataset.h, 10);
+          const available = p.parentElement.clientWidth - 48; // padding allowance
+          const scale = Math.min(available / nw, 0.8);
+          const inner = p.querySelector(".thumb");
+          inner.style.transform = `scale(${scale})`;
+          p.style.width = nw * scale + "px";
+          p.style.height = nh * scale + "px";
+        });
+      }
+      scaleThumbs();
+      window.addEventListener("resize", scaleThumbs);
+
+      // ── Wait for fonts to load before allowing export ───────────────────────
+      document.fonts.ready.then(() => {
+        document.querySelectorAll(".download-btn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.dataset.target;
+            const name = btn.dataset.name || id;
+            const target = document.getElementById(id);
+            const original = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = "Rendering…";
+
+            try {
+              // Temporarily unscale the thumb for native-resolution capture
+              const prevTransform = target.style.transform;
+              target.style.transform = "none";
+
+              const canvas = await html2canvas(target, {
+                backgroundColor: null,
+                scale: 1,
+                useCORS: true,
+                logging: false,
+                onclone: (clonedDoc, clonedTarget) => {
+                  // Safety net: re-inline any owl <use> in the cloned tree.
+                  inlineOwls(clonedTarget);
+                },
+              });
+
+              target.style.transform = prevTransform;
+
+              const link = document.createElement("a");
+              link.download = `${name}.png`;
+              link.href = canvas.toDataURL("image/png");
+              link.click();
+            } catch (e) {
+              console.error(e);
+              alert("Export failed — see console.");
+            } finally {
+              btn.disabled = false;
+              btn.textContent = original;
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

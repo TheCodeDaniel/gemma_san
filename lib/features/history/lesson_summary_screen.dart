@@ -51,10 +51,18 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
   Future<void> _loadOrGenerate() async {
     final topic = widget.topic;
 
-    // Use cached summary if it's still fresh.
+    // Use cached summary if it's still fresh AND not poisoned by a previous
+    // thinking-channel JSON leak (see GemmaService._extractPlainText).
     if (!topic.needsNewSummary && topic.lessonSummaryJson != null) {
-      _parseCached(topic.lessonSummaryJson!);
-      return;
+      final parsed = _tryParseCached(topic.lessonSummaryJson!);
+      if (parsed != null) {
+        setState(() {
+          _summary = parsed.summary;
+          _concepts = parsed.concepts;
+        });
+        return;
+      }
+      debugPrint('[LessonSummary] cached summary is poisoned — regenerating');
     }
 
     if (!widget.gemmaService.isReady) {
@@ -94,16 +102,25 @@ class _LessonSummaryScreenState extends ConsumerState<LessonSummaryScreen> {
     }
   }
 
-  void _parseCached(String json) {
+  /// Returns the parsed pair, or null if the cache is unreadable or poisoned.
+  ({String? summary, List<String> concepts})? _tryParseCached(String json) {
     try {
       final m = jsonDecode(json) as Map<String, dynamic>;
-      setState(() {
-        _summary = m['summary'] as String?;
-        _concepts = (m['concepts'] as List?)?.cast<String>() ?? [];
-      });
+      final summary = m['summary'] as String?;
+      final concepts = (m['concepts'] as List?)?.cast<String>() ?? <String>[];
+      if (summary != null && _looksLikeThinkingJson(summary)) return null;
+      return (summary: summary, concepts: concepts);
     } catch (_) {
-      setState(() => _error = 'Could not read cached summary.');
+      return null;
     }
+  }
+
+  static bool _looksLikeThinkingJson(String s) {
+    final trimmed = s.trimLeft();
+    if (!trimmed.startsWith('{')) return false;
+    return trimmed.contains('"channels"') ||
+        trimmed.contains('"thought"') ||
+        trimmed.contains('"role":"assistant"');
   }
 
   void _openConversation(String initialText) {

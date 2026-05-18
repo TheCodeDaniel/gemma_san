@@ -13,6 +13,9 @@ class TtsService {
 
   bool _ready = false;
   bool _stopped = false;
+  bool _hasGoogleTts = false;
+
+  bool get hasGoogleTts => _hasGoogleTts;
   bool _processingQueue = false;
   Completer<void>? _utteranceCompleter;
   late String _deviceCountry;
@@ -27,6 +30,19 @@ class TtsService {
 
     _deviceCountry = ui.PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? 'NG';
     debugPrint('[TTS] device country: $_deviceCountry');
+
+    try {
+      final engines = await _tts.getEngines as List?;
+      if (engines != null && engines.contains('com.google.android.tts')) {
+        await _tts.setEngine('com.google.android.tts');
+        _hasGoogleTts = true;
+        debugPrint('[TTS] Google TTS engine active');
+      } else {
+        debugPrint('[TTS] Google TTS not installed — using system default');
+      }
+    } catch (e) {
+      debugPrint('[TTS] engine check failed: $e');
+    }
 
     await _resolvePreferredEnglish();
     await _setTtsLanguage('en');
@@ -75,14 +91,18 @@ class TtsService {
 
   // ── Private ────────────────────────────────────────────────────────────────
 
-  /// Queries installed TTS languages once and caches the best English variant
-  /// (en-NG > en-GB > en-US) in SharedPreferences.
+  /// Queries installed TTS languages and caches the best English variant
+  /// (en-NG > en-GB > en-US). Cache is keyed by engine so switching to
+  /// Google TTS forces a fresh language scan.
   Future<void> _resolvePreferredEnglish() async {
     final prefs = await SharedPreferences.getInstance();
+    final engineKey = _hasGoogleTts ? 'google' : 'system';
+    final cachedEngine = prefs.getString('tts_engine');
     final cached = prefs.getString('tts_preferred_english');
-    if (cached != null) {
+
+    if (cached != null && cachedEngine == engineKey) {
       _preferredEnglish = cached;
-      debugPrint('[TTS] preferred English (cached): $_preferredEnglish');
+      debugPrint('[TTS] preferred English (cached/$engineKey): $_preferredEnglish');
       return;
     }
 
@@ -93,12 +113,14 @@ class TtsService {
       if (available.any((l) => l.toLowerCase().startsWith(preferred.toLowerCase()))) {
         _preferredEnglish = preferred;
         await prefs.setString('tts_preferred_english', preferred);
-        debugPrint('[TTS] preferred English (detected): $_preferredEnglish (${available.length} voices available)');
+        await prefs.setString('tts_engine', engineKey);
+        debugPrint('[TTS] preferred English (detected/$engineKey): $_preferredEnglish (${available.length} voices)');
         return;
       }
     }
     await prefs.setString('tts_preferred_english', _preferredEnglish);
-    debugPrint('[TTS] preferred English (fallback): $_preferredEnglish');
+    await prefs.setString('tts_engine', engineKey);
+    debugPrint('[TTS] preferred English (fallback/$engineKey): $_preferredEnglish');
   }
 
   /// Tries language variants in priority order; stops at the first that succeeds.

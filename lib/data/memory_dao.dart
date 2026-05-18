@@ -273,7 +273,7 @@ class MemoryDao {
     final buf = StringBuffer('[Memory from previous sessions: ');
 
     if (facts.isNotEmpty) {
-      final factTexts = facts.take(8).map((f) => f.value).join('; ');
+      final factTexts = facts.take(3).map((f) => f.value).join('; ');
       buf.write('Known facts about this child: $factTexts. ');
     }
 
@@ -291,7 +291,7 @@ class MemoryDao {
           })
           .whereType<String>()
           .where((t) => t.isNotEmpty)
-          .take(3)
+          .take(2)
           .join('; ');
 
       if (recentMessages.isNotEmpty) {

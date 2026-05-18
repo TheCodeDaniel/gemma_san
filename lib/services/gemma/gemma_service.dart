@@ -19,16 +19,12 @@ import 'tutor_response.dart';
 // encoders that flutter_gemma 0.14.x rejects. Text generation works fine.
 const _modelUrl =
     'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/'
-    'resolve/7fa1d78473894f7e736a21d920c3aa80f950c0db/gemma-4-E2B-it.litertlm';
+    'resolve/main/gemma-4-E2B-it.litertlm';
 
 const _modelFilename = 'gemma-4-E2B-it.litertlm';
 
 // Set at build time via .env / --dart-define=HF_TOKEN=hf_xxx
 const _hfToken = String.fromEnvironment('HF_TOKEN');
-
-// USE_GPU=false  → CPU backend (works on emulator and all real devices, slower)
-// USE_GPU=true   → GPU backend (real device only — crashes on emulator's SwiftShader)
-const _useGpu = bool.fromEnvironment('USE_GPU', defaultValue: false);
 
 // Dev shortcut: set DEV_MODEL_PATH to an absolute path on the device where you've
 // already pushed the model file (e.g. /sdcard/Download/gemma-4-E4B-it.litertlm).
@@ -93,7 +89,8 @@ class GemmaService {
 
     try {
       debugPrint('[Gemma] initializing SDK…');
-      await FlutterGemma.initialize(huggingFaceToken: _hfToken);
+      final usingLocalModel = _devModelPath.isNotEmpty;
+      await FlutterGemma.initialize(huggingFaceToken: usingLocalModel ? '' : _hfToken);
 
       String modelPath;
       if (_devModelPath.isNotEmpty && File(_devModelPath).existsSync()) {
@@ -127,11 +124,25 @@ class GemmaService {
         fileType: ModelFileType.litertlm,
       ).fromFile(modelPath).install();
 
-      final backend = _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu;
-      debugPrint('[Gemma] loading model (backend=${backend.name}, maxTokens=$_maxTokens, vision=false)…');
+      InferenceModel? loadedModel;
       final swLoad = Stopwatch()..start();
-      _model = await FlutterGemma.getActiveModel(maxTokens: _maxTokens, preferredBackend: backend, supportImage: true);
-      debugPrint('[Gemma] model ready — load time: ${swLoad.elapsed}');
+      // NPU omitted: standard .litertlm files aren't NPU-compiled; attempting it
+      // blocks for ~20 s then fails, triggering ANR on real devices.
+      for (final backend in [PreferredBackend.gpu, PreferredBackend.cpu]) {
+        try {
+          loadedModel = await FlutterGemma.getActiveModel(
+            maxTokens: _maxTokens,
+            preferredBackend: backend,
+            supportImage: true,
+          );
+          debugPrint('[Gemma] ${backend.name.toUpperCase()} backend active — load: ${swLoad.elapsed}');
+          break;
+        } catch (e) {
+          debugPrint('[Gemma] ${backend.name} unavailable: $e');
+        }
+      }
+      if (loadedModel == null) throw StateError('No inference backend available (tried NPU/GPU/CPU)');
+      _model = loadedModel;
     } catch (_) {
       _initializing = false;
       rethrow;
@@ -204,121 +215,217 @@ class GemmaService {
     final tools = _sessionTools ?? kGemmaTools;
     final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
     debugPrint('[Gemma] creating session (tools=${tools.length})…');
-    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
+    final session = await model.createSession(
+      tools: tools,
+      systemInstruction: sysPrompt,
+      enableThinking: false,
+      temperature: 0.4,
+      topK: 40,
+      topP: 0.9,
+      randomSeed: 1,
+    );
 
     try {
-      await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
+      try {
+        await session.addQueryChunk(Message.text(text: fullPrompt, isUser: true));
 
-      final sw = Stopwatch()..start();
-      await session.getResponse();
-      debugPrint('[Gemma] response in ${sw.elapsed}');
+        final sw = Stopwatch()..start();
+        await session.getResponse();
+        debugPrint('[Gemma] response in ${sw.elapsed}');
 
-      final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
-      debugPrint('[Gemma] raw response: $raw');
+        final raw = session is RawSdkResponseSession ? session.lastRawResponse : null;
+        debugPrint('[Gemma] raw response: $raw');
 
-      // Primary path: SDK converts <|tool_call>...<tool_call|> to OpenAI JSON.
-      var calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
+        // Primary path: SDK converts <|tool_call>...<tool_call|> to OpenAI JSON.
+        var calls = raw != null ? SdkResponseParser.extractToolCalls(raw) : <FunctionCallResponse>[];
 
-      // Fallback: C library streamed raw Gemma 4 tokens instead of JSON.
-      // Parses <|tool_call>call:name{key:<"|>val<"|>,...} directly.
-      if (calls.isEmpty && raw != null) {
-        calls = _parseRawGemma4Calls(raw);
-        if (calls.isNotEmpty) debugPrint('[Gemma] used raw-format fallback parser');
-      }
-
-      if (calls.isNotEmpty) {
-        final call = calls.first;
-        debugPrint('[Gemma] tool call: ${call.name} args=${call.args}');
-
-        // Auto-detect topic. Only fires until topic is set (updateSessionTopic
-        // ignores the call if a topic already exists for this session).
-        if (_sessionId != null && _memoryDao != null) {
-          final String? detected = switch (call.name) {
-            'socratic_teach' => (call.args['target_concept'] as String?)?.toLowerCase().trim(),
-            'direct_teach' => (call.args['subject'] as String?)?.toLowerCase().trim(),
-            'show_illustration' => call.args['topic_id'] as String?,
-            'try_drawing' => (call.args['topic'] as String?)?.toLowerCase().trim(),
-            _ => null,
-          };
-          if (detected != null && detected.isNotEmpty) {
-            await _memoryDao!.updateSessionTopic(_sessionId!, detected);
-          }
+        // Fallback: C library streamed raw Gemma 4 tokens instead of JSON.
+        // Parses <|tool_call>call:name{key:<"|>val<"|>,...} directly.
+        if (calls.isEmpty && raw != null) {
+          calls = _parseRawGemma4Calls(raw);
+          if (calls.isNotEmpty) debugPrint('[Gemma] used raw-format fallback parser');
         }
 
-        // quiz_question uses 'spoken_question'; all other tools use 'spoken_response'.
-        final spokenText = call.name == 'quiz_question'
-            ? (call.args['spoken_question'] as String?) ?? ''
-            : (call.args['spoken_response'] as String?) ?? '';
-        final langCode = call.args['language_code'] as String?;
+        if (calls.isNotEmpty) {
+          final call = calls.first;
+          final args = _sanitizeArgs(call.args);
+          debugPrint('[Gemma] tool call: ${call.name} args=$args');
 
-        if (call.name == 'try_drawing') {
-          final topic = (call.args['topic'] as String?) ?? '';
-          final rawSvg = (call.args['svg_code'] as String?) ?? '';
-          final validation = SvgValidator.validate(topic, rawSvg);
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(
-            mode: TutorMode.direct,
-            spokenText: spokenText,
-            languageCode: langCode,
-            tryDrawingSvg: validation.valid ? rawSvg : null,
-            tryDrawingTopic: topic,
-            metadata: call.args,
-          );
-        } else if (call.name == 'show_illustration') {
-          final topicId = (call.args['topic_id'] as String?) ?? '';
-          // Validate against registry — Gemma may hallucinate a value outside the enum.
-          final resolvedId = IllustrationRegistry.hasIllustration(topicId) ? topicId : null;
-          debugPrint('[Illustration] topic=$topicId resolved=$resolvedId');
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(
-            mode: TutorMode.direct,
-            spokenText: spokenText,
-            languageCode: langCode,
-            illustrationTopicId: resolvedId,
-            metadata: call.args,
-          );
-        } else if (call.name == 'remember') {
-          final fact = (call.args['fact'] as String?) ?? '';
-          if (fact.isNotEmpty) {
-            final key = 'fact_${DateTime.now().millisecondsSinceEpoch}';
-            await _memoryDao?.saveFact(_childId, key, fact);
-            debugPrint('[Memory] saveFact key=$key value=$fact');
+          // Auto-detect topic. Only fires until topic is set (updateSessionTopic
+          // ignores the call if a topic already exists for this session).
+          if (_sessionId != null && _memoryDao != null) {
+            final String? detected = switch (call.name) {
+              'socratic_teach' => (args['target_concept'] as String?)?.toLowerCase().trim(),
+              'direct_teach' => (args['subject'] as String?)?.toLowerCase().trim(),
+              'show_illustration' => args['topic_id'] as String?,
+              'try_drawing' => (args['topic'] as String?)?.toLowerCase().trim(),
+              _ => null,
+            };
+            if (detected != null && detected.isNotEmpty) {
+              await _memoryDao!.updateSessionTopic(_sessionId!, detected);
+            }
           }
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(
-            mode: TutorMode.direct,
-            spokenText: spokenText,
-            languageCode: langCode,
-            metadata: call.args,
-          );
+
+          final spokenText = _resolveSpokenText(call.name, args);
+          final langCode = args['language_code'] as String?;
+
+          if (call.name == 'try_drawing') {
+            final topic = (args['topic'] as String?) ?? '';
+            final rawSvg = (args['svg_code'] as String?) ?? '';
+            final validation = SvgValidator.validate(topic, rawSvg);
+            _addTurn(role: 'assistant', text: spokenText);
+            if (validation.valid) {
+              // Prefer the sanitized SVG if the validator auto-corrected it.
+              final finalSvg = validation.sanitizedSvg ?? rawSvg;
+              yield TutorResponse(
+                mode: TutorMode.direct,
+                spokenText: spokenText,
+                languageCode: langCode,
+                tryDrawingSvg: finalSvg,
+                tryDrawingTopic: topic,
+                metadata: args,
+              );
+            } else {
+              // SVG too complex or malformed — fall back to spoken explanation only.
+              debugPrint('[Drawing] SVG invalid for "$topic" — text fallback');
+              yield TutorResponse(
+                mode: TutorMode.direct,
+                spokenText: spokenText,
+                languageCode: langCode,
+                metadata: args,
+              );
+            }
+          } else if (call.name == 'show_illustration') {
+            final topicId = (args['topic_id'] as String?) ?? '';
+            // Guard 1: topic_id must exist in registry.
+            // Guard 2: topic_id must be semantically related to the child's actual query —
+            // Gemma sometimes picks a valid registry ID that is completely unrelated
+            // to what was asked (e.g. "simple_machines" for "traffic light").
+            final inRegistry = IllustrationRegistry.hasIllustration(topicId);
+            final resolvedId = (inRegistry && _topicMatchesQuery(topicId, prompt)) ? topicId : null;
+            debugPrint('[Illustration] topic=$topicId inRegistry=$inRegistry resolved=$resolvedId');
+            _addTurn(role: 'assistant', text: spokenText);
+            yield TutorResponse(
+              mode: TutorMode.direct,
+              spokenText: spokenText,
+              languageCode: langCode,
+              illustrationTopicId: resolvedId,
+              metadata: args,
+            );
+          } else if (call.name == 'remember') {
+            final fact = (args['fact'] as String?) ?? '';
+            if (fact.isNotEmpty) {
+              final key = 'fact_${DateTime.now().millisecondsSinceEpoch}';
+              await _memoryDao?.saveFact(_childId, key, fact);
+              debugPrint('[Memory] saveFact key=$key value=$fact');
+            }
+            _addTurn(role: 'assistant', text: spokenText);
+            yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText, languageCode: langCode, metadata: args);
+          } else {
+            final mode = switch (call.name) {
+              'socratic_teach' => TutorMode.socratic,
+              'direct_teach' => TutorMode.direct,
+              'encourage' => TutorMode.encourage,
+              'quiz_question' => TutorMode.quiz,
+              _ => TutorMode.direct,
+            };
+            _addTurn(role: 'assistant', text: spokenText);
+            yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
+          }
         } else {
-          final mode = switch (call.name) {
-            'socratic_teach' => TutorMode.socratic,
-            'direct_teach' => TutorMode.direct,
-            'encourage' => TutorMode.encourage,
-            'quiz_question' => TutorMode.quiz,
-            _ => TutorMode.direct,
-          };
-          _addTurn(role: 'assistant', text: spokenText);
-          yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+          // No tool call parsed. Try in order: salvage → one retry with nudge →
+          // graceful direct_teach. The child must never see an error message.
+          final salvaged = raw != null ? _salvageSpokenText(raw) : null;
+          if (salvaged != null) {
+            debugPrint('[Gemma] no tool call — salvaged spoken_response');
+            _addTurn(role: 'assistant', text: salvaged);
+            yield TutorResponse(mode: TutorMode.direct, spokenText: salvaged);
+          } else {
+            debugPrint('[Gemma] no tool call, no salvage — retrying once with nudge');
+            final retry = await _retryWithNudge(model, fullPrompt, tools, sysPrompt);
+            if (retry != null) {
+              _addTurn(role: 'assistant', text: retry.spokenText);
+              yield retry;
+            } else {
+              const fallback = "Let me explain that differently. Which part would you like me to start with?";
+              _addTurn(role: 'assistant', text: fallback);
+              yield const TutorResponse(mode: TutorMode.direct, spokenText: fallback);
+            }
+          }
         }
-      } else {
-        // Last resort: salvage spoken_response from truncated/malformed output.
-        final salvaged = raw != null ? _salvageSpokenText(raw) : null;
-        debugPrint('[Gemma] no tool call — salvaged=${salvaged != null}');
-        final spokenText = salvaged ?? 'Something went wrong — please try again.';
-        _addTurn(role: 'assistant', text: spokenText);
-        yield TutorResponse(mode: TutorMode.direct, spokenText: spokenText);
-      }
 
-      // Persist turn data after every response so force-killed sessions survive.
-      final sid = _sessionId;
-      final dao = _memoryDao;
-      if (sid != null && dao != null) {
-        await dao.persistTurnProgress(sid, _turns.length, _compactSession());
+        // Persist turn data after every response so force-killed sessions survive.
+        final sid = _sessionId;
+        final dao = _memoryDao;
+        if (sid != null && dao != null) {
+          await dao.persistTurnProgress(sid, _turns.length, _compactSession());
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('[Gemma] generate error: $e');
+        const fallback = "Let me think about that again. Can you tell me what you'd like to explore?";
+        _addTurn(role: 'assistant', text: fallback);
+        yield const TutorResponse(mode: TutorMode.direct, spokenText: fallback);
       }
     } finally {
       await session.close();
+    }
+  }
+
+  /// One-shot retry on parse failure. Opens a fresh session (the original is
+  /// already finalised), appends a forceful nudge to the prompt, runs once,
+  /// and parses with the same fallback chain as the primary path.
+  /// Returns null on any exception so the caller can fire the graceful fallback.
+  Future<TutorResponse?> _retryWithNudge(
+    InferenceModel model,
+    String fullPrompt,
+    List<Tool> tools,
+    String sysPrompt,
+  ) async {
+    InferenceModelSession? retrySession;
+    try {
+      retrySession = await model.createSession(
+        tools: tools,
+        systemInstruction: sysPrompt,
+        enableThinking: false,
+        temperature: 0.4,
+        topK: 40,
+        topP: 0.9,
+        randomSeed: 1,
+      );
+      const nudge = '\n\nIMPORTANT: Respond by calling exactly ONE function. No plain text.';
+      await retrySession.addQueryChunk(Message.text(text: fullPrompt + nudge, isUser: true));
+      await retrySession.getResponse();
+      final raw = retrySession is RawSdkResponseSession ? retrySession.lastRawResponse : null;
+      if (raw == null) return null;
+
+      var calls = SdkResponseParser.extractToolCalls(raw);
+      if (calls.isEmpty) calls = _parseRawGemma4Calls(raw);
+      if (calls.isEmpty) {
+        final salvaged = _salvageSpokenText(raw);
+        if (salvaged != null) {
+          return TutorResponse(mode: TutorMode.direct, spokenText: salvaged);
+        }
+        return null;
+      }
+
+      final call = calls.first;
+      final args = _sanitizeArgs(call.args);
+      final spokenText = _resolveSpokenText(call.name, args);
+      final langCode = args['language_code'] as String?;
+      final mode = switch (call.name) {
+        'socratic_teach' => TutorMode.socratic,
+        'direct_teach' => TutorMode.direct,
+        'encourage' => TutorMode.encourage,
+        'quiz_question' => TutorMode.quiz,
+        _ => TutorMode.direct,
+      };
+      debugPrint('[Gemma] retry succeeded with ${call.name}');
+      return TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Gemma] retry failed: $e');
+      return null;
+    } finally {
+      await retrySession?.close();
     }
   }
 
@@ -344,7 +451,15 @@ class GemmaService {
     final tools = _sessionTools ?? kGemmaTools;
     final sysPrompt = _sessionSystemPrompt ?? kSystemPrompt;
     debugPrint('[Gemma] createSession for vision…');
-    final session = await model.createSession(tools: tools, systemInstruction: sysPrompt);
+    final session = await model.createSession(
+      tools: tools,
+      systemInstruction: sysPrompt,
+      enableThinking: false,
+      temperature: 0.4,
+      topK: 40,
+      topP: 0.9,
+      randomSeed: 1,
+    );
 
     try {
       await session.addQueryChunk(
@@ -370,10 +485,9 @@ class GemmaService {
 
       if (calls.isNotEmpty) {
         final call = calls.first;
-        final spokenText = call.name == 'quiz_question'
-            ? (call.args['spoken_question'] as String?) ?? ''
-            : (call.args['spoken_response'] as String?) ?? '';
-        final langCode = call.args['language_code'] as String?;
+        final args = _sanitizeArgs(call.args);
+        final spokenText = _resolveSpokenText(call.name, args);
+        final langCode = args['language_code'] as String?;
         final mode = switch (call.name) {
           'socratic_teach' => TutorMode.socratic,
           'direct_teach' => TutorMode.direct,
@@ -382,7 +496,7 @@ class GemmaService {
           _ => TutorMode.direct,
         };
         _addTurn(role: 'assistant', text: spokenText);
-        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: call.args);
+        yield TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
       } else {
         final salvaged = raw != null ? _salvageSpokenText(raw) : null;
         final spokenText = salvaged ?? "I had trouble seeing that picture. Try describing what you see!";
@@ -422,7 +536,19 @@ class GemmaService {
         'Summarize what this child has learned about "$topic" in simple English. '
         'Session data: ${sessionSummaries.take(5).join('; ')}';
 
-    final session = await model.createSession(tools: [_summaryTool], systemInstruction: _summarySystemPrompt);
+    // Thinking OFF: single-tool composition task, no routing benefit. Thinking
+    // here eats the token budget and occasionally causes the model to never
+    // emit the lesson_summary tool call — its thinking-channel JSON then leaks
+    // into the lesson summary text (see issue: "Jollof rice" garbage card).
+    final session = await model.createSession(
+      tools: [_summaryTool],
+      systemInstruction: _summarySystemPrompt,
+      enableThinking: false,
+      temperature: 0.4,
+      topK: 40,
+      topP: 0.9,
+      randomSeed: 1,
+    );
 
     try {
       await session.addQueryChunk(Message.text(text: prompt, isUser: true));
@@ -435,7 +561,11 @@ class GemmaService {
 
       final calls = SdkResponseParser.extractToolCalls(raw);
       if (calls.isEmpty) {
-        return (summary: _extractPlainText(raw), concepts: <String>[]);
+        final plain = _extractPlainText(raw);
+        if (plain.trim().isEmpty) {
+          return (summary: 'You have been exploring "$topic". Keep learning!', concepts: <String>[]);
+        }
+        return (summary: plain, concepts: <String>[]);
       }
 
       final args = calls.first.args;
@@ -492,7 +622,7 @@ class GemmaService {
 
   /// Pure-Dart compaction — serialises user turns for cross-session injection.
   String _compactSession() {
-    final userTurns = _turns.where((t) => t.role == 'user').map((t) => t.text).take(5).toList();
+    final userTurns = _turns.where((t) => t.role == 'user').map((t) => t.text).take(3).toList();
     return jsonEncode({'user_turns': userTurns, 'turn_count': _turns.length});
   }
 
@@ -516,6 +646,74 @@ class GemmaService {
   }
 
   // ── Private: model download & loading ─────────────────────────────────────
+
+  /// New flutter_gemma versions leave Gemma 4 special quote tokens inside JSON
+  /// string values (e.g. "<|\"|>en<|\"|>" instead of "en"). Strip them.
+  static Map<String, dynamic> _sanitizeArgs(Map<String, dynamic> args) =>
+      args.map((k, v) => MapEntry(k, v is String ? v.replaceAll('<|"|>', '').replaceAll('<"|>', '').trim() : v));
+
+  /// Resolve the spoken text from sanitized args, with per-tool fallbacks.
+  /// Newer SDK builds may omit spoken_response; this handles all known cases.
+  static String _resolveSpokenText(String toolName, Map<String, dynamic> args) {
+    if (toolName == 'quiz_question') {
+      return (args['spoken_question'] as String? ?? '');
+    }
+
+    final primary = args['spoken_response'] as String?;
+    if (primary != null && _looksLikeResponse(primary)) return primary;
+
+    if (kDebugMode) debugPrint('[Gemma] spoken_response empty for $toolName — scanning fields');
+
+    if (toolName == 'socratic_teach') {
+      // Scan all string fields for one that contains '?' — model sometimes puts
+      // the real question in a sibling field (e.g. target_concept on confusion).
+      for (final v in args.values) {
+        if (v is String && v.contains('?') && _looksLikeResponse(v)) {
+          if (kDebugMode) debugPrint('[Gemma] socratic fallback: found question in sibling field');
+          return v;
+        }
+      }
+      // Construct a stage-appropriate Socratic question from available metadata.
+      final stage = (args['stage'] as String? ?? '');
+      final concept = (args['target_concept'] as String? ?? '').trim();
+      if (concept.isNotEmpty) {
+        return switch (stage) {
+          'probe' => 'What do you already know about $concept?',
+          'build' => 'Good! What else do you think is important about $concept?',
+          'narrow' => 'Let\'s make it simple — can you guess one thing about $concept?',
+          'resolve' => 'Can you explain how $concept works in your own words?',
+          _ => 'What do you know about $concept?',
+        };
+      }
+      return 'Let me think about that for a moment…';
+    }
+
+    return 'Let me think about that for a moment…';
+  }
+
+  /// Returns true when [topicId] is semantically related to the user's [query].
+  /// Splits the topic_id on underscores and checks that at least one meaningful
+  /// word (≥4 chars) appears in the query — prevents Gemma from showing an
+  /// illustration that exists in the registry but is unrelated to what was asked
+  /// (e.g. returning "simple_machines" for a "traffic light" request).
+  static bool _topicMatchesQuery(String topicId, String query) {
+    final queryLower = query.toLowerCase();
+    return topicId.toLowerCase().split('_').any((word) => word.length >= 4 && queryLower.contains(word));
+  }
+
+  /// Returns true only when [s] looks like a real natural-language response —
+  /// not a serialisation fragment such as `,stage:`, `<|"|>`, or a raw tool call.
+  static bool _looksLikeResponse(String s) {
+    if (s.length < 4) return false;
+    // Reject obvious serialisation artifacts: comma-prefixed, raw delimiters, etc.
+    if (s.startsWith(',') || s.startsWith(':') || s.startsWith('<') || s.startsWith('{')) return false;
+    // Reject bare field references like ",stage:" or "stage:"
+    if (RegExp(r'^,?\s*\w+:\s*$').hasMatch(s)) return false;
+    // Reject raw function call syntax like socratic_teach(stage=probe,...)
+    if (RegExp(r'^\w+\s*\(').hasMatch(s)) return false;
+    // Must contain at least a few consecutive letters (real words)
+    return RegExp(r'[a-zA-Z]{3,}').hasMatch(s);
+  }
 
   /// Parse the native Gemma 4 token format emitted when the C library does not
   /// convert to OpenAI JSON:
@@ -557,23 +755,98 @@ class GemmaService {
       final text = end > start
           ? raw.substring(start, end).trim()
           : raw.substring(start).replaceAll(RegExp(r'[,}].*$', dotAll: true), '').trim();
-      if (text.length > 3) return text;
+      if (_looksLikeResponse(text)) return text;
     }
     return null;
   }
 
+  /// Extract natural-language text from a raw SDK response.
+  /// Handles three shapes the SDK can emit:
+  ///   - single top-level JSON with `content[].type=="text"`
+  ///   - concatenated multi-object JSON: `{...}{...}{...}`
+  ///   - thinking-channel chunks: `{"role":"assistant","channels":{"thought":"…"}}`
+  /// Thinking chunks are explicitly dropped. Returns an empty string if nothing
+  /// usable is found — the caller is responsible for substituting a safe message.
   static String _extractPlainText(String raw) {
-    try {
-      final json = jsonDecode(raw) as Map<String, dynamic>;
-      final content = json['content'] as List?;
-      if (content == null) return raw;
-      final buf = StringBuffer();
-      for (final item in content) {
-        if (item is Map && item['type'] == 'text') buf.write(item['text'] ?? '');
+    final buf = StringBuffer();
+    for (final fragment in _splitConcatenatedJson(raw)) {
+      try {
+        final parsed = jsonDecode(fragment);
+        if (parsed is! Map<String, dynamic>) continue;
+
+        // Skip thinking-only chunks.
+        final channels = parsed['channels'];
+        if (channels is Map) {
+          final content = channels['content'];
+          if (content is String && content.isNotEmpty) {
+            buf.write(content);
+          }
+          // thought-only fragments contribute nothing.
+          continue;
+        }
+
+        // OpenAI-style content array.
+        final content = parsed['content'];
+        if (content is List) {
+          for (final item in content) {
+            if (item is Map && item['type'] == 'text' && item['text'] is String) {
+              buf.write(item['text']);
+            }
+          }
+          continue;
+        }
+
+        // Plain `text` field.
+        final text = parsed['text'];
+        if (text is String) buf.write(text);
+      } on FormatException {
+        // Ignore unparseable fragments.
       }
-      return buf.toString();
-    } catch (_) {
-      return raw;
+    }
+
+    // Final scrub: drop any leftover Gemma 4 channel sentinel tokens.
+    var out = buf.toString().replaceAll(RegExp(r'<\|channel\|>thought.*?<channel\|>', dotAll: true), '').trim();
+
+    // Reject results that still look like raw JSON garbage.
+    if (out.startsWith('{') && (out.contains('"channels"') || out.contains('"thought"'))) {
+      return '';
+    }
+    return out;
+  }
+
+  /// Split a string that may be one JSON object or a concatenation of multiple
+  /// top-level objects (e.g. `{...}{...}`). Tracks brace depth while ignoring
+  /// braces inside string literals. Mirrors the helper inside SdkResponseParser.
+  static Iterable<String> _splitConcatenatedJson(String input) sync* {
+    int depth = 0;
+    int start = -1;
+    bool inString = false;
+    bool escape = false;
+    for (var i = 0; i < input.length; i++) {
+      final c = input[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (c == r'\') {
+        escape = true;
+        continue;
+      }
+      if (c == '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+      if (c == '{') {
+        if (depth == 0) start = i;
+        depth++;
+      } else if (c == '}') {
+        depth--;
+        if (depth == 0 && start >= 0) {
+          yield input.substring(start, i + 1);
+          start = -1;
+        }
+      }
     }
   }
 

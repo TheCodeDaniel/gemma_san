@@ -26,151 +26,100 @@ class ConvInputRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
         color: AppColors.warmCream,
-        border: Border(top: BorderSide(color: AppColors.warmCreamDark, width: 1.5)),
+        border: Border(top: BorderSide(color: AppColors.warmCreamDark, width: 1)),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.charcoal.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
+          BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, -3)),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (onCameraTap != null) ...[
-            _CameraButton(
-              disabled: busy || !sessionReady || recording,
-              onTap: onCameraTap!,
-            ),
-            const SizedBox(width: AppSpacing.sm),
+            _CameraButton(disabled: busy || !sessionReady || recording, onTap: onCameraTap!),
+            const SizedBox(width: 6),
           ],
-          MicPill(
+          Expanded(
+            child: _InputField(
+              controller: controller,
+              enabled: sessionReady && !busy && !recording,
+              recording: recording,
+              transcribing: transcribing,
+              onSubmitted: canSend ? (_) => onSend() : null,
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Mic and send share one button slot — animated swap based on text content.
+          _ActionButton(
+            canSend: canSend,
             recording: recording,
             transcribing: transcribing,
-            disabled: busy || !sessionReady,
-            onTap: onMicTap,
+            disabled: !sessionReady || busy,
+            onMicTap: onMicTap,
+            onSend: onSend,
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                border: Border.all(color: AppColors.warmCreamDark, width: 1.5),
-              ),
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: recording
-                      ? 'Listening… tap mic to stop'
-                      : transcribing
-                      ? 'Transcribing…'
-                      : 'Type or speak…',
-                  hintStyle: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.35)),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  isDense: true,
-                ),
-                style: AppText.body(),
-                maxLines: 4,
-                minLines: 1,
-                enabled: sessionReady && !busy && !recording,
-                onSubmitted: canSend ? (_) => onSend() : null,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          SendButton(enabled: canSend, onTap: onSend),
         ],
       ),
     );
   }
 }
 
-class MicPill extends StatefulWidget {
-  const MicPill({
+// ── Text field ────────────────────────────────────────────────────────────────
+
+class _InputField extends StatelessWidget {
+  const _InputField({
+    required this.controller,
+    required this.enabled,
     required this.recording,
     required this.transcribing,
-    required this.disabled,
-    required this.onTap,
-    super.key,
+    required this.onSubmitted,
   });
 
-  final bool recording, transcribing, disabled;
-  final VoidCallback onTap;
+  final TextEditingController controller;
+  final bool enabled, recording, transcribing;
+  final ValueChanged<String>? onSubmitted;
 
-  @override
-  State<MicPill> createState() => _MicPillState();
-}
-
-class _MicPillState extends State<MicPill> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Color get _color {
-    if (widget.recording) return Colors.red.shade600;
-    if (widget.disabled) return AppColors.charcoal.withValues(alpha: 0.15);
-    return AppColors.terracotta;
+  String get _hint {
+    if (recording) return 'Listening… tap to stop';
+    if (transcribing) return 'Transcribing…';
+    return 'Type or speak…';
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: widget.disabled ? null : (_) => _ctrl.forward(),
-      onTapUp: widget.disabled
-          ? null
-          : (_) {
-              _ctrl.reverse();
-              widget.onTap();
-            },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: AppSpacing.minTap,
-          height: AppSpacing.minTap,
-          decoration: BoxDecoration(
-            color: _color,
-            shape: BoxShape.circle,
-            boxShadow: widget.disabled ? [] : AppShadows.button(_color),
-          ),
-          alignment: Alignment.center,
-          child: widget.transcribing
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                )
-              : Icon(
-                  widget.recording ? PhosphorIconsRegular.stop : PhosphorIconsRegular.microphone,
-                  color: Colors.white,
-                  size: 22,
-                ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: recording ? Colors.red.shade300 : AppColors.warmCreamDark, width: 1.5),
+        boxShadow: [
+          BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1)),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          hintText: _hint,
+          hintStyle: AppText.body(color: AppColors.charcoal.withValues(alpha: 0.35)),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          isDense: true,
         ),
+        style: AppText.body(),
+        maxLines: 3,
+        minLines: 1,
+        enabled: enabled,
+        onSubmitted: onSubmitted,
+        textInputAction: TextInputAction.send,
       ),
     );
   }
 }
+
+// ── Camera — compact ghost icon, no background circle ─────────────────────────
 
 class _CameraButton extends StatefulWidget {
   const _CameraButton({required this.disabled, required this.onTap});
@@ -182,17 +131,11 @@ class _CameraButton extends StatefulWidget {
 }
 
 class _CameraButtonState extends State<_CameraButton> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
-  }
+  late final AnimationController _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+  late final Animation<double> _scale = Tween<double>(
+    begin: 1.0,
+    end: 0.85,
+  ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
 
   @override
   void dispose() {
@@ -202,10 +145,9 @@ class _CameraButtonState extends State<_CameraButton> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.disabled
-        ? AppColors.charcoal.withValues(alpha: 0.15)
-        : AppColors.deepGreen;
+    final color = widget.disabled ? AppColors.charcoal.withValues(alpha: 0.2) : AppColors.deepGreen;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTapDown: widget.disabled ? null : (_) => _ctrl.forward(),
       onTapUp: widget.disabled
           ? null
@@ -216,75 +158,120 @@ class _CameraButtonState extends State<_CameraButton> with SingleTickerProviderS
       onTapCancel: () => _ctrl.reverse(),
       child: ScaleTransition(
         scale: _scale,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: AppSpacing.minTap,
-          height: AppSpacing.minTap,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            boxShadow: widget.disabled ? [] : AppShadows.button(color),
-          ),
-          alignment: Alignment.center,
-          child: Icon(PhosphorIconsRegular.camera, color: Colors.white, size: 22),
-        ),
+        // Fixed height to align baseline with text field
+        child: SizedBox(width: 36, height: 44, child: Icon(PhosphorIconsRegular.camera, color: color, size: 24)),
       ),
     );
   }
 }
 
-class SendButton extends StatefulWidget {
-  const SendButton({required this.enabled, required this.onTap, super.key});
-  final bool enabled;
-  final VoidCallback onTap;
+// ── Action button — mic ↔ send with animated icon swap ────────────────────────
+
+class _ActionButton extends StatefulWidget {
+  const _ActionButton({
+    required this.canSend,
+    required this.recording,
+    required this.transcribing,
+    required this.disabled,
+    required this.onMicTap,
+    required this.onSend,
+  });
+
+  final bool canSend, recording, transcribing, disabled;
+  final VoidCallback onMicTap;
+  final VoidCallback onSend;
 
   @override
-  State<SendButton> createState() => _SendButtonState();
+  State<_ActionButton> createState() => _ActionButtonState();
 }
 
-class _SendButtonState extends State<SendButton> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
-  }
+class _ActionButtonState extends State<_ActionButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _pressCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 100),
+  );
+  late final Animation<double> _scale = Tween<double>(
+    begin: 1.0,
+    end: 0.90,
+  ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeOut));
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _pressCtrl.dispose();
     super.dispose();
+  }
+
+  bool get _isMicMode => !widget.canSend;
+  bool get _isInteractive => !widget.disabled || widget.recording;
+
+  Color get _color {
+    if (widget.recording) return Colors.red.shade600;
+    if (widget.disabled) return AppColors.charcoal.withValues(alpha: 0.15);
+    if (_isMicMode) return AppColors.terracotta;
+    return AppColors.deepGreen;
+  }
+
+  void _onTap() {
+    if (_isMicMode || widget.recording) {
+      widget.onMicTap();
+    } else {
+      widget.onSend();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final color = _color;
     return GestureDetector(
-      onTapDown: widget.enabled ? (_) => _ctrl.forward() : null,
-      onTapUp: widget.enabled
+      onTapDown: _isInteractive ? (_) => _pressCtrl.forward() : null,
+      onTapUp: _isInteractive
           ? (_) {
-              _ctrl.reverse();
-              widget.onTap();
+              _pressCtrl.reverse();
+              _onTap();
             }
           : null,
-      onTapCancel: () => _ctrl.reverse(),
+      onTapCancel: () => _pressCtrl.reverse(),
       child: ScaleTransition(
         scale: _scale,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: AppSpacing.minTap,
-          height: AppSpacing.minTap,
+          duration: const Duration(milliseconds: 200),
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: widget.enabled ? AppColors.deepGreen : AppColors.charcoal.withValues(alpha: 0.15),
+            color: color,
             shape: BoxShape.circle,
-            boxShadow: widget.enabled ? AppShadows.button(AppColors.deepGreen) : [],
+            boxShadow: _isInteractive && !widget.disabled ? AppShadows.button(color) : const [],
           ),
           alignment: Alignment.center,
-          child: Icon(PhosphorIconsRegular.paperPlaneTilt, color: Colors.white, size: 22),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+            child: widget.transcribing
+                ? const SizedBox(
+                    key: ValueKey('transcribing'),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                  )
+                : Icon(
+                    key: ValueKey(
+                      widget.recording
+                          ? 'stop'
+                          : _isMicMode
+                          ? 'mic'
+                          : 'send',
+                    ),
+                    widget.recording
+                        ? PhosphorIconsRegular.stop
+                        : _isMicMode
+                        ? PhosphorIconsRegular.microphone
+                        : PhosphorIconsRegular.paperPlaneTilt,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+          ),
         ),
       ),
     );
