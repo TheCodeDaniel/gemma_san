@@ -218,7 +218,7 @@ class GemmaService {
     final session = await model.createSession(
       tools: tools,
       systemInstruction: sysPrompt,
-      enableThinking: true,
+      enableThinking: false,
       temperature: 0.4,
       topK: 40,
       topP: 0.9,
@@ -347,8 +347,7 @@ class GemmaService {
               _addTurn(role: 'assistant', text: retry.spokenText);
               yield retry;
             } else {
-              const fallback =
-                  "Let me explain that differently. Which part would you like me to start with?";
+              const fallback = "Let me explain that differently. Which part would you like me to start with?";
               _addTurn(role: 'assistant', text: fallback);
               yield const TutorResponse(mode: TutorMode.direct, spokenText: fallback);
             }
@@ -363,8 +362,7 @@ class GemmaService {
         }
       } catch (e) {
         if (kDebugMode) debugPrint('[Gemma] generate error: $e');
-        const fallback =
-            "Let me think about that again. Can you tell me what you'd like to explore?";
+        const fallback = "Let me think about that again. Can you tell me what you'd like to explore?";
         _addTurn(role: 'assistant', text: fallback);
         yield const TutorResponse(mode: TutorMode.direct, spokenText: fallback);
       }
@@ -388,7 +386,7 @@ class GemmaService {
       retrySession = await model.createSession(
         tools: tools,
         systemInstruction: sysPrompt,
-        enableThinking: true,
+        enableThinking: false,
         temperature: 0.4,
         topK: 40,
         topP: 0.9,
@@ -422,12 +420,7 @@ class GemmaService {
         _ => TutorMode.direct,
       };
       debugPrint('[Gemma] retry succeeded with ${call.name}');
-      return TutorResponse(
-        mode: mode,
-        spokenText: spokenText,
-        languageCode: langCode,
-        metadata: args,
-      );
+      return TutorResponse(mode: mode, spokenText: spokenText, languageCode: langCode, metadata: args);
     } catch (e) {
       if (kDebugMode) debugPrint('[Gemma] retry failed: $e');
       return null;
@@ -461,7 +454,7 @@ class GemmaService {
     final session = await model.createSession(
       tools: tools,
       systemInstruction: sysPrompt,
-      enableThinking: true,
+      enableThinking: false,
       temperature: 0.4,
       topK: 40,
       topP: 0.9,
@@ -812,10 +805,7 @@ class GemmaService {
     }
 
     // Final scrub: drop any leftover Gemma 4 channel sentinel tokens.
-    var out = buf
-        .toString()
-        .replaceAll(RegExp(r'<\|channel\|>thought.*?<channel\|>', dotAll: true), '')
-        .trim();
+    var out = buf.toString().replaceAll(RegExp(r'<\|channel\|>thought.*?<channel\|>', dotAll: true), '').trim();
 
     // Reject results that still look like raw JSON garbage.
     if (out.startsWith('{') && (out.contains('"channels"') || out.contains('"thought"'))) {

@@ -152,8 +152,7 @@ final kGemmaTools = [
         },
         'spoken_response': {
           'type': 'string',
-          'description':
-              'Warm acknowledgement (1–2 sentences) in the SAME language the child used.',
+          'description': 'Warm acknowledgement (1–2 sentences) in the SAME language the child used.',
         },
         ..._languageCodeParam,
       },
