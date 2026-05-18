@@ -137,8 +137,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
     _scrollToBottom();
     await widget.ttsService.stop();
 
+    // For quiz mode, the model has no built-in counter — without an explicit
+    // hint it tends to repeat the same question. Append a state line that the
+    // child never sees but the model is told to trust.
+    final modelPrompt = widget.quizMode ? '$prompt${_quizHint()}' : prompt;
+
     final completer = Completer<void>();
-    _generateSub = widget.gemmaService.generate(prompt).listen(
+    _generateSub = widget.gemmaService.generate(modelPrompt).listen(
       (response) {
         if (!mounted) return;
         setState(() {
@@ -297,6 +302,23 @@ class _ConversationScreenState extends State<ConversationScreen> {
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
       }
     });
+  }
+
+  /// Per-turn state hint appended to the model prompt in quiz mode so it never
+  /// repeats a question or loses track of which number is next.
+  String _quizHint() {
+    final asked = _quizQuestionNumber;
+    if (asked == 0) {
+      return ' [Quiz: ask question 1 of 5 now.]';
+    } else if (asked >= 5) {
+      return ' [Quiz: the child has just answered the final question. '
+          'Call direct_teach now (NOT quiz_question) with a short result like '
+          '"You got X right out of 5!" and warm encouragement.]';
+    } else {
+      return ' [Quiz: the child just answered question $asked. '
+          'Now ask question ${asked + 1} of 5 with question_number=${asked + 1}. '
+          'Never repeat a question already asked above.]';
+    }
   }
 
   @override

@@ -245,11 +245,14 @@ final kGemmaTools = [
 final kQuizQuestionTool = Tool(
   name: 'quiz_question',
   description:
-      'Ask ONE quiz question about the lesson topic. '
-      'question_number counts from 1 to 5. '
-      'After question 5, use direct_teach to give a short result summary '
-      '("You got X right out of 5"). '
-      'After each child answer, evaluate briefly then ask the next question.',
+      'Ask ONE NEW quiz question about the lesson topic. '
+      'question_number MUST be exactly one greater than the previous quiz_question call '
+      'in this conversation (1 → 2 → 3 → 4 → 5). Read the "[Quiz: …]" hint at the end '
+      'of the child\'s message — it tells you which number to use. '
+      'NEVER reuse a question_number, NEVER repeat a question that already appears earlier '
+      'in the conversation. '
+      'After the child answers question 5, call direct_teach (not quiz_question) with a '
+      'short result like "You got X right out of 5!".',
   parameters: {
     'type': 'object',
     'properties': {
@@ -273,14 +276,28 @@ final kQuizQuestionTool = Tool(
 final kQuizTools = [kQuizQuestionTool, kGemmaTools[1], kGemmaTools[2]];
 
 String kQuizSystemPrompt(String topic, String context) =>
-    'You are Gemma-San, running a 5-question quiz on "$topic" for a child.\n\n'
-    'LESSON CONTEXT (do not read aloud):\n$context\n\n'
-    'Rules:\n'
-    '- You MUST call quiz_question for questions 1–4.\n'
-    '- For question 5 (the last), call quiz_question, then on the NEXT turn call direct_teach '
-    'with a result: "You got X right out of 5! [encouragement]"\n'
-    '- Call encourage ONLY if the child is clearly upset; then return to quiz_question.\n'
+    'You are running a 5-question quiz on "$topic" for a child aged 5–12.\n'
+    '\n'
+    'LESSON CONTEXT (source of correct answers; never read aloud):\n'
+    '$context\n'
+    '\n'
+    'TURN-BY-TURN PROGRESSION — CRITICAL:\n'
+    '- The conversation history shows EVERY question you have ALREADY asked.\n'
+    '- NEVER repeat a question that appears earlier in the conversation.\n'
+    '- Every child reply IS their ANSWER to your most recent question. Treat it as such.\n'
+    '- After receiving an answer, IMMEDIATELY ask a NEW question with question_number = previous + 1.\n'
+    '- question_number must climb 1 → 2 → 3 → 4 → 5. Never reuse a number, never go backwards.\n'
+    '- Each user message will end with a "[Quiz: …]" hint telling you which question_number to ask. Trust it.\n'
+    '- After the child answers question 5, do NOT call quiz_question again. Call direct_teach with a short result summary like "You got X right out of 5! [warm encouragement]".\n'
+    '\n'
+    'TOOLS YOU MAY CALL:\n'
+    '- quiz_question: ask ONE new question with question_number = next in sequence.\n'
+    '- encourage: only if the child is upset/giving up; then return to quiz_question with the SAME next question_number.\n'
+    '- direct_teach: only ONCE, as the final result summary after question 5.\n'
     '- Do NOT use socratic_teach in quiz mode.\n'
-    '- Keep questions short and answerable for a child aged 5–12.\n'
-    '- Always reply in the same language the child used.\n'
-    '- Set language_code to the BCP-47 code you used.\n';
+    '\n'
+    'WORKED EXAMPLE (turn 2 — child just answered question 1 about $topic):\n'
+    'Child: "[some answer] [Quiz: child answered question 1; ask question 2 of 5.]"\n'
+    'Call: quiz_question{spoken_question:"[a DIFFERENT question about $topic]", expected_answer_hint:"...", topic:"$topic", question_number:2, language_code:"en"}\n'
+    '\n'
+    'LANGUAGE: reply in the SAME language the child used. Set language_code (BCP-47, e.g. en, pcm, yo, ig, ha, ja).\n';
