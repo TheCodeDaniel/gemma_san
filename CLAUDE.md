@@ -101,12 +101,6 @@ features/<name>/
 
 ---
 
-## Known Limitations (v1)
-
-- **Vision / camera**: Camera UI is fully wired (`image_picker` → preview → `GemmaService.generateWithImage`). Currently blocked at inference: `libLiteRtLm.so` rejects Gemma 4's 3-subgraph vision encoder ("must have exactly one signature but got 3"). Not patchable client-side — fix requires Google to update the native binary. When that lands, flip `GemmaService._supportsVision` to `true` and uncomment the vision call block. Camera/multimodal activation deferred to v2.
-
----
-
 ## Build State Log
 
 | Day | Goal                                                            | Status                                                                                                       |
@@ -116,7 +110,7 @@ features/<name>/
 | 3   | GemmaService: GPU backend, DEV_MODEL_PATH shortcut, HF download | Done                                                                                                         |
 | 4   | STT: Whisper tiny via whisper_flutter_new, WAV recording        | Done — tiny model avoids OOM alongside Gemma 4B                                                              |
 | 5   | TTS: sentence-streaming via flutter_tts, interruption support   | Done — speech starts at first sentence boundary, ~1–2s                                                       |
-| 6   | Camera/image UI, gallery picker, vision spike                   | Done — vision blocked by libLiteRtLm.so (Gemma 4 has 3-subgraph encoder; LiteRT requires 1). Deferred to v2. |
+| 6   | Camera/image UI, gallery picker, vision spike                   | Done — vision working end-to-end. Multimodal Gemma 4 with image input running fully on-device via `GemmaService.generateWithImage`. |
 | 7   | Tool-call mode signaling: 3 tools, system prompt, TutorResponse | Done — socratic/direct/encourage, mode pill on diagnostic screen                                             |
 | 8   | Practice mode: phonics drilling loop, fuzzy STT eval, 5 levels  | Done                                                                                                         |
 | 9   | Adaptive practice: SRS scheduler, SQLite persistence, session stats | Done                                                                                                     |

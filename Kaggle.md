@@ -1,14 +1,15 @@
-<div align="center">
-
 # Gemma-San
 
-### _When the Internet Ends, the Lesson Begins._
+> **_When the Internet Ends, the Lesson Begins._**
 
-**A patient, voice-first AI tutor that runs Gemma 4 entirely offline on a 4 GB Android phone — built for the 250 million African children the cloud forgot.**
+A patient, voice-first AI tutor that runs Gemma 4 entirely offline on a 4 GB Android phone — built for the 250 million African children the cloud forgot.
 
-[▶ Watch the demo](https://www.youtube.com/watch?v=FD7dJ33XGXc) · [⬇ Download APK](https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk) · [🌐 Live site](https://thecodedaniel.github.io/gemma_san/) · [Source](https://github.com/TheCodeDaniel/gemma_san)
+**🔗 Quick links**
 
-</div>
+- ▶ **[Watch the 90-second demo](https://www.youtube.com/watch?v=FD7dJ33XGXc)**
+- ⬇ **[Download the APK](https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk)**
+- 🌐 **[Live project site](https://thecodedaniel.github.io/gemma_san/)**
+- 💻 **[Source on GitHub](https://github.com/TheCodeDaniel/gemma_san)**
 
 ---
 
@@ -44,19 +45,20 @@ That's the gap Gemma-San is built for.
 
 Gemma-San is a complete app, not a demo. Every feature below is implemented and shipping in the APK:
 
-| Capability                      | How it works                                                                                                                                                                                  |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Voice in (multilingual)**     | Whisper Tiny via FFI — auto-detects Hausa, Yorùbá, Igbo, Pidgin, English. Runs alongside Gemma in ~1 GB combined.                                                                             |
-| **Voice out**                   | Android TTS, Nigerian English voice preferred (`en-NG > en-GB > en-US`), with one-time Google TTS install prompt for the best neural voices.                                                  |
-| **Socratic dialogue**           | A 4-step teaching ladder (probe → build → narrow → resolve) grounded in Vygotsky's ZPD and the Khanmigo pedagogical pattern.                                                                  |
-| **Direct teaching**             | Triggered when the child explicitly asks "what is X?" or after two "I don't know" signals.                                                                                                    |
-| **Live drawing**                | The model generates SVGs on demand for any topic — traffic lights, clocks, rainbows. A custom validator auto-fixes Gemma's quirks (degenerate coordinates, garbled `xmlns`, wrong `viewBox`). |
-| **22 hand-built illustrations** | Photosynthesis, human heart, solar system, water cycle, food chain, simple machines… all SVG, all offline.                                                                                    |
-| **Three-tier memory**           | Working (current turn) → session summary → cross-session facts. Compacted in a background isolate. The tutor remembers the child's name, hobbies, and prior lessons across days.              |
-| **Spaced-repetition phonics**   | Deterministic SRS over a 5-level curriculum. Levenshtein fuzzy match on STT output — instant, no LLM round-trip.                                                                              |
-| **Quiz mode**                   | Dedicated tool schema (`quiz_question`), 5 questions per lesson, score summarised at the end.                                                                                                 |
-| **Lesson summaries**            | Background `generateLessonSummary` call after each session — child can revisit any past lesson in the history browser.                                                                        |
-| **Privacy by design**           | Every conversation, memory, and audio file stays on the child's phone. Zero telemetry.                                                                                                        |
+| Capability                         | How it works                                                                                                                                                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Voice in (multilingual)**        | Whisper Tiny via FFI — auto-detects Hausa, Yorùbá, Igbo, Pidgin, English. Runs alongside Gemma in ~1 GB combined.                                                                                        |
+| **Voice out**                      | Android TTS, Nigerian English voice preferred (`en-NG > en-GB > en-US`), with one-time Google TTS install prompt for the best neural voices.                                                             |
+| **Vision — show me your homework** | Snap or pick a photo; the child asks a question about it. Multimodal Gemma 4 with image input running fully on-device — no cloud, no upload. A child can hold up a schoolbook page and get help with it. |
+| **Socratic dialogue**              | A 4-step teaching ladder (probe → build → narrow → resolve) grounded in Vygotsky's ZPD and the Khanmigo pedagogical pattern.                                                                             |
+| **Direct teaching**                | Triggered when the child explicitly asks "what is X?" or after two "I don't know" signals.                                                                                                               |
+| **Live drawing**                   | The model generates SVGs on demand for any topic — traffic lights, clocks, rainbows. A custom validator auto-fixes Gemma's quirks (degenerate coordinates, garbled `xmlns`, wrong `viewBox`).            |
+| **22 hand-built illustrations**    | Photosynthesis, human heart, solar system, water cycle, food chain, simple machines… all SVG, all offline.                                                                                               |
+| **Three-tier memory**              | Working (current turn) → session summary → cross-session facts. Compacted in a background isolate. The tutor remembers the child's name, hobbies, and prior lessons across days.                         |
+| **Spaced-repetition phonics**      | Deterministic SRS over a 5-level curriculum. Levenshtein fuzzy match on STT output — instant, no LLM round-trip.                                                                                         |
+| **Quiz mode**                      | Dedicated tool schema (`quiz_question`), 5 questions per lesson, score summarised at the end.                                                                                                            |
+| **Lesson summaries**               | Background `generateLessonSummary` call after each session — child can revisit any past lesson in the history browser.                                                                                   |
+| **Privacy by design**              | Every conversation, memory, and audio file stays on the child's phone. Zero telemetry.                                                                                                                   |
 
 ---
 
@@ -81,10 +83,10 @@ A walkthrough showing:
 
 Real screens from the shipping APK — no mockups, no marketing renders.
 
-| | | | |
-|---|---|---|---|
-| ![Avatar picker](docs/assets/screens/screen-avatar.png) | ![Home screen](docs/assets/screens/screen-home.png) | ![Practice mode](docs/assets/screens/screen-practice.png) | ![Lesson summary](docs/assets/screens/screen-summary.png) |
-| **Onboarding** — ten avatars, age-aware curriculum | **Home** — three doors: learn, practice, revisit | **Practice** — phonics drilling, voice-evaluated | **Lesson summary** — child-friendly recap + 5-question quiz |
+|                                                                                                                        |                                                                                                                    |                                                                                                                          |                                                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| ![Avatar picker](https://raw.githubusercontent.com/TheCodeDaniel/gemma_san/main/docs/assets/screens/screen-avatar.png) | ![Home screen](https://raw.githubusercontent.com/TheCodeDaniel/gemma_san/main/docs/assets/screens/screen-home.png) | ![Practice mode](https://raw.githubusercontent.com/TheCodeDaniel/gemma_san/main/docs/assets/screens/screen-practice.png) | ![Lesson summary](https://raw.githubusercontent.com/TheCodeDaniel/gemma_san/main/docs/assets/screens/screen-summary.png) |
+| **Onboarding** — ten avatars, age-aware curriculum                                                                     | **Home** — three doors: learn, practice, revisit                                                                   | **Practice** — phonics drilling, voice-evaluated                                                                         | **Lesson summary** — child-friendly recap + 5-question quiz                                                              |
 
 A full-resolution gallery and additional screens are on the [live site](https://thecodedaniel.github.io/gemma_san/#screens).
 
@@ -275,7 +277,6 @@ for (final backend in [PreferredBackend.gpu, PreferredBackend.cpu]) {
 
 A submission that doesn't list its flaws is hiding something. Here are ours:
 
-- **Vision is off**. The camera UI is wired and the multimodal call path exists, but `libLiteRtLm.so` rejects Gemma 4's 3-subgraph vision encoder. This is a binary-level issue Google needs to fix in LiteRT. The day it lands, flipping `_supportsVision = true` enables image Q&A.
 - **TTS for African languages is English-fallback.** Android has no native Hausa / Yorùbá / Igbo TTS voices. Whisper transcribes them and the model responds in them as text, but spoken output uses Nigerian English. Native voices are a v2 priority via a bundled neural TTS engine.
 - **Practice mode is deterministic, not AI**. Phonics drilling uses Levenshtein matching, not pronunciation scoring. Faster, child-friendly, but less nuanced than a true ASR pronunciation judge.
 - **The E4B model can be flakier than E2B** on structured generation (SVGs). We default to E2B and offer E4B as an opt-in.
@@ -319,7 +320,6 @@ flutter build apk --release
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **v1 (now)** | Five-language tutor, offline, voice in/out, memory, drawing, illustrations, practice, quiz                                                                      |
 | **v1.1**     | Native TTS voices for Hausa / Yorùbá / Igbo via bundled neural engine                                                                                           |
-| **v2**       | Vision unlock once `libLiteRtLm.so` accepts Gemma 4's vision encoder — child shows the tutor their homework                                                     |
 | **v2**       | Teacher dashboard: parents see weekly lesson summaries on the same device                                                                                       |
 | **v3**       | Federated curriculum sync — schools can opt in to share anonymised topic-difficulty data to improve curriculum order, with no per-child data leaving the device |
 
@@ -334,12 +334,9 @@ flutter build apk --release
 
 ---
 
-<div align="center">
+### Gemma-San — _A teacher in every pocket._
 
-### Gemma-San
-
-_A teacher in every pocket._
-
-**[GitHub](https://github.com/TheCodeDaniel/gemma_san) · [Demo Video](https://www.youtube.com/watch?v=FD7dJ33XGXc) · [Download APK](https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk)**
-
-</div>
+- 💻 **[GitHub](https://github.com/TheCodeDaniel/gemma_san)**
+- ▶ **[Demo video](https://www.youtube.com/watch?v=FD7dJ33XGXc)**
+- ⬇ **[Download APK](https://github.com/TheCodeDaniel/gemma_san/releases/download/Initial/app-release.apk)**
+- 🌐 **[Live site](https://thecodedaniel.github.io/gemma_san/)**
