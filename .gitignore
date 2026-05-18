@@ -1,5 +1,7 @@
 # Secrets — never commit
+.env*
 .env
+.env.example
 gemma-4-E2B-it.litertlm
 
 # Miscellaneous
